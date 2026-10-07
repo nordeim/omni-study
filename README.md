@@ -1,6 +1,6 @@
 # StudyFlow (Omni-Study)
 
-![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-147%20green-22c55e)
+![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-159%20green-22c55e)
 
 **StudyFlow — your study companion.** A production-ready, self-hosted clone (functional superset) of the [`omni-study1.base44.app`](https://omni-study1.base44.app/) study-planning app, rebuilt as a single Next.js application you fully own: your database, your AI keys, your deployment.
 
@@ -13,7 +13,7 @@ The reference app is a study companion that keeps a student's whole life in one 
 | ![Dashboard](docs/screenshots/desktop-Dashboard.png) | ![Timetable](docs/screenshots/desktop-Timetable.png) | ![Flashcards](docs/screenshots/desktop-Flashcards.png) |
 | ![Calculator](docs/screenshots/desktop-Calculator.png) | ![Mobile nav](docs/screenshots/mobile-navigation-drawer.png) | ![Grade tracker](docs/screenshots/desktop-GradeTracker.png) |
 
-All 20 views (plus the login card and three mobile captures) are in [`docs/screenshots/`](docs/screenshots/) — refreshed after the session-3 mobile-chrome remediation (`node scripts/capture-studyflow.mjs` regenerates them).
+All 20 views (plus the login card and three mobile captures) are in [`docs/screenshots/`](docs/screenshots/) — refreshed after the session-4 text-metrics & login remediation (`node scripts/capture-studyflow.mjs` regenerates them).
 
 ## Key Features
 
@@ -93,12 +93,13 @@ flowchart TB
 │   ├── 📄 schema.prisma         ← 21 models; DATABASE PATH CONTRACT header
 │   └── 📄 seed.ts               ← idempotent demo data
 ├── 📂 tests/
-│   ├── 📄 *.test.ts             ← Vitest unit layer (86 tests)
-│   └── 📂 e2e/                  ← Playwright specs (61 tests)
+│   ├── 📄 *.test.ts             ← Vitest unit layer (87 tests)
+│   └── 📂 e2e/                  ← Playwright specs (72 specs)
 └── 📂 docs/
     ├── 📄 Tailwind-V4-Validation-Report.md  ← the five documented v3→v4 traps
     ├── 📄 remediation-plan.md   ← session-2 parity audit: evidence, fixes, non-gaps
     ├── 📄 remediation-plan-session3.md ← session-3 mobile-chrome & token audit
+    ├── 📄 remediation-plan-session4.md ← session-4 text-metrics & login audit
     ├── 📂 screenshots/          ← dev-server captures of every view
     └── 📄 DEPLOYMENT.md         ← production notes
 ```
@@ -139,12 +140,12 @@ Copy `.env.example` to `.env` (the defaults above already work locally):
 ## Testing
 
 ```bash
-bun run test        # Vitest — 86 unit tests (router, theme, date, calculator, auth, validation, db-path)
+bun run test        # Vitest — 87 unit tests (router, theme, date, calculator, auth, validation, db-path)
 bun run build       # REQUIRED before e2e — the suite boots the standalone server
-bun run test:e2e    # Playwright — 61 specs against the production build on :3100
+bun run test:e2e    # Playwright — 72 specs against the production build on :3100
 ```
 
-E2E notes: the suite pushes and seeds an isolated `db/e2e.db` (never touches `custom.db`), signs the demo user in **once** via a setup project (the login endpoints are rate-limited — 10 attempts/IP/15 min), and asserts the reference-measured design pins (sidebar geometry, v3 `shadow-sm`, canvas gradient). Full gate order: `lint → typecheck → test → build → test:e2e`.
+E2E notes: the suite pushes and seeds an isolated `db/e2e.db` (never touches `custom.db`), signs the demo user in **once** via a setup project (the login endpoints are rate-limited — 10 attempts/IP/15 min), and asserts the reference-measured design pins (sidebar geometry, v3 `shadow-sm`, canvas gradient, view-title model, stat-card text metrics, empty-state design, brand-gradient stops, login chrome). Full gate order: `lint → typecheck → test → build → test:e2e`.
 
 ## API Reference
 
@@ -169,6 +170,8 @@ Measured from the live reference (see `docs/Tailwind-V4-Validation-Report.md` fo
 | Token | Value | Usage |
 |-------|-------|-------|
 | Primary | `#8b5cf6` (violet-500) via `--sf-primary` RGB triplet | Buttons, active nav, accents |
+| View titles | `h1 text-2xl font-bold text-slate-800` + 24px accent icon (MyDay/FocusTimer are 30px) | Every view header (session-4 pin) |
+| Empty states | 80px rounded-2xl gradient block (`violet-100 → indigo-100`), 40px accent icon, 20px/600 h3, 16px hint | Every empty view (session-4 pin) |
 | Strong | `#7c3aed` (violet-600) | Links ("View All"), active nav text |
 | Card | white, `1px solid #f1f5f9`, radius 16px | Every surface |
 | Shadow | `0 1px 2px 0 rgb(0 0 0 / 0.05)` | v3 `shadow-sm`, **pinned** in `@theme` |
@@ -177,6 +180,7 @@ Measured from the live reference (see `docs/Tailwind-V4-Validation-Report.md` fo
 | Mobile app bar | 64px fixed `.glass`, brand + live clock ("03:43 AM") | Content starts at 80px (both apps) |
 | Mobile drawer | 288px white panel, `shadow-2xl`, 20% blurred backdrop, icon nav items | No footer (reference-exact) |
 | Clock chip | `violet-50 → indigo-50` gradient (`rgb(245,243,255) → rgb(238,242,255)`), violet-700 time | Accent-aware via `--sf-primary-softest(-adjacent)` |
+| Brand gradients | chips + CTA end **indigo-600** (`rgb(79,70,229)`); avatar runs violet-400 → indigo-500 (the lighter pair) | Accent-aware via `--sf-primary-gradient-to` / `-avatar-*` tokens |
 | Accents | violet · blue · green · orange · pink · red · teal | Settings → Appearance |
 | Font | system sans stack | Matches reference body styles |
 
@@ -214,10 +218,11 @@ The verification gate before any push: `bun run lint && bun run typecheck && bun
 |-------|--------|--------------|
 | Reference recon (all 20 views, computed-style tokens) | ✅ Complete | Traps + measured tokens in `docs/Tailwind-V4-Validation-Report.md` |
 | Codebase build (20 views, 21 models, 40+ endpoints) | ✅ Complete | `src/**`, `prisma/**` |
-| Test suites (86 unit + 61 e2e) | ✅ Complete | `tests/**` |
+| Test suites (87 unit + 72 e2e) | ✅ Complete | `tests/**` |
 | Visual parity verification | ✅ Complete | `docs/screenshots/**`, `docs/remediation-plan*.md` |
 | Session-2 parity remediation (radius trap, icons, avatar, clock) | ✅ Complete | `docs/remediation-plan.md` |
 | Session-3 mobile-chrome & token remediation (fixed glass app bar + live clock, drawer mirror, greeting map, accent token completeness) | ✅ Complete | `docs/remediation-plan-session3.md` |
+| Session-4 text-metrics & second-order remediation (v4 blur trap, stat-card metrics, reference empty states, view-title h1+icon model, login card, measured gradient stops, heading hierarchy) | ✅ Complete | `docs/remediation-plan-session4.md` |
 | Docs (README / AGENTS / CLAUDE / PAD / SKILL) | ✅ Complete | repo root |
 
 No license file is present in this repository; treat the code as proprietary to the repo owner.

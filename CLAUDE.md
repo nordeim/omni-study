@@ -46,10 +46,10 @@ Key decisions that shape everything else: **Next.js 16 App Router as a one-page 
 - No `tailwind.config.js`. All tokens live in `src/app/globals.css` under `@theme inline`.
 - Layout with `flex gap-*` exclusively — margin utilities inside `space-y/x-*` containers are forbidden (v4 trap 4).
 - Accent colors via `rgb(var(--sf-*))` inline styles or the generated `*-sf-primary-*` utilities; the v3-pinned palette and `--shadow-sm` pin must not be removed (traps 2 & 5, pinned by e2e specs).
-- The radius scale is v3-identical from `md` up — do NOT re-pin it upward (trap 6); only `--radius-sm: 0.125rem` is pinned for v3 semantics. Opacity utilities serialize as oklab in computed styles (trap 7) — e2e pins accept both serializations. `pt-*` after `p-*` REPLACES the shorthand's side (trap 8) — assert observable positions, not padding internals.
+- The radius scale is v3-identical from `md` up — do NOT re-pin it upward (trap 6); only `--radius-sm: 0.125rem` is pinned for v3 semantics. Opacity utilities serialize as oklab/lab in computed styles (trap 7) — e2e pins accept both serializations. `pt-*` after `p-*` REPLACES the shorthand's side (trap 8) — assert observable positions, not padding internals. The BLUR scale shifted one notch (trap 9): v3's `backdrop-blur-sm` (4px) is v4's `backdrop-blur-xs` — use `backdrop-blur-xs` where the reference measures 4px (drawer backdrop, login card).
 
 **State (Zustand)**
-- `useAppStore` (view/sidebar/drawer), `useThemeStore` (mode/accent/avatar), `useDataStore` + `mutations` (entity cache; every mutation refreshes the touched collections). No React Context for app state, no new state libraries. Theme vars go to `<html>` through `accentCssVars` — the COMPLETE token set (dropping tokens silently leaves stale violet values under other accents).
+- `useAppStore` (view/sidebar/drawer), `useThemeStore` (mode/accent/avatar), `useDataStore` + `mutations` (entity cache; every mutation refreshes the touched collections). No React Context for app state, no new state libraries. Theme vars go to `<html>` through `accentCssVars` — the COMPLETE 14-var token set (dropping tokens silently leaves stale violet values under other accents; the S4-G gradient/avatar/empty tokens are part of the set).
 
 **Prisma / SQLite**
 - Schema edits: update `prisma/schema.prisma`, then `bun run db:push`. Seeds stay idempotent (`bun run db:seed` is safe to re-run).
@@ -83,8 +83,8 @@ bun run dev                           # http://localhost:3000 (demo@studyflow.ap
 
 ### Test Pyramid
 
-- **Unit (Vitest, 86 tests)** — pure seams: router mapping (incl. the reference-probed greeting buckets), date math (2-digit-hour clock format), calculator engine (incl. unary ops), auth primitives (scrypt/HMAC/rate-limit), Zod schemas, db-path resolution (the full anchor contract), theme tokens (measured values + complete accent var set).
-- **E2E (Playwright, 61 specs)** — auth flows, mobile chrome (fixed glass app bar + brand + clock, drawer geometry/backdrop/icon items/no footer, content offset y=80), desktop sidebar active states, all 20 views render, task CRUD golden path, calculator + theme switching; computed-style parity pins (v3 `shadow-sm`, canvas gradient, sidebar geometry, corner radii, footer avatar default, stat icon size, clock chip gradient, CTA width).
+- **Unit (Vitest, 87 tests)** — pure seams: router mapping (incl. the reference-probed greeting buckets), date math (2-digit-hour clock format), calculator engine (incl. unary ops), auth primitives (scrypt/HMAC/rate-limit), Zod schemas, db-path resolution (the full anchor contract), theme tokens (measured values + complete 14-var accent set incl. the S4-G gradient stops).
+- **E2E (Playwright, 72 specs)** — auth flows (incl. the login card's measured chrome), mobile chrome (fixed glass app bar + brand + clock, drawer geometry/backdrop blur(4px)/icon items/no footer, content offset y=80), desktop sidebar active states, all 20 views render, task CRUD golden path, calculator + theme switching; computed-style parity pins (v3 `shadow-sm`, canvas gradient, sidebar geometry, corner radii, footer avatar default + gradient stops, stat icon size + text metrics, clock chip gradient, CTA width + gradient, view-title h1/icon/subtitle model, empty-state design, "My Lists" label).
 
 ### Test Commands
 
@@ -121,7 +121,7 @@ Rules: unique row titles in e2e (the db persists across runs); exactly one share
 ## Project-Specific Standards
 
 ### Architecture
-One-page SPA shell + rewrites; fixed glass sidebar ≥ lg; below lg a fixed glass app bar (64px, brand + live clock) + mobile drawer (288px, nav items from the shared `nav-items.tsx`, no footer); view router + theme + data stores; CRUD delegate factory; stateless HMAC sessions. Nav item markup has ONE source (`NavItemLink`) shared by sidebar and drawer.
+One-page SPA shell + rewrites; fixed glass sidebar ≥ lg; below lg a fixed glass app bar (64px, brand + live clock) + mobile drawer (288px, nav items from the shared `nav-items.tsx`, no footer); view router + theme + data stores; CRUD delegate factory; stateless HMAC sessions. Nav item markup has ONE source (`NavItemLink`) shared by sidebar and drawer; view page headers have ONE source (`ViewHeader` — h1 + optional 24px icon + reference subtitle) consumed by all 20 views.
 
 ### API Design
 REST-ish `/api/<entity>` collections with `/[id]` items; Zod at every boundary; ownership in the WHERE clause; destructive ops are plain DELETE behind auth (no tokens/approvals — single-user contexts).
@@ -150,5 +150,7 @@ You are successful when: the full gate is green; e2e specs that pin parity still
 - Importing `z-ai-web-dev-sdk` client-side.
 - Re-implementing nav item markup instead of using `NavItemLink` (sidebar/drawer drift).
 - Writing only SOME accent tokens to `<html>` (stale violet tokens under other accents).
+- Hand-rolled page headers (use `ViewHeader`) or empty states (use the shared `EmptyState`/`SimpleEmptyState` reference pattern).
+- Routing brand/avatar gradients through `primary`/`strong` (they end at the ADJACENT hue — use `--sf-primary-gradient-to` / `-avatar-*`).
 - Extra real logins in e2e specs (rate limiter poisons the run).
 - Weakening lint/type gates to ship.

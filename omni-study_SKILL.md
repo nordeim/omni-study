@@ -25,7 +25,7 @@ tags:
 
 > **What this is:** the single-source-of-truth reference for working in
 > `nordeim/omni-study`. Every fact below is verified against the codebase
-> (147 tests green at last update: 86 Vitest unit + 61 Playwright e2e).
+> (159 tests green at last update: 87 Vitest unit + 72 Playwright e2e).
 > Sections marked with ⚠️ encode non-obvious contracts — violating them has
 > historically produced silent visual or data-path bugs.
 
@@ -164,7 +164,7 @@ Seven accents × 4 core stops each: violet / blue / green / orange / pink /
 red / teal — full table in `src/lib/theme.ts` `ACCENT_TOKENS` (v3-pinned
 hexes; adding an accent = one object literal + one `ACCENTS` entry).
 
-**⚠️ The eight documented Tailwind v3→v4 traps (all live here):**
+**⚠️ The nine documented Tailwind v3→v4 traps (all live here):**
 1. `@theme inline` vars must be **full `hsl()` colors** — bare triplets
    silently resolve to transparent.
 2. The v3-era palette (slate 50–950, violet 100–900) is **pinned** in
@@ -189,11 +189,20 @@ hexes; adding an accent = one object literal + one `ACCENTS` entry).
    64px of top padding, not 80. The mobile offset models the reference's
    measured y=80 as a single `pt-20`; always assert the OBSERVABLE
    position (heading y-coordinate), never the internal padding split.
+9. **The BLUR scale shifted one notch** (session 4): v4 inserted
+   `blur-xs` (4px) at the bottom of the scale — v3's `backdrop-blur-sm`
+   (4px) is v4's `backdrop-blur-xs`, and v4's `backdrop-blur-sm` computes
+   8px. Same family as the radius trap. The drawer backdrop and the login
+   card use `backdrop-blur-xs` (e2e-pinned at `blur(4px)`).
 
 **Typography:** system sans stack (ui-sans-serif → Apple Color Emoji …);
-page greeting `text-3xl font-bold`; section titles `text-lg font-semibold`
-+ `h-5 w-5` accent icon; stat values `text-[30px] font-bold`; nav labels
-16px with `w-5` icons; body `text-sm`.
+page greeting `text-3xl font-bold`; view titles `h1 text-2xl font-bold
+text-slate-800` with a 24px accent icon (16 views; MyDay/FocusTimer are
+`text-3xl` 30px; Tasks/Calendar have no icon) + 16px subtitle with the
+reference's exact per-view wording (S4-D); section titles `h2 text-lg
+font-semibold` + `h-5 w-5` accent icon; stat values `h3 text-3xl font-bold`
+(30px/36px, tracking normal — NOT leading-none/tracking-tight); empty-state
+titles `h3 text-xl` (20px); nav labels 16px with `w-5` icons; body `text-sm`.
 
 **Surface geometry (measured):** cards white, `1px solid #f1f5f9`
 (slate-100), radius **16px** (`rounded-2xl` v3 semantics / `.sf-card`
@@ -368,6 +377,11 @@ notes, decks, grades; `avatarEmoji: ""` (reference default state).
 | AP-14 | MEDIUM | Sidebar/drawer nav items drift apart | drawer re-implemented item markup instead of sharing | ONE source: `nav-items.tsx` `NavItemLink` (session-3 S3-F) |
 | AP-15 | LOW | e2e backdrop pin fails on identical color | `bg-black/20` computes as `oklab(0 0 0 / 0.2)` in Chromium | accept both serializations (trap 7) |
 | AP-16 | LOW | Emoji length test off-by-UTF-16 | Zod v4 `.max()` counts code points | test updated with the semantics documented |
+| AP-17 | MEDIUM | Drawer backdrop blurs 8px (reference: 4px) | v4 blur-scale shift — `backdrop-blur-sm` is 8px in v4 (trap 9) | `backdrop-blur-xs`; e2e `blur(4px)` pin (session-4 S4-A) |
+| AP-18 | MEDIUM | Brand/CTA/avatar gradients end violet-600 | routed through `primary`/`strong`; the reference ends at the ADJACENT hue | `--sf-primary-gradient-to` + `-avatar-*` tokens (session-4 S4-G) |
+| AP-19 | HIGH | Every empty view renders the wrong empty-state design | ad-hoc slate circle + gray text vs the reference's gradient-block pattern | shared `EmptyState`/`SimpleEmptyState` on 80px gradient block + 40px icon + h3 20px (session-4 S4-C) |
+| AP-20 | MEDIUM | View headers drift (h2 in 8 views, tracking-tight slate-900, no icons, wrong subtitles) | hand-rolled headers in 11 views + a stale ViewHeader | ONE source: `ViewHeader` h1+icon+reference subtitle, all 20 views (session-4 S4-D) |
+| AP-21 | LOW | e2e order-dependent flake: later specs see TEAL | theme spec's Violet-restore PATCH aborted by page teardown at test end | restore awaits the settings PATCH + asserts the violet triplet (session-4) |
 
 ---
 
@@ -416,7 +430,7 @@ tail -40 dev.log                            # request traces + prisma queries
 ```bash
 bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
-Current green state: lint ✓ · tsc ✓ · 86 unit ✓ · build ✓ · 61 e2e ✓.
+Current green state: lint ✓ · tsc ✓ · 87 unit ✓ · build ✓ · 72 e2e ✓.
 
 **Pre-deployment:** set a real `AUTH_SECRET` (`openssl rand -hex 32`); use an
 ABSOLUTE `DATABASE_URL` (see `docs/DEPLOYMENT.md` §4); never ship `.env`,
@@ -654,7 +668,11 @@ type ViewId = "dashboard" | "myday" | "tasks" | "calendar" | "events"
 type Accent = "violet" | "blue" | "green" | "orange" | "pink" | "red" | "teal";
 type ThemeMode = "light" | "dark" | "system";         // src/lib/theme.ts
 interface AccentToken { primary, primaryFg, soft, softDark, strong,
-  strongDark, deep, softest, softestAdjacent: string }  // RGB triplets
+  strongDark, deep, softest, softestAdjacent, gradientTo, avatarFrom,
+  avatarTo, emptyFrom, emptyTo: string }  // RGB triplets (14 CSS vars;
+  gradientTo = adjacent-hue 600 for brand chips + CTA — indigo-600 for
+  violet; avatarFrom/to = the lighter 400→adjacent-500 pair; emptyFrom/to
+  = the 100-level pair for the empty-state block — all measured, S4-G)
 interface EntityDelegate { model, createSchema, updateSchema, orderBy, ... }
 ```
 
@@ -688,7 +706,7 @@ updatedAt }`); the client `mutations` object exposes typed
 |---|---|
 | Commands + gate order | `AGENTS.md` (top table) |
 | DATABASE_URL contract | §3 here; `prisma/schema.prisma` header; `tests/db-path.test.ts` |
-| The 6 Tailwind traps | §4 here; `docs/Tailwind-V4-Validation-Report.md` |
+| The 9 Tailwind traps | §4 here; `docs/Tailwind-V4-Validation-Report.md`; session-3/4 plans |
 | Session-2 parity audit + non-gaps | `docs/remediation-plan.md` |
 | View↔path map | `src/lib/router.ts` (unit-tested) |
 | Accent tokens (7 accents) | `src/lib/theme.ts` `ACCENT_TOKENS` |

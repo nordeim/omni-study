@@ -112,7 +112,7 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 **ADR-007: Two-layer testing with an isolated e2e database**
 
 - **Context:** The value concentrated in this codebase is (a) pure domain seams (calculator engine, date math, auth primitives, path resolution, schemas) and (b) cross-cutting UI contracts (the SPA chrome, parity pins, golden-path CRUD).
-- **Decision:** Vitest for unit seams (`tests/*.test.ts`, 86 tests). Playwright for e2e (`tests/e2e/*.spec.ts`, 61 specs) against the production standalone build on `:3100` with its own `db/e2e.db` (pushed + seeded by `global-setup.ts` using the ADR-002 shell-env mechanism), one shared authenticated storageState (rate-limiter budget), unique row titles per run, accent restoration in the theme spec, a hydration gate before post-`goto` clicks, and computed-style parity pins (shadow, canvas gradient, sidebar geometry, corner radii, footer avatar default, stat icon size, clock chip gradient, mobile app bar glass/brand/clock, drawer geometry/backdrop/icon items, content offset y=80, CTA width).
+- **Decision:** Vitest for unit seams (`tests/*.test.ts`, 87 tests). Playwright for e2e (`tests/e2e/*.spec.ts`, 72 specs) against the production standalone build on `:3100` with its own `db/e2e.db` (pushed + seeded by `global-setup.ts` using the ADR-002 shell-env mechanism), one shared authenticated storageState (rate-limiter budget), unique row titles per run, accent restoration in the theme spec (awaiting the settings PATCH so the restore cannot be aborted by page teardown), a hydration gate before post-`goto` clicks, and computed-style parity pins (shadow, canvas gradient, sidebar geometry, corner radii, footer avatar default + gradient stops, stat icon size + text metrics, clock chip gradient, mobile app bar glass/brand/clock, drawer geometry/backdrop blur(4px)/icon items, content offset y=80, CTA width + gradient, view-title h1/icon/subtitle model, empty-state design, login card chrome).
 - **Rationale:** Fast feedback where logic lives; end-to-end confidence where integration lives; zero collision between dev and e2e data.
 - **Consequences:** E2E requires a fresh `bun run build` after component changes (stale-build false failures — documented); suite runtime ~1 min single-worker.
 - **Alternatives Rejected:** Running e2e against `next dev` (slower, different engine than production); per-test logins (trips the rate limiter); a shared db (cross-run pollution).
@@ -362,13 +362,20 @@ System sans stack (`ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", �
 | `--sf-primary-deep` | `109 40 217` (#6d28d9) | Clock time text (reference violet-700, measured) |
 | `--sf-primary-softest` | `245 243 255` (#f5f3ff) | Clock chip gradient start (reference violet-50) |
 | `--sf-primary-soft` | `243 232 255` | Active nav gradient tint, icon chips |
+| `--sf-primary-softest-adjacent` | `238 242 255` (indigo-50) | Clock chip gradient SECOND stop (measured, S3-C) |
+| `--sf-primary-gradient-to` | `79 70 229` (indigo-600) | Brand chips (sidebar/drawer/app-bar) + CTA gradient end (measured, S4-G) |
+| `--sf-primary-avatar-from` / `-to` | `167 139 250` / `99 102 241` | Footer avatar gradient (violet-400 → indigo-500, the LIGHTER pair — measured, S4-G) |
+| `--sf-primary-empty-from` / `-to` | `237 233 254` / `224 231 255` | Empty-state 80px block gradient (violet-100 → indigo-100 — measured, S4-C) |
 | Card surface | white / `#f1f5f9` border / 16px radius | `sf-card` + SectionCard |
 | Shadow | `0 1px 2px 0 rgb(0 0 0 / 0.05)` | v3 `shadow-sm` — **pinned** (trap 5) |
 | Radius scale | md 6px / lg 8px / xl 12px / 2xl 16px / 3xl 24px | v4 defaults = v3 semantics; only `--radius-sm: 0.125rem` pinned (trap 6) |
 | Canvas | `linear-gradient(to right bottom, #f8fafc, #fff, #f5f3ff4d)` | `.sf-canvas` — measured from the reference; exact third stop pinned |
 | Slate ramp | 50–950 | v3 hexes pinned in `@theme` (trap 2) |
 | Dark mode | slate-950 family + `--sf-primary-soft-dark` tokens | `.dark` class + token swap |
-| Footer avatar | 36px gradient circle (`primary → primary-strong`), white initial when no emoji | `UserAvatar` (reference default state, R3) |
+| Footer avatar | 36px gradient circle (`avatar-from → avatar-to` = violet-400 → indigo-500), white initial when no emoji | `UserAvatar` (reference default state, R3 + S4-G) |
+| View titles | `h1 text-2xl font-bold text-slate-800` + 24px accent icon (MyDay/FocusTimer 30px) + 16px subtitle (reference wording) | `ViewHeader` — one source for all 20 views (S4-D) |
+| Empty states | 80px rounded-2xl gradient block + 40px accent icon + h3 20px/600 + 16px hint | `EmptyState`/`SimpleEmptyState` (S4-C) |
+| Login card | 448px `shadow-2xl bg-white/95 backdrop-blur-xs border-0` + gradient strip + 96px circular logo | `src/app/login/page.tsx` (S4-F) |
 
 Seven accent sets (violet/blue/green/orange/pink/red/teal) × Light/Dark/System × 24 emoji avatars, persisted on `User` and applied by `useThemeStore.loadFromUser`.
 
@@ -425,17 +432,17 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 
 | Category | Files | Tests | Location | Framework |
 |----------|-------|-------|----------|-----------|
-| Unit — pure seams | 7 | 86 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
-| E2E — auth | 1 | 5 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
+| Unit — pure seams | 7 | 87 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
+| E2E — auth | 1 | 6 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
 | E2E — mobile navigation | 1 | 11 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
-| E2E — desktop nav + views + parity pins | 1 | 31 | `tests/e2e/navigation.spec.ts` | Playwright |
+| E2E — desktop nav + views + parity pins | 1 | 41 | `tests/e2e/navigation.spec.ts` | Playwright |
 | E2E — task CRUD golden path | 1 | 6 | `tests/e2e/tasks.spec.ts` | Playwright |
 | E2E — calculator + theme | 1 | 8 | `tests/e2e/calculator.spec.ts` | Playwright |
 
 ### 8.2 Test Patterns
 
 - **Contract pinning:** db-path anchors, router round-trips, theme token values, calculator edge cases (unary chains, right-assoc powers, division by zero), Zod accept/reject matrices.
-- **Computed-style parity:** the e2e layer asserts the v3 `shadow-sm` geometry, the canvas gradient's first stop, sidebar width/margin at `lg`, active-nav color `rgb(124, 58, 237)` — the trap-log guarantees.
+- **Computed-style parity:** the e2e layer asserts the v3 `shadow-sm` geometry, the canvas gradient's first stop, sidebar width/margin at `lg`, active-nav color `rgb(124, 58, 237)`, the stat-card text metrics, the view-title model, the empty-state design, the brand-gradient stops, and the login chrome — the trap-log guarantees.
 - **Golden-path CRUD:** create → complete → filter → delete through the real UI against the seeded e2e db.
 - **Shared-session design:** one login via the setup project's storageState; the auth spec opts out with an empty state and stays under the rate-limiter budget.
 
@@ -447,7 +454,7 @@ No numeric coverage gate is configured; the standard is "every pure seam has a t
 
 - [ ] `bun run lint` clean
 - [ ] `bun run typecheck` clean
-- [ ] `bun run test` green (86+)
+- [ ] `bun run test` green (87+)
 - [ ] `bun run build` succeeds
 - [ ] `bun run test:e2e` green (60+; rebuild first if components changed)
 - [ ] No secrets / db files staged (`git status`)
@@ -523,6 +530,8 @@ Enforced: ESLint flat config + `tsc --noEmit` (both gate). Convention (review-en
 | RESOLVED | Session-3 remediation: mobile app bar was sticky + main pt-20 → 64px dead gap (content at 144px vs reference 80px); header showed the view title instead of brand + live clock | Every mobile view sat 64px too low; header content mismatch | **Fixed** — fixed glass app bar + main pt-20 (see `docs/remediation-plan-session3.md` S3-E) |
 | RESOLVED | Session-3 remediation: drawer divergences (290px panel, 45% backdrop, text-only nav links, extra footer), stat icons 20px, clock "3:43 AM" + indigo-50 stop drift, "Good night" greeting bucket, CTA full-width at mobile, glass blur 16px | Mobile visual parity + token drifts | **Fixed** — drawer mirrors the reference (shared `NavItemLink`), tokens pinned exactly; see `docs/remediation-plan-session3.md` |
 | RESOLVED | Session-3 remediation: accent switching wrote only 6 of 9 theme tokens — `deep`/`softest` stayed violet under every non-violet accent | Clock text/chip stayed violet after switching accents | **Fixed** — `applyToDocument` writes the complete `accentCssVars` set (S3-J; unit-pinned) |
+| RESOLVED | Session-4 remediation: v4 blur trap (drawer backdrop 8px vs reference 4px); stat-card text metrics (tracking-tight/leading-none/12px hint); empty-state design divergence; view titles tracking-tight slate-900 h2-in-8-views with NO icons; subtitle text drift on ~12 views; login card chrome; brand gradients ending violet-600 instead of indigo-600; "My Lists" label; dashboard date 14px | Second-order parity across every view | **Fixed** — all measured against the reference DOM; 11 new e2e pins + 2 unit pins; see `docs/remediation-plan-session4.md` |
+| MITIGATED | The sandbox reaps background processes at tool-call boundaries — a plain `&` dev server dies silently between agent commands | Dev server instability during long agent sessions | **Mitigated** — `scripts/dev-daemon.py` (double-fork + setsid) keeps the dev server alive; documented in the session-4 plan |
 
 ---
 
