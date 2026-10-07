@@ -6,7 +6,10 @@ const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLI
     <input
       type={type}
       className={cn(
-        "flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm transition-colors",
+        // S5-C — the reference's dialog inputs are shadcn-v3 stock:
+        // h-9, transparent bg, gray-200 border (--input, S5-D), shadow-sm.
+        // The login page (S4-F) overrides height/radius explicitly.
+        "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors",
         "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sf-primary/60 focus-visible:border-sf-primary/50",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className,
@@ -22,7 +25,8 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttribu
   ({ className, ...props }, ref) => (
     <textarea
       className={cn(
-        "flex min-h-[80px] w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm transition-colors",
+        // S5-C — min-h-[60px] matches the reference's dialog textarea.
+        "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors",
         "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sf-primary/60 focus-visible:border-sf-primary/50",
         "disabled:cursor-not-allowed disabled:opacity-50 sf-scroll",
         className,
@@ -38,7 +42,10 @@ const Label = React.forwardRef<HTMLLabelElement, React.LabelHTMLAttributes<HTMLL
   ({ className, ...props }, ref) => (
     <label
       ref={ref}
-      className={cn("text-sm font-medium leading-none text-slate-700 dark:text-slate-300", className)}
+      // S5-C — the reference's dialog labels are shadcn stock
+      // `text-sm font-medium` (default foreground); the slate-700 tint
+      // was a clone-side deviation.
+      className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", className)}
       {...props}
     />
   ),

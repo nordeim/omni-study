@@ -110,24 +110,30 @@ export function MyDayView() {
         </p>
       </div>
 
-      {/* Quick add */}
-      <form onSubmit={addTask} className="sf-card flex flex-col gap-3 p-4">
-        <div className="flex gap-2">
-          <Input
-            value={quick}
-            onChange={(e) => setQuick(e.target.value)}
-            placeholder="Add a task for today..."
-            aria-label="Add a task for today"
-            className="flex-1"
-            maxLength={200}
-          />
-          <Button type="button" variant="outline" size="icon" onClick={() => setMoreOpen((v) => !v)} aria-expanded={moreOpen} aria-label="More options">
-            <Settings2 className="h-4 w-4" />
-          </Button>
-          <Button type="submit" size="icon" disabled={!quick.trim()} aria-label="Add task">
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Quick add — S5-I: measured as a bare flex row (no card wrapper):
+          h-12 rounded-xl input + "More Options" outline text button. */}
+      <form onSubmit={addTask} className="mb-6 flex gap-3">
+        <Input
+          value={quick}
+          onChange={(e) => setQuick(e.target.value)}
+          placeholder="Add a task for today..."
+          aria-label="Add a task for today"
+          className="h-12 flex-1 rounded-xl"
+          maxLength={200}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 rounded-xl"
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+        >
+          More Options
+        </Button>
+        <Button type="submit" variant="gradient" className="h-12 rounded-xl px-4" disabled={!quick.trim()} aria-label="Add task">
+          <Plus className="h-4 w-4" strokeWidth={2} />
+        </Button>
+      </form>
         {moreOpen && (
           <div className="flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800/50">
             <label className="flex items-center gap-2">
@@ -158,7 +164,6 @@ export function MyDayView() {
             </label>
           </div>
         )}
-      </form>
 
       {/* Progress */}
       <div className="sf-card flex items-center justify-between gap-4 p-5">

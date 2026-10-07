@@ -34,7 +34,10 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card p-6 shadow-lg duration-200 rounded-2xl max-h-[90vh] overflow-y-auto sf-scroll",
+        // S5-C — the reference's dialogs are shadcn-v3 stock: max-w-md
+        // (448px measured) + rounded-lg (8px measured). The clone's previous
+        // max-w-lg / rounded-2xl diverged on every dialog in the app.
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card p-6 shadow-lg duration-200 rounded-lg max-h-[90vh] overflow-y-auto sf-scroll",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         className,
       )}

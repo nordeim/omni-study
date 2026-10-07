@@ -339,7 +339,7 @@ export function StudyGroupsView() {
         title="Study Groups"
         icon={Users}
         actions={
-          <Button onClick={openCreate} className="gap-1.5">
+          <Button onClick={openCreate} variant="gradient" className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} /> Create Group
           </Button>
         }
@@ -354,7 +354,7 @@ export function StudyGroupsView() {
             title="No study groups"
             hint="Create a group to plan meetings and keep everyone on track."
             action={
-              <Button onClick={openCreate} variant="outline">
+              <Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">
                 Create Group
               </Button>
             }
@@ -567,7 +567,7 @@ export function StudyGroupsView() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={busy || !name.trim()}>
+              <Button type="submit" variant="gradient" disabled={busy || !name.trim()}>
                 {busy ? "Saving…" : editing ? "Save changes" : "Create Group"}
               </Button>
             </DialogFooter>

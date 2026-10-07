@@ -1,9 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { Brain, Coffee, Flame, Moon, Pause, Play, RotateCcw, SkipForward, Timer, Zap } from "lucide-react";
-import { useDataStore, mutations, type FocusSession } from "@/lib/data";
-import { EmptyState, ErrorText, LoadingCards, ViewHeader, useSubjectMap } from "./shared";
+import {
+  Brain,
+  Coffee,
+  Flame,
+  Moon,
+  Pause,
+  Play,
+  RotateCcw,
+  Settings2,
+  SkipForward,
+  Timer,
+  Volume2,
+} from "lucide-react";
+import { useDataStore, mutations } from "@/lib/data";
+import { ErrorText, LoadingCards } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
@@ -14,26 +26,54 @@ type TimerMode = "focus" | "short_break" | "long_break";
 
 interface Preset {
   name: string;
+  durations: string;
   focus: number;
   short_break: number;
   long_break: number;
 }
 
-const MODE_META: Record<TimerMode, { label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = {
-  focus: { label: "Focus", icon: Brain },
-  short_break: { label: "Short Break", icon: Coffee },
-  long_break: { label: "Long Break", icon: Moon },
+const MODE_META: Record<TimerMode, { label: string; ringLabel: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = {
+  focus: { label: "Focus", ringLabel: "Focus Time", icon: Brain },
+  short_break: { label: "Short Break", ringLabel: "Short Break", icon: Coffee },
+  long_break: { label: "Long Break", ringLabel: "Long Break", icon: Moon },
 };
 
 const PRESETS: Preset[] = [
-  { name: "Pomodoro 25/5/15", focus: 25, short_break: 5, long_break: 15 },
-  { name: "Deep Work 50/10/30", focus: 50, short_break: 10, long_break: 30 },
+  { name: "Pomodoro", durations: "25/5/15", focus: 25, short_break: 5, long_break: 15 },
+  { name: "Deep Work", durations: "50/10/30", focus: 50, short_break: 10, long_break: 30 },
 ];
 
-const RADIUS = 110;
+/** S5-E — the reference's ring: 256px box, r=120, stroke-width 8. */
+const RADIUS = 120;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const LONG_BREAK_INTERVAL = 4;
 
 const pad = (n: number) => n.toString().padStart(2, "0");
+
+/** Completion chime (WebAudio) — the reference's volume2 button implies an
+ *  audible alarm; the clone makes it real. No assets needed: two soft beeps. */
+function playChime(): void {
+  try {
+    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    for (const [i, freq] of [880, 1174.66].entries()) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + i * 0.35 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.35 + 0.9);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.35);
+      osc.stop(ctx.currentTime + i * 0.35 + 1);
+    }
+    window.setTimeout(() => void ctx.close(), 2500);
+  } catch {
+    // Audio is best-effort only.
+  }
+}
 
 export function FocusTimerView() {
   const focusSessions = useDataStore((s) => s.data.focusSessions);
@@ -41,7 +81,6 @@ export function FocusTimerView() {
   const status = useDataStore((s) => s.status.focusSessions);
   const error = useDataStore((s) => s.error);
   const loadAll = useDataStore((s) => s.loadAll);
-  const subjectMap = useSubjectMap();
 
   React.useEffect(() => {
     void loadAll(["focusSessions", "subjects"]);
@@ -56,6 +95,9 @@ export function FocusTimerView() {
   const [remaining, setRemaining] = React.useState(25 * 60);
   const [running, setRunning] = React.useState(false);
   const [subjectId, setSubjectId] = React.useState("");
+  const [soundOn, setSoundOn] = React.useState(true);
+  const [autoBreaks, setAutoBreaks] = React.useState(false);
+  const [pomodoroCount, setPomodoroCount] = React.useState(0);
 
   // Timestamp (ms) at which the running timer will reach zero — tracking an
   // absolute deadline instead of decrementing keeps the timer drift-free
@@ -72,10 +114,14 @@ export function FocusTimerView() {
   async function handleComplete() {
     const completedMode = mode;
     const totalMinutes = durations[completedMode];
-    const next: TimerMode = completedMode === "focus" ? "short_break" : "focus";
+    const isLongBreakDue = completedMode === "focus" && (pomodoroCount + 1) % LONG_BREAK_INTERVAL === 0;
+    const next: TimerMode =
+      completedMode === "focus" ? (isLongBreakDue ? "long_break" : "short_break") : "focus";
+    if (completedMode === "focus") setPomodoroCount((c) => c + 1);
     // Advance immediately so the ring resets while the session logs.
     setMode(next);
     setRemaining(durations[next] * 60);
+    if (soundOn) playChime();
     try {
       await mutations.createFocusSession({
         durationMinutes: totalMinutes,
@@ -90,6 +136,10 @@ export function FocusTimerView() {
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not log the session");
+    }
+    if (autoBreaks && !isLongBreakDue) {
+      endAtRef.current = Date.now() + durations[next] * 60_000;
+      setRunning(true);
     }
   }
 
@@ -169,201 +219,238 @@ export function FocusTimerView() {
   const display = `${pad(Math.floor(remaining / 60))}:${pad(remaining % 60)}`;
   const now = new Date();
   const todaySessions = focusSessions.filter((f) => isSameDay(new Date(f.date), now));
+  const todayFocus = todaySessions.filter((f) => f.mode === "focus");
   const totalTodayMinutes = todaySessions.reduce((sum, f) => sum + f.durationMinutes, 0);
+  const activePreset = PRESETS.find(
+    (p) => p.focus === durations.focus && p.short_break === durations.short_break && p.long_break === durations.long_break,
+  );
 
   return (
-    <div className="flex flex-col gap-6">
-      <ViewHeader title="Focus Timer" subtitle="Stay focused and productive" icon={Timer} size="lg" />
+    <div className="flex flex-col gap-8">
+      {/* S5-E — the reference centers the whole view in a max-w-2xl column
+          with a centered text-3xl title + 32px icon. */}
+      <div className="mx-auto w-full max-w-2xl space-y-8">
+        <div className="text-center">
+          <h1 className="flex items-center justify-center gap-3 text-3xl font-bold text-slate-800 dark:text-slate-100">
+            <Timer className="h-8 w-8 text-sf-primary" strokeWidth={2} aria-hidden="true" />
+            Focus Timer
+          </h1>
+          <p className="mt-2 text-slate-500 dark:text-slate-400">Stay focused and productive</p>
+        </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        {/* Timer card */}
-        <div className="w-full lg:flex-1">
-          <div className="sf-card flex flex-col items-center gap-6 p-6 sm:p-8">
-            {/* Mode buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Timer mode">
-              {(Object.keys(MODE_META) as TimerMode[]).map((m) => {
-                const Meta = MODE_META[m];
-                const Icon = Meta.icon;
-                return (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => switchMode(m)}
-                    aria-pressed={mode === m}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors sf-focus",
-                      mode === m
-                        ? "bg-sf-primary text-sf-primary-foreground shadow-sm"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" strokeWidth={1.75} />
-                    {Meta.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Presets */}
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {PRESETS.map((p) => (
-                <Button key={p.name} variant="outline" size="sm" onClick={() => applyPreset(p)} className="gap-1.5">
-                  {p.name.startsWith("Deep") ? (
-                    <Zap className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  ) : (
-                    <Timer className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  )}
-                  {p.name}
-                </Button>
+        {status === "error" ? (
+          <ErrorText message={error ?? "Failed to load focus sessions"} />
+        ) : status === "idle" || status === "loading" ? (
+          <LoadingCards count={3} />
+        ) : (
+          <>
+            {/* Today stats — measured: grid-cols-3, rounded-xl cards,
+                centered, 24px icon + text-2xl/700 value + text-xs label. */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { icon: Brain, value: String(todayFocus.length), label: "Pomodoros" },
+                { icon: Flame, value: formatMinutes(totalTodayMinutes), label: "Today" },
+                { icon: Timer, value: String(todaySessions.length), label: "Sessions" },
+              ].map(({ icon: Icon, value, label }) => (
+                <div
+                  key={label}
+                  className="rounded-xl border border-slate-100 bg-white p-4 text-center dark:border-slate-800 dark:bg-slate-900"
+                >
+                  <Icon className="mx-auto h-6 w-6 text-sf-primary" strokeWidth={1.75} aria-hidden="true" />
+                  <p className="mt-1 text-2xl font-bold text-slate-800 dark:text-slate-100">{value}</p>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{label}</p>
+                </div>
               ))}
             </div>
 
-            {/* Circular timer */}
-            <div className="relative flex h-64 w-64 items-center justify-center">
-              <svg viewBox="0 0 256 256" className="h-full w-full -rotate-90" aria-hidden="true">
-                <circle
-                  cx="128"
-                  cy="128"
-                  r={RADIUS}
-                  fill="none"
-                  strokeWidth="12"
-                  className="stroke-slate-100 dark:stroke-slate-800"
-                />
-                <circle
-                  cx="128"
-                  cy="128"
-                  r={RADIUS}
-                  fill="none"
-                  strokeWidth="12"
-                  strokeLinecap="round"
-                  strokeDasharray={CIRCUMFERENCE}
-                  strokeDashoffset={CIRCUMFERENCE * (1 - fraction)}
-                  style={{ stroke: "rgb(var(--sf-primary))" }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-                  {MODE_META[mode].label}
-                </p>
-                <p
-                  className="text-5xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-slate-50"
-                  role="timer"
-                  aria-label={`${Math.floor(remaining / 60)} minutes and ${remaining % 60} seconds remaining`}
-                >
-                  {display}
-                </p>
-                <p className="text-xs text-slate-400">of {formatMinutes(durations[mode])}</p>
+            {/* Main timer card — measured: rounded-3xl, p-8, shadow-xl. */}
+            <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+              {/* Mode buttons — measured: px-4 py-2 rounded-xl h9/r12, active
+                  = gradient + shadow-lg + white; inactive = text-slate-600
+                  hover:bg-slate-100. */}
+              <div className="mb-8 flex justify-center gap-2" role="group" aria-label="Timer mode">
+                {(Object.keys(MODE_META) as TimerMode[]).map((m) => {
+                  const Meta = MODE_META[m];
+                  const Icon = Meta.icon;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => switchMode(m)}
+                      aria-pressed={mode === m}
+                      className={cn(
+                        "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all sf-focus",
+                        mode === m
+                          ? "sf-gradient text-white shadow-lg"
+                          : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={1.75} />
+                      {Meta.label}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
 
-            {/* Subject + controls */}
-            <div className="flex w-full flex-col items-center gap-4">
-              <Select value={subjectId || undefined} onValueChange={(v) => setSubjectId(v)}>
-                <SelectTrigger className="w-full max-w-[260px]" aria-label="Session subject">
-                  <SelectValue placeholder="Select subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <Button onClick={toggleRunning} className="min-w-[120px] gap-1.5">
-                  {running ? (
-                    <Pause className="h-4 w-4" strokeWidth={1.75} />
-                  ) : (
-                    <Play className="h-4 w-4" strokeWidth={1.75} />
-                  )}
-                  {running ? "Pause" : remaining < totalSeconds ? "Resume" : "Start"}
-                </Button>
-                <Button variant="outline" onClick={resetTimer} className="gap-1.5">
-                  <RotateCcw className="h-4 w-4" strokeWidth={1.75} /> Reset
-                </Button>
-                <Button variant="outline" onClick={skipSession} className="gap-1.5">
-                  <SkipForward className="h-4 w-4" strokeWidth={1.75} /> Skip
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Today's sessions */}
-        <div className="w-full lg:w-96 lg:shrink-0">
-          {status === "error" ? (
-            <ErrorText message={error ?? "Failed to load focus sessions"} />
-          ) : status === "idle" || status === "loading" ? (
-            <LoadingCards count={1} />
-          ) : (
-            <section className="sf-card overflow-hidden" aria-label="Today's focus sessions">
-              <header className="flex items-center justify-between gap-2 border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-                <h3 className="flex items-center gap-2.5 text-[18px] font-semibold text-slate-800 dark:text-slate-100">
-                  <Flame className="h-5 w-5" strokeWidth={1.75} /> Today&apos;s Sessions
-                </h3>
-                <span className="text-xs text-slate-400">{todaySessions.length} logged</span>
-              </header>
-              <div className="flex flex-col gap-4 p-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-800/60">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Sessions today</p>
-                    <p className="mt-1 text-[26px] font-bold leading-none text-slate-800 dark:text-slate-100">
-                      {todaySessions.length}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-800/60">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Total time</p>
-                    <p className="mt-1 text-[26px] font-bold leading-none text-slate-800 dark:text-slate-100">
-                      {formatMinutes(totalTodayMinutes)}
-                    </p>
-                  </div>
-                </div>
-                {todaySessions.length === 0 ? (
-                  <EmptyState
-                    icon={Timer}
-                    title="No sessions yet today"
-                    hint="Complete a timer to log your first session of the day."
+              {/* Ring — measured: 256px, r=120, sw=8, track slate-100,
+                  progress an SVG linearGradient (violet → indigo). */}
+              <div className="relative mx-auto mb-8 h-64 w-64">
+                <svg viewBox="0 0 256 256" className="h-full w-full -rotate-90" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="sf-timer-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" style={{ stopColor: "rgb(var(--sf-primary))" }} />
+                      <stop offset="100%" style={{ stopColor: "rgb(var(--sf-primary-gradient-to))" }} />
+                    </linearGradient>
+                  </defs>
+                  <circle
+                    cx="128"
+                    cy="128"
+                    r={RADIUS}
+                    fill="none"
+                    strokeWidth="8"
+                    className="stroke-slate-100 dark:stroke-slate-800"
                   />
-                ) : (
-                  <ul className="flex max-h-96 flex-col gap-2 overflow-y-auto sf-scroll">
-                    {todaySessions.map((f: FocusSession) => {
-                      const subject = f.subjectId ? subjectMap.get(f.subjectId) : undefined;
-                      const ModeIcon = MODE_META[f.mode]?.icon ?? Timer;
-                      return (
-                        <li
-                          key={f.id}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-4 py-2.5 dark:border-slate-800"
-                        >
-                          <span className="flex min-w-0 items-center gap-2.5">
-                            <span
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sf-primary-soft text-sf-primary-strong dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
-                              aria-hidden="true"
-                            >
-                              <ModeIcon className="h-4 w-4" strokeWidth={1.75} />
-                            </span>
-                            <span className="min-w-0">
-                              <span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">
-                                {subject ? subject.name : MODE_META[f.mode]?.label ?? "Session"}
-                              </span>
-                              <span className="block text-xs text-slate-400">
-                                {MODE_META[f.mode]?.label ?? f.mode} ·{" "}
-                                {new Date(f.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                              </span>
-                            </span>
-                          </span>
-                          <span className="shrink-0 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                            {formatMinutes(f.durationMinutes)}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                  <circle
+                    cx="128"
+                    cy="128"
+                    r={RADIUS}
+                    fill="none"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    stroke="url(#sf-timer-grad)"
+                    strokeDasharray={CIRCUMFERENCE}
+                    strokeDashoffset={CIRCUMFERENCE * (1 - fraction)}
+                    style={{ transition: "stroke-dashoffset 1s linear" }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <p
+                    className="font-mono text-5xl font-bold text-slate-800 dark:text-slate-100"
+                    role="timer"
+                    aria-label={`${Math.floor(remaining / 60)} minutes and ${remaining % 60} seconds remaining`}
+                  >
+                    {display}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{MODE_META[mode].ringLabel}</p>
+                </div>
               </div>
-            </section>
-          )}
-        </div>
+
+              {/* Controls — measured: three round buttons; reset/skip 48px
+                  outline circles, play a 64px gradient circle. */}
+              <div className="flex items-center justify-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={resetTimer}
+                  aria-label="Reset timer"
+                  className="h-12 w-12 rounded-full"
+                >
+                  <RotateCcw className="h-5 w-5" strokeWidth={2} />
+                </Button>
+                <button
+                  type="button"
+                  onClick={toggleRunning}
+                  aria-label={running ? "Pause timer" : remaining < totalSeconds ? "Resume timer" : "Start timer"}
+                  className="sf-gradient sf-focus flex h-16 w-16 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
+                  style={{ boxShadow: "0 10px 15px -3px rgb(var(--sf-primary) / 0.25), 0 4px 6px -4px rgb(var(--sf-primary) / 0.25)" }}
+                >
+                  {running ? (
+                    <Pause className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
+                  ) : (
+                    <Play className="h-6 w-6 translate-x-0.5" strokeWidth={2} aria-hidden="true" />
+                  )}
+                </button>
+                <Button
+                  variant="outline"
+                  onClick={skipSession}
+                  aria-label="Skip to next mode"
+                  className="h-12 w-12 rounded-full"
+                >
+                  <SkipForward className="h-5 w-5" strokeWidth={2} />
+                </Button>
+              </div>
+
+              {/* Subject select + sound/settings — measured: border-t row,
+                  h-9 select flanked by two 40px outline icon buttons. */}
+              <div className="mt-8 flex items-center justify-center gap-4 border-t border-slate-100 pt-6 dark:border-slate-800">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setSoundOn((v) => !v);
+                    toast.info(soundOn ? "Chime muted" : "Chime on");
+                  }}
+                  aria-label={soundOn ? "Mute completion chime" : "Enable completion chime"}
+                  aria-pressed={soundOn}
+                  className="h-10 w-10 shrink-0"
+                >
+                  <Volume2 className="h-4 w-4" strokeWidth={2} />
+                </Button>
+                <Select value={subjectId || undefined} onValueChange={(v) => setSubjectId(v)}>
+                  <SelectTrigger className="w-48" aria-label="Session subject">
+                    <SelectValue placeholder="Select subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjects.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setAutoBreaks((v) => !v);
+                    toast.info(autoBreaks ? "Auto-start breaks off" : "Auto-start breaks on");
+                  }}
+                  aria-label="Toggle auto-start breaks"
+                  aria-pressed={autoBreaks}
+                  className="h-10 w-10 shrink-0"
+                >
+                  <Settings2 className="h-4 w-4" strokeWidth={2} />
+                </Button>
+              </div>
+
+              {/* Pomodoro cycle dots — measured: 4× w-3 h-3 rounded-full. */}
+              <div className="mt-6 flex justify-center gap-2" aria-label="Pomodoro cycle progress">
+                {Array.from({ length: LONG_BREAK_INTERVAL }, (_, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "h-3 w-3 rounded-full transition-all",
+                      i < pomodoroCount % LONG_BREAK_INTERVAL || (pomodoroCount > 0 && pomodoroCount % LONG_BREAK_INTERVAL === 0)
+                        ? "bg-sf-primary"
+                        : "bg-slate-200 dark:bg-slate-700",
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Presets — measured: two-line buttons px-6 py-3 rounded-xl
+                (64px tall); active bg violet-100. */}
+            <div className="flex justify-center gap-4">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.name}
+                  type="button"
+                  onClick={() => applyPreset(p)}
+                  aria-pressed={activePreset?.name === p.name}
+                  className={cn(
+                    "rounded-xl px-6 py-3 text-sm font-medium transition-all sf-focus",
+                    activePreset?.name === p.name
+                      ? "bg-sf-primary-soft text-sf-primary-strong dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800",
+                  )}
+                >
+                  <p className="font-semibold">{p.name}</p>
+                  <p className="text-xs opacity-70">{p.durations}</p>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,19 +1,38 @@
 "use client";
 
 import * as React from "react";
-import { CalendarDays, Clock, Plus, Trash2 } from "lucide-react";
+import { Bell, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Plus, Repeat as RepeatIcon, Trash2, X } from "lucide-react";
 import { useDataStore, mutations, type AppEvent } from "@/lib/data";
-import { ViewHeader, EmptyState, LoadingCards, ErrorText, SectionCard } from "./shared";
+import { ViewHeader, LoadingCards, ErrorText } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
-import { Checkbox, Switch } from "@/components/ui/primitives";
+import { Checkbox } from "@/components/ui/primitives";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
-import { WEEKDAY_SHORT, addDays, dayBucketLabel, daysUntil, isSameDay, isoWeekday, startOfDay } from "@/lib/date";
+import { addDays, isoWeekNumber, isSameDay, startOfDay, WEEKDAY_LONG, WEEKDAY_SHORT, isoWeekday } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-const FIELD_CLASS = "flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm";
-const EVENT_COLORS = ["#8b5cf6", "#3b82f6", "#22c55e", "#f97316", "#ec4899", "#ef4444", "#14b8a6"];
+const FIELD_CLASS = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm";
+/** S5-B — the reference's dialog color picker shows SIX swatches (measured). */
+const EVENT_COLORS = ["#8b5cf6", "#3b82f6", "#22c55e", "#f97316", "#ec4899", "#ef4444"];
+const REPEAT_OPTIONS = [
+  { value: "none", label: "No repeat" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+] as const;
+const REMINDER_UNITS = [
+  { value: "minutes", minutes: 1 },
+  { value: "hours", minutes: 60 },
+  { value: "days", minutes: 1440 },
+] as const;
 
 function pad2(n: number): string {
   return n.toString().padStart(2, "0");
@@ -32,7 +51,7 @@ function dateKey(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
-function eventTimeLabel(ev: AppEvent): string {
+function eventTimeLabel(ev: Occurrence): string {
   if (ev.allDay) return "All day";
   const start = new Date(ev.startDate);
   if (Number.isNaN(start.getTime())) return "";
@@ -46,33 +65,124 @@ function eventTimeLabel(ev: AppEvent): string {
   return startLabel;
 }
 
+/** An event occurrence on a specific date (recurring events expand into
+ *  these within the visible window — S5-B2 makes the reference's Repeat
+ *  combobox real). */
+interface Occurrence {
+  key: string;
+  date: Date;
+  title: string;
+  description: string;
+  location: string;
+  startDate: string;
+  endDate: string | null;
+  allDay: boolean;
+  color: string;
+  repeat: string;
+  reminders: string;
+  /** The underlying stored event (edit/delete operate on it). */
+  source: AppEvent;
+}
+
+function parseReminders(raw: string): number[] {
+  try {
+    const parsed: unknown = JSON.parse(raw || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((n): n is number => typeof n === "number" && n >= 0);
+  } catch {
+    return [];
+  }
+}
+
+/** Expand an event into occurrences inside [windowStart, windowEnd]. */
+function expandOccurrences(ev: AppEvent, windowStart: Date, windowEnd: Date): Occurrence[] {
+  const base = new Date(ev.startDate);
+  if (Number.isNaN(base.getTime())) return [];
+  const out: Occurrence[] = [];
+  const push = (date: Date) => {
+    if (date < windowStart || date > windowEnd) return;
+    // Keep the event's wall-clock time on the occurrence date.
+    const start = new Date(date);
+    start.setHours(base.getHours(), base.getMinutes(), 0, 0);
+    let end: string | null = null;
+    if (ev.endDate) {
+      const baseEnd = new Date(ev.endDate);
+      if (!Number.isNaN(baseEnd.getTime())) {
+        const durMs = baseEnd.getTime() - base.getTime();
+        const occEnd = new Date(start.getTime() + durMs);
+        end = occEnd.toISOString();
+      }
+    }
+    out.push({
+      key: `${ev.id}:${dateKey(date)}`,
+      date,
+      title: ev.title,
+      description: ev.description,
+      location: ev.location ?? "",
+      startDate: start.toISOString(),
+      endDate: end,
+      allDay: ev.allDay,
+      color: ev.color,
+      repeat: ev.repeat ?? "none",
+      reminders: ev.reminders ?? "[]",
+      source: ev,
+    });
+  };
+
+  const repeat = ev.repeat ?? "none";
+  if (repeat === "none") {
+    push(startOfDay(base));
+    return out;
+  }
+  // Walk the recurrence from the event start (bounded to a 2-year lookback so
+  // long-running dailies cannot loop forever).
+  const cursor = startOfDay(base);
+  const limit = 730;
+  let count = 0;
+  while (cursor <= windowEnd && count < limit) {
+    if (cursor >= windowStart) push(new Date(cursor));
+    if (repeat === "daily") cursor.setDate(cursor.getDate() + 1);
+    else if (repeat === "weekly") cursor.setDate(cursor.getDate() + 7);
+    else if (repeat === "monthly") cursor.setMonth(cursor.getMonth() + 1);
+    else break;
+    count += 1;
+  }
+  return out;
+}
+
 function EventRow({
-  ev,
+  occ,
   onEdit,
   onDelete,
 }: {
-  ev: AppEvent;
+  occ: Occurrence;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   return (
-    <li className="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
+    <div className="group flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-slate-800/60">
       <span
         className="h-2.5 w-2.5 shrink-0 rounded-full"
-        style={{ backgroundColor: ev.color || "#8b5cf6" }}
+        style={{ backgroundColor: occ.color || "#8b5cf6" }}
         aria-hidden="true"
       />
       <button
         type="button"
         onClick={onEdit}
         className="min-w-0 flex-1 text-left"
-        aria-label={`Edit event "${ev.title}"`}
+        aria-label={`Edit event "${occ.title}"`}
       >
-        <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{ev.title}</p>
+        <p className="truncate text-sm font-medium text-white">
+          {occ.title}
+          {occ.repeat !== "none" && (
+            <RepeatIcon className="ml-1.5 inline h-3 w-3 text-slate-500" aria-label="Recurring event" />
+          )}
+        </p>
         <p className="mt-0.5 truncate text-xs text-slate-400">
-          {eventTimeLabel(ev)}
-          {ev.description
-            ? ` · ${ev.description.slice(0, 60)}${ev.description.length > 60 ? "…" : ""}`
+          {eventTimeLabel(occ)}
+          {occ.location ? ` · ${occ.location}` : ""}
+          {occ.description
+            ? ` · ${occ.description.slice(0, 50)}${occ.description.length > 50 ? "…" : ""}`
             : ""}
         </p>
       </button>
@@ -80,36 +190,19 @@ function EventRow({
         variant="ghost"
         size="iconSm"
         onClick={onDelete}
-        aria-label={`Delete event "${ev.title}"`}
-        className="text-slate-400 hover:text-red-500"
+        aria-label={`Delete event "${occ.title}"`}
+        className="text-slate-600 opacity-0 transition-opacity hover:text-red-400 hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
       >
         <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
       </Button>
-    </li>
+    </div>
   );
 }
 
-interface EventGroup {
+interface DaySection {
   date: Date;
-  items: AppEvent[];
-}
-
-function groupEventsByDay(items: AppEvent[]): EventGroup[] {
-  const map = new Map<string, EventGroup>();
-  for (const ev of items) {
-    const d = new Date(ev.startDate);
-    if (Number.isNaN(d.getTime())) continue;
-    const key = dateKey(d);
-    const entry = map.get(key) ?? { date: startOfDay(d), items: [] };
-    entry.items.push(ev);
-    map.set(key, entry);
-  }
-  const groups = [...map.values()];
-  groups.sort((a, b) => a.date.getTime() - b.date.getTime());
-  for (const g of groups) {
-    g.items.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-  }
-  return groups;
+  label: string;
+  occurrences: Occurrence[];
 }
 
 export function EventsView() {
@@ -119,9 +212,9 @@ export function EventsView() {
   const loadAll = useDataStore((s) => s.loadAll);
 
   const [selectedDay, setSelectedDay] = React.useState<Date>(() => startOfDay(new Date()));
-  const [showAll, setShowAll] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<AppEvent | null>(null);
+  const datePickerRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     void loadAll(["events"]);
@@ -130,9 +223,14 @@ export function EventsView() {
   // ---- Form state ----
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [location, setLocation] = React.useState("");
   const [startDate, setStartDate] = React.useState("");
   const [endDate, setEndDate] = React.useState("");
   const [allDay, setAllDay] = React.useState(false);
+  const [repeat, setRepeat] = React.useState<string>("none");
+  const [reminderDraft, setReminderDraft] = React.useState("15");
+  const [reminderUnit, setReminderUnit] = React.useState<string>("minutes");
+  const [reminderList, setReminderList] = React.useState<number[]>([]);
   const [color, setColor] = React.useState("#8b5cf6");
   const [busy, setBusy] = React.useState(false);
 
@@ -144,9 +242,14 @@ export function EventsView() {
     setEditing(null);
     setTitle("");
     setDescription("");
+    setLocation("");
     setStartDate(defaultStart());
     setEndDate("");
     setAllDay(false);
+    setRepeat("none");
+    setReminderDraft("15");
+    setReminderUnit("minutes");
+    setReminderList([]);
     setColor("#8b5cf6");
     setDialogOpen(true);
   }
@@ -155,11 +258,28 @@ export function EventsView() {
     setEditing(ev);
     setTitle(ev.title);
     setDescription(ev.description ?? "");
+    setLocation(ev.location ?? "");
     setStartDate(toDateTimeInputValue(ev.startDate));
     setEndDate(toDateTimeInputValue(ev.endDate));
     setAllDay(ev.allDay);
+    setRepeat(ev.repeat ?? "none");
+    setReminderDraft("15");
+    setReminderUnit("minutes");
+    setReminderList(parseReminders(ev.reminders));
     setColor(ev.color || "#8b5cf6");
     setDialogOpen(true);
+  }
+
+  function addReminder() {
+    const n = Number.parseInt(reminderDraft, 10);
+    if (!Number.isFinite(n) || n <= 0) return;
+    const unit = REMINDER_UNITS.find((u) => u.value === reminderUnit) ?? REMINDER_UNITS[0];
+    const minutes = n * unit.minutes;
+    if (minutes > 10080) {
+      toast.error("Reminders can be at most 7 days in advance");
+      return;
+    }
+    setReminderList((prev) => (prev.includes(minutes) ? prev : [...prev, minutes].sort((a, b) => a - b)));
   }
 
   async function submitEvent(e: React.FormEvent) {
@@ -170,9 +290,12 @@ export function EventsView() {
     const payload = {
       title: title.trim(),
       description: description.trim(),
+      location: location.trim(),
       startDate: start.toISOString(),
       endDate: endDate || null,
       allDay,
+      repeat,
+      reminders: JSON.stringify(reminderList),
       color,
     };
     try {
@@ -201,34 +324,50 @@ export function EventsView() {
     }
   }
 
-  // ---- Day strip + grouping ----
+  // ---- Sections: 7 days starting from the selected day ----
   const now = new Date();
-  const today = startOfDay(now);
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const date = addDays(today, i);
-    const count = events.filter((ev) => {
-      const d = new Date(ev.startDate);
-      return !Number.isNaN(d.getTime()) && isSameDay(d, date);
-    }).length;
-    return { date, count };
+  const windowStart = startOfDay(selectedDay);
+  const windowEnd = addDays(windowStart, 6);
+  /** Reference label format: "Today" / "Tomorrow" / "Friday, October 9" —
+   *  formatFullDate WITHOUT the year (measured). */
+  const sectionLabel = (date: Date): string => {
+    if (isSameDay(date, now)) return "Today";
+    if (isSameDay(date, addDays(now, 1))) return "Tomorrow";
+    return `${WEEKDAY_LONG[isoWeekday(date)]}, ${date.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
+  };
+  const sections: DaySection[] = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(windowStart, i);
+    const occurrences = events
+      .flatMap((ev) => expandOccurrences(ev, windowStart, windowEnd))
+      .filter((occ) => isSameDay(occ.date, date))
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    return { date, label: sectionLabel(date), occurrences };
   });
 
-  const selectedEvents = events
-    .filter((ev) => {
-      const d = new Date(ev.startDate);
-      return !Number.isNaN(d.getTime()) && isSameDay(d, selectedDay);
-    })
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  // ---- Reminders: toast when a reminder offset elapses while the view is open ----
+  React.useEffect(() => {
+    const timers: number[] = [];
+    const windowEndMs = windowEnd.getTime() + 86_400_000;
+    for (const ev of events) {
+      if ((ev.reminders ?? "[]") === "[]") continue;
+      const start = new Date(ev.startDate).getTime();
+      if (Number.isNaN(start) || start > windowEndMs) continue;
+      for (const minutes of parseReminders(ev.reminders)) {
+        const fireAt = start - minutes * 60_000;
+        const delay = fireAt - Date.now();
+        if (delay <= 0 || delay > 2_147_000_000) continue;
+        timers.push(
+          window.setTimeout(() => {
+            toast.info(`Reminder: “${ev.title}” starts in ${minutes >= 60 ? `${Math.round(minutes / 60)} h` : `${minutes} min`}`);
+          }, delay),
+        );
+      }
+    }
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [events, windowEnd]);
 
-  const pool = showAll
-    ? events
-    : events.filter((ev) => {
-        const d = new Date(ev.startDate);
-        if (Number.isNaN(d.getTime())) return false;
-        const delta = daysUntil(d, now);
-        return delta >= 0 && delta <= 6;
-      });
-  const groups = groupEventsByDay(pool);
+  const weekdayLabel = WEEKDAY_SHORT[isoWeekday(selectedDay)];
+  const monthLabel = `${selectedDay.toLocaleString("en-US", { month: "short" })} ${selectedDay.getFullYear()}`;
 
   if (loadStatus === "error") {
     return (
@@ -245,151 +384,117 @@ export function EventsView() {
         title="Events & Reminders"
         subtitle="Manage your events with custom reminders"
         icon={CalendarDays}
-        actions={
-          <Button onClick={openCreate} className="gap-1.5">
-            <Plus className="h-4 w-4" strokeWidth={1.75} />
-            New Event
-          </Button>
-        }
       />
 
       {loadStatus === "idle" || loadStatus === "loading" ? (
         <LoadingCards />
-      ) : events.length === 0 ? (
-        <div className="sf-card">
-          <EmptyState
-            icon={CalendarDays}
-            title="No events yet"
-            hint="Create reminders and events to see them across your 7-day schedule."
-            action={<Button variant="outline" onClick={openCreate}>New Event</Button>}
-          />
-        </div>
       ) : (
-        <>
-          {/* 7-day strip */}
-          <div className="sf-card flex gap-2 overflow-x-auto p-3" role="group" aria-label="Choose a day">
-            {weekDays.map(({ date, count }) => {
-              const selected = isSameDay(date, selectedDay);
-              return (
-                <button
-                  key={dateKey(date)}
-                  type="button"
-                  onClick={() => setSelectedDay(date)}
-                  aria-pressed={selected}
-                  aria-label={`Show events for ${dayBucketLabel(date, now)}`}
-                  className={cn(
-                    "flex min-w-[60px] flex-1 flex-col items-center gap-1 rounded-lg px-2 py-2.5 transition-colors sf-focus",
-                    selected
-                      ? "bg-sf-primary text-sf-primary-foreground shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/60",
-                  )}
+        <section
+          className="w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl"
+          aria-label="Events panel"
+        >
+          {/* Panel header — S5-B measured spec. The panel is intentionally
+              dark in BOTH themes (the reference renders it dark on its light
+              canvas). */}
+          <div className="border-b border-slate-700 p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wider text-slate-400">Events</p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  onClick={() => setSelectedDay((d) => addDays(d, -1))}
+                  aria-label="Previous day"
+                  className="h-6 w-6 text-slate-400 hover:bg-slate-800 hover:text-white"
                 >
-                  <span
-                    className={cn(
-                      "text-xs font-medium",
-                      selected ? "text-sf-primary-foreground/80" : "text-slate-400 dark:text-slate-500",
-                    )}
-                  >
-                    {WEEKDAY_SHORT[isoWeekday(date)]}
-                  </span>
-                  <span className="text-base font-semibold leading-none">{date.getDate()}</span>
-                  <span
-                    className={cn(
-                      "h-1 w-1 rounded-full",
-                      count > 0 ? (selected ? "bg-white" : "bg-sf-primary") : "bg-transparent",
-                    )}
-                    aria-hidden="true"
-                  />
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Selected day */}
-          <SectionCard
-            title={dayBucketLabel(selectedDay, now)}
-            icon={CalendarDays}
-            action={
-              selectedEvents.length > 0 ? (
-                <span className="text-xs text-slate-400">
-                  {selectedEvents.length} event{selectedEvents.length === 1 ? "" : "s"}
-                </span>
-              ) : undefined
-            }
-          >
-            {selectedEvents.length === 0 ? (
-              <EmptyState
-                icon={CalendarDays}
-                title="Nothing scheduled"
-                hint="Pick another day above or create a new event."
-              />
-            ) : (
-              <ul className="flex flex-col gap-1">
-                {selectedEvents.map((ev) => (
-                  <EventRow
-                    key={ev.id}
-                    ev={ev}
-                    onEdit={() => openEdit(ev)}
-                    onDelete={() => void handleDelete(ev)}
-                  />
-                ))}
-              </ul>
-            )}
-          </SectionCard>
-
-          {/* Next 7 days / all events */}
-          <SectionCard
-            title={showAll ? "All Events" : "Next 7 Days"}
-            icon={Clock}
-            action={
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="events-show-all"
-                  className="cursor-pointer text-sm text-slate-500 dark:text-slate-400"
+                  <ChevronLeft className="h-4 w-4" strokeWidth={2} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  onClick={() => setSelectedDay(startOfDay(new Date()))}
+                  aria-label="Today"
+                  className="h-6 w-6 text-slate-400 hover:bg-slate-800 hover:text-white"
                 >
-                  All events
-                </label>
-                <Switch
-                  id="events-show-all"
-                  checked={showAll}
-                  onCheckedChange={(v) => setShowAll(v === true)}
-                  aria-label="Show all events"
+                  <Circle className="h-3.5 w-3.5" strokeWidth={2} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  onClick={() => setSelectedDay((d) => addDays(d, 1))}
+                  aria-label="Next day"
+                  className="h-6 w-6 text-slate-400 hover:bg-slate-800 hover:text-white"
+                >
+                  <ChevronRight className="h-4 w-4" strokeWidth={2} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  onClick={() => datePickerRef.current?.showPicker?.()}
+                  aria-label="Pick a date"
+                  className="h-6 w-6 text-slate-400 hover:bg-slate-800 hover:text-white"
+                >
+                  <ChevronDown className="h-4 w-4" strokeWidth={2} />
+                </Button>
+                <input
+                  ref={datePickerRef}
+                  type="date"
+                  onChange={(e) => {
+                    if (e.target.value) setSelectedDay(startOfDay(new Date(`${e.target.value}T12:00`)));
+                  }}
+                  className="sr-only"
+                  aria-hidden="true"
+                  tabIndex={-1}
                 />
               </div>
-            }
-          >
-            {groups.length === 0 ? (
-              <EmptyState
-                icon={Clock}
-                title={showAll ? "No events yet" : "Nothing scheduled this week"}
-                hint={showAll ? undefined : "Flip the switch to see events beyond this week."}
-              />
-            ) : (
-              <div className="flex flex-col gap-5">
-                {groups.map((g) => (
-                  <div key={dateKey(g.date)} className="flex flex-col gap-1">
-                    <h4 className="px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      {dayBucketLabel(g.date, now)}
-                    </h4>
-                    <ul className="flex flex-col gap-1">
-                      {g.items.map((ev) => (
-                        <EventRow
-                          key={ev.id}
-                          ev={ev}
-                          onEdit={() => openEdit(ev)}
-                          onDelete={() => void handleDelete(ev)}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold">{selectedDay.getDate()}</span>
+              <div>
+                <span className="text-lg font-medium">{weekdayLabel}</span>
+                <p className="text-sm text-slate-400">
+                  {monthLabel} CW {isoWeekNumber(selectedDay)}
+                </p>
               </div>
-            )}
-          </SectionCard>
-        </>
+            </div>
+            <button
+              type="button"
+              onClick={openCreate}
+              className="mt-3 flex h-9 w-full items-center justify-start gap-2 rounded-md px-4 py-2 text-sm font-medium text-cyan-400 transition-colors hover:bg-slate-800 hover:text-cyan-300 sf-focus"
+            >
+              <CalendarDays className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              New Event
+            </button>
+          </div>
+
+          {/* Day sections */}
+          <div className="max-h-[calc(100vh-400px)] min-h-[300px] overflow-y-auto sf-scroll">
+            {sections.map((section) => (
+              <div key={dateKey(section.date)} className="border-b border-slate-800 last:border-b-0">
+                <div className="bg-slate-800/50 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-slate-300">{section.label}</h3>
+                </div>
+                <div className="p-2">
+                  {section.occurrences.length === 0 ? (
+                    <p className="px-2 py-3 text-sm text-slate-500">No events</p>
+                  ) : (
+                    section.occurrences.map((occ) => (
+                      <EventRow
+                        key={occ.key}
+                        occ={occ}
+                        onEdit={() => openEdit(occ.source)}
+                        onDelete={() => void handleDelete(occ.source)}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* Event dialog */}
+      {/* Event dialog — S5-B2 field set measured on the reference. */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -397,14 +502,24 @@ export function EventsView() {
           </DialogHeader>
           <form onSubmit={submitEvent} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="event-title">Title</Label>
+              <Label htmlFor="event-title">Title *</Label>
               <Input
                 id="event-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Study group meetup"
+                placeholder="Event title"
                 maxLength={200}
                 required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="event-location">Location / Link</Label>
+              <Input
+                id="event-location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Room or meeting URL"
+                maxLength={160}
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -413,13 +528,13 @@ export function EventsView() {
                 id="event-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={3}
+                placeholder="Event details..."
                 maxLength={2000}
               />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="event-start">Starts</Label>
+                <Label htmlFor="event-start">Start</Label>
                 <input
                   id="event-start"
                   type="datetime-local"
@@ -430,7 +545,7 @@ export function EventsView() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="event-end">Ends (optional)</Label>
+                <Label htmlFor="event-end">End</Label>
                 <input
                   id="event-end"
                   type="datetime-local"
@@ -439,6 +554,80 @@ export function EventsView() {
                   className={FIELD_CLASS}
                 />
               </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="event-repeat">Repeat</Label>
+              <Select value={repeat} onValueChange={setRepeat}>
+                <SelectTrigger id="event-repeat">
+                  <SelectValue placeholder="No repeat" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REPEAT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="flex items-center gap-2">
+                <Bell className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                Reminders
+              </Label>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="icon" onClick={addReminder} aria-label="Add reminder">
+                  <Plus className="h-4 w-4" strokeWidth={2} />
+                </Button>
+                <input
+                  type="number"
+                  min={1}
+                  max={10080}
+                  value={reminderDraft}
+                  onChange={(e) => setReminderDraft(e.target.value)}
+                  aria-label="Reminder amount"
+                  className={cn(FIELD_CLASS, "w-20")}
+                />
+                <Select value={reminderUnit} onValueChange={setReminderUnit}>
+                  <SelectTrigger className="w-28" aria-label="Reminder unit">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REMINDER_UNITS.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>
+                        {u.value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-muted-foreground">before</span>
+              </div>
+              {reminderList.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {reminderList.map((minutes) => (
+                    <span
+                      key={minutes}
+                      className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"
+                    >
+                      <Clock className="h-3 w-3" aria-hidden="true" />
+                      {minutes >= 1440
+                        ? `${minutes / 1440} day${minutes / 1440 === 1 ? "" : "s"}`
+                        : minutes >= 60
+                          ? `${minutes / 60} hour${minutes / 60 === 1 ? "" : "s"}`
+                          : `${minutes} min`}{" "}
+                      before
+                      <button
+                        type="button"
+                        onClick={() => setReminderList((prev) => prev.filter((m) => m !== minutes))}
+                        aria-label={`Remove ${minutes} minute reminder`}
+                        className="sf-focus rounded-sm hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" aria-hidden="true" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-2">
@@ -473,7 +662,7 @@ export function EventsView() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={busy || !title.trim() || !startDate}>
+              <Button type="submit" variant="gradient" disabled={busy || !title.trim() || !startDate}>
                 {busy ? "Saving…" : editing ? "Save changes" : "Create Event"}
               </Button>
             </DialogFooter>

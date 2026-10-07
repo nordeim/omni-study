@@ -122,7 +122,7 @@ export function FlashcardsView() {
         title="Flashcards"
         icon={Layers}
         actions={
-          <Button onClick={openCreateDeck}><Plus className="h-4 w-4" /> Create Deck</Button>
+          <Button variant="gradient" onClick={openCreateDeck}><Plus className="h-4 w-4" /> Create Deck</Button>
         }
       />
 
@@ -143,7 +143,7 @@ export function FlashcardsView() {
             <EmptyState
               icon={Layers}
               title="No decks yet"
-              action={<Button variant="outline" onClick={openCreateDeck}>Create Deck</Button>}
+              action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={openCreateDeck}>Create Deck</Button>}
             />
           ) : (
             <ul className="sf-scroll flex-1 divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800">
@@ -223,7 +223,7 @@ export function FlashcardsView() {
                 <EmptyState
                   icon={Layers}
                   title="No cards in this deck"
-                  action={<Button variant="outline" onClick={() => setCardDialogOpen(true)}>Add Card</Button>}
+                  action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={() => setCardDialogOpen(true)}>Add Card</Button>}
                 />
               ) : (
                 <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
@@ -356,7 +356,7 @@ export function FlashcardsView() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={!deckName.trim()}>
+              <Button type="submit" variant="gradient" disabled={!deckName.trim()}>
                 {editingDeck ? "Save changes" : "Create Deck"}
               </Button>
             </DialogFooter>
@@ -381,7 +381,7 @@ export function FlashcardsView() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCardDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={!cardFront.trim() || !cardBack.trim()}>Add Card</Button>
+              <Button type="submit" variant="gradient" disabled={!cardFront.trim() || !cardBack.trim()}>Add Card</Button>
             </DialogFooter>
           </form>
         </DialogContent>

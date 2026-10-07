@@ -125,7 +125,7 @@ export function MathSolverView() {
             >
               <Eraser className="h-4 w-4" /> Clear
             </Button>
-            <Button onClick={solve} disabled={busy || (!problem.trim() && !image)} className="ml-auto">
+            <Button variant="gradient" onClick={solve} disabled={busy || (!problem.trim() && !image)} className="ml-auto">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {busy ? "Solving…" : "Solve"}
             </Button>

@@ -41,6 +41,10 @@ export interface AccentToken {
    *  hue rotation cannot be derived from the accent itself (session 4,
    * extends the softestAdjacent pattern to the 600 level). */
   gradientTo: string;
+  /** 700-level of the ADJACENT hue — the gradient HOVER end (reference:
+   *  hover:from-violet-600 hover:to-indigo-700 = indigo-700 rgb(67,56,202)).
+   *  Session 5 (S5-A): gradient CTAs darken both stops on hover. */
+  gradientToStrong: string;
   /** 400-level of the accent — the avatar gradient's start (reference:
    *  violet-400 `rgb(167,139,250)`). */
   avatarFrom: string;
@@ -72,6 +76,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     softestAdjacent: "238 242 255", // indigo-50 #EEF2FF (measured on the reference)
     // S4-G measured gradient stops (session 4):
     gradientTo: "79 70 229", // indigo-600 #4F46E5 — brand chips + CTA end
+    gradientToStrong: "67 56 202", // indigo-700 #4338CA — gradient hover end
     avatarFrom: "167 139 250", // violet-400 #A78BFA — avatar start
     avatarTo: "99 102 241", // indigo-500 #6366F1 — avatar end
     emptyFrom: "237 233 254", // violet-100 #EDE9FE — empty-state block start
@@ -88,42 +93,49 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     softest: "239 246 255",
     softestAdjacent: "238 242 255", // indigo-50 (blue's adjacent hue)
     gradientTo: "8 145 178", // cyan-600 #0891B2
+    gradientToStrong: "14 116 144", // cyan-700 #0E7490
     avatarFrom: "96 165 250", // blue-400 #60A5FA
     avatarTo: "6 182 212", // cyan-500 #06B6D4
     emptyFrom: "219 234 254", // blue-100 #DBEAFE
     emptyTo: "207 250 254", // cyan-100 #CFFAFE
   },
   green: {
-    primary: "34 197 94",
+    // S5-F: migrated to the EMERALD family — the reference's swatch face
+    // measured rgb(16,185,129) = emerald-500 (NOT green-500 rgb(34,197,94)).
+    primary: "16 185 129",
     primaryFg: "255 255 255",
-    soft: "220 252 231",
-    softDark: "20 83 45",
-    strong: "22 163 74",
-    strongDark: "187 247 208",
-    deep: "21 128 61",
-    softest: "240 253 244",
-    softestAdjacent: "236 253 245", // emerald-50 #ECFDF5
+    soft: "209 250 229",
+    softDark: "6 78 59",
+    strong: "5 150 105",
+    strongDark: "110 231 183",
+    deep: "4 120 87",
+    softest: "236 253 245",
+    softestAdjacent: "240 253 250", // teal-50 #F0FDFA
     gradientTo: "13 148 136", // teal-600 #0D9488
-    avatarFrom: "74 222 128", // green-400 #4ADE80
+    gradientToStrong: "15 118 110", // teal-700 #0F766E
+    avatarFrom: "52 211 153", // emerald-400 #34D399
     avatarTo: "20 184 166", // teal-500 #14B8A6
-    emptyFrom: "220 252 231", // green-100 #DCFCE7
+    emptyFrom: "209 250 229", // emerald-100 #D1FAE5
     emptyTo: "204 251 241", // teal-100 #CCFBF1
   },
   orange: {
-    primary: "249 115 22",
+    // S5-F: migrated to the AMBER family — the reference's swatch face
+    // measured rgb(245,158,11) = amber-500 (NOT orange-500 rgb(249,115,22)).
+    primary: "245 158 11",
     primaryFg: "255 255 255",
-    soft: "255 237 213",
-    softDark: "124 45 18",
-    strong: "234 88 12",
-    strongDark: "253 186 116",
-    deep: "194 65 12",
-    softest: "255 247 237",
-    softestAdjacent: "255 251 235", // amber-50 #FFFBEB
-    gradientTo: "217 119 6", // amber-600 #D97706 (the stat-chip pair)
-    avatarFrom: "249 115 22", // orange-400 #F97316
-    avatarTo: "245 158 11", // amber-500 #F59E0B
-    emptyFrom: "255 237 213", // orange-100 #FFEDD5
-    emptyTo: "254 243 199", // amber-100 #FEF3C7
+    soft: "254 243 199",
+    softDark: "120 53 15",
+    strong: "217 119 6",
+    strongDark: "252 211 77",
+    deep: "180 83 9",
+    softest: "255 251 235",
+    softestAdjacent: "255 247 237", // orange-50 #FFF7ED
+    gradientTo: "234 88 12", // orange-600 #EA580C
+    gradientToStrong: "194 65 12", // orange-700 #C2410C
+    avatarFrom: "251 191 36", // amber-400 #FBBF24
+    avatarTo: "249 115 22", // orange-500 #F97316
+    emptyFrom: "254 243 199", // amber-100 #FEF3C7
+    emptyTo: "255 237 213", // orange-100 #FFEDD5
   },
   pink: {
     primary: "236 72 153",
@@ -136,6 +148,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     softest: "253 242 248",
     softestAdjacent: "255 241 242", // rose-50 #FFF1F2
     gradientTo: "225 29 72", // rose-600 #E11D48 (the stat-chip pair)
+    gradientToStrong: "190 18 60", // rose-700 #BE123C
     avatarFrom: "244 114 182", // pink-400 #F472B6
     avatarTo: "244 63 94", // rose-500 #F43F5E
     emptyFrom: "252 231 243", // pink-100 #FCE7F3
@@ -152,6 +165,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     softest: "254 242 242",
     softestAdjacent: "255 241 242", // rose-50 #FFF1F2
     gradientTo: "234 88 12", // orange-600 #EA580C
+    gradientToStrong: "194 65 12", // orange-700 #C2410C
     avatarFrom: "248 113 113", // red-400 #F87171
     avatarTo: "249 115 22", // orange-500 #F97316
     emptyFrom: "254 226 226", // red-100 #FEE2E2
@@ -168,6 +182,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     softest: "240 253 250",
     softestAdjacent: "236 254 255", // cyan-50 #ECFEFF
     gradientTo: "8 145 178", // cyan-600 #0891B2
+    gradientToStrong: "14 116 144", // cyan-700 #0E7490
     avatarFrom: "45 212 191", // teal-400 #2DD4BF
     avatarTo: "6 182 212", // cyan-500 #06B6D4
     emptyFrom: "204 251 241", // teal-100 #CCFBF1
@@ -203,6 +218,7 @@ export function accentCssVars(accent: Accent): Record<string, string> {
     "--sf-primary-softest": t.softest,
     "--sf-primary-softest-adjacent": t.softestAdjacent,
     "--sf-primary-gradient-to": t.gradientTo,
+    "--sf-primary-gradient-to-strong": t.gradientToStrong,
     "--sf-primary-avatar-from": t.avatarFrom,
     "--sf-primary-avatar-to": t.avatarTo,
     "--sf-primary-empty-from": t.emptyFrom,

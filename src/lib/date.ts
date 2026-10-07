@@ -152,3 +152,15 @@ export function formatHHMMRange(start: string, end: string): string {
   if (a === null || b === null) return "";
   return formatMinutes(Math.max(0, b - a));
 }
+
+/** ISO-8601 week number (1..53). The reference's Events panel renders
+ *  "Oct 2026 CW 41" — the calendar week of the selected day. */
+export function isoWeekNumber(d: Date): number {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = (date.getUTCDay() + 6) % 7; // Mon = 0 … Sun = 6
+  date.setUTCDate(date.getUTCDate() - dayNum + 3); // nearest Thursday
+  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  const firstDayNum = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNum + 3);
+  return 1 + Math.round((date.getTime() - firstThursday.getTime()) / 604_800_000);
+}

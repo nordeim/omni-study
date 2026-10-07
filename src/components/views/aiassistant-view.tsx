@@ -69,8 +69,11 @@ export function AIAssistantView() {
     <div className="flex h-full flex-col gap-4">
       <ViewHeader title="AI Study Assistant" subtitle="Your personal AI tutor, available 24/7" icon={Sparkles} />
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {/* Quick actions — S5-N: measured cards: p-4 bg-white rounded-xl
+          border-slate-200 hover:border-violet-300 hover:shadow-lg, 32px
+          accent icon + 16px/600 title (no description line). The hints
+          still seed the input on click. */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {MODES.map((m) => (
           <button
             key={m.id}
@@ -80,26 +83,26 @@ export function AIAssistantView() {
               setInput(m.hint);
             }}
             className={cn(
-              "sf-card flex flex-col items-start gap-2 p-4 text-left transition-all hover:shadow-md",
-              mode === m.id && "ring-2",
+              "group rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-sf-primary/50 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900",
+              mode === m.id && "border-sf-primary/60",
             )}
-            style={mode === m.id ? { boxShadow: "inset 0 0 0 2px rgb(var(--sf-primary))" } : undefined}
+            aria-pressed={mode === m.id}
           >
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-white"
-              style={{ backgroundColor: "rgb(var(--sf-primary))" }}
-            >
-              <m.icon className="h-4.5 w-4.5 h-[18px] w-[18px]" strokeWidth={1.75} />
-            </span>
-            <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{m.label}</span>
-            <span className="text-xs leading-snug text-slate-400">{m.hint}</span>
+            <m.icon
+              className="h-8 w-8 text-sf-primary"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
+            <h3 className="mt-2 text-base font-semibold text-slate-800 dark:text-slate-100">{m.label}</h3>
           </button>
         ))}
       </div>
 
-      {/* Chat */}
-      <div className="sf-card flex min-h-[380px] flex-1 flex-col overflow-hidden">
-        <div className="sf-scroll flex-1 overflow-y-auto p-5">
+      {/* Chat — S5-N: measured card: rounded-2xl border-slate-200 shadow-sm
+          min-h-[500px], message pane p-6, composer border-t p-4 with a 60px
+          textarea + 60px gradient send button and the hint line. */}
+      <div className="flex min-h-[500px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="sf-scroll flex-1 overflow-y-auto p-6">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 py-10 text-center">
               <Sparkles className="h-10 w-10 text-slate-200 dark:text-slate-700" strokeWidth={1.5} />
@@ -169,8 +172,8 @@ export function AIAssistantView() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={mode ? `${MODES.find((m) => m.id === mode)?.label} — ask away…` : "Ask me anything..."}
               aria-label="Message the assistant"
-              rows={1}
-              className="max-h-40 min-h-[44px] resize-none"
+              rows={2}
+              className="max-h-40 min-h-[60px] resize-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -181,14 +184,16 @@ export function AIAssistantView() {
             />
             <Button
               type="submit"
+              variant="gradient"
               size="icon"
               disabled={busy || !input.trim()}
               aria-label="Send message"
-              className="h-11 w-11 shrink-0"
+              className="h-[60px] w-[60px] shrink-0"
             >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
             </Button>
           </form>
+          <p className="mt-2 text-xs text-slate-400">Press Enter to send, Shift + Enter for a new line</p>
           {messages.length > 0 && (
             <button
               type="button"
@@ -196,7 +201,7 @@ export function AIAssistantView() {
                 void mutations.clearChat();
                 toast.success("Chat cleared");
               }}
-              className="mt-2 text-xs text-slate-400 hover:text-slate-600 sf-focus dark:hover:text-slate-300"
+              className="mt-1 text-xs text-slate-400 hover:text-slate-600 sf-focus dark:hover:text-slate-300"
             >
               Clear conversation
             </button>

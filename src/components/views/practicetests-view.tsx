@@ -242,7 +242,7 @@ export function PracticeTestsView() {
         subtitle="Test yourself with practice exams"
         icon={FileQuestion}
         actions={
-          <Button onClick={openCreate} className="gap-1.5">
+          <Button onClick={openCreate} variant="gradient" className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} /> Create Test
           </Button>
         }
@@ -257,7 +257,7 @@ export function PracticeTestsView() {
             title="No practice tests yet"
             hint="Create your first practice test to check what you really know."
             action={
-              <Button onClick={openCreate} variant="outline">
+              <Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">
                 Create Test
               </Button>
             }
@@ -352,7 +352,7 @@ export function PracticeTestsView() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={busy || !title.trim()}>
+              <Button type="submit" variant="gradient" disabled={busy || !title.trim()}>
                 {busy ? "Saving…" : editing ? "Save changes" : "Create Test"}
               </Button>
             </DialogFooter>

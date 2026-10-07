@@ -68,6 +68,10 @@ export interface AppEvent {
   endDate: string | null;
   allDay: boolean;
   color: string;
+  // S5-B2 — the reference dialog's fields.
+  location: string;
+  repeat: string;
+  reminders: string;
 }
 
 export interface TimetableClass {
@@ -80,6 +84,8 @@ export interface TimetableClass {
   room: string;
   teacher: string;
   color: string;
+  /** S5-J — ALL | A | B (the reference's alternating-week select). */
+  weekType: string;
 }
 
 export interface Notebook {

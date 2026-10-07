@@ -85,25 +85,25 @@ export function CalendarView() {
         title="Calendar"
         subtitle="View all your tasks, assignments and classes"
         actions={
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-            {(["calendar", "timeline"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors",
-                  mode === m
-                    ? "bg-card text-slate-900 shadow-sm dark:text-slate-100"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400",
-                )}
-                aria-pressed={mode === m}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
+          // S5-G — measured segmented control: white bg, rounded-lg,
+          // border-slate-200, p-1; tabs 12px; active = solid accent bg.
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          {(["calendar", "timeline"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors",
+                mode === m
+                  ? "bg-sf-primary text-sf-primary-foreground"
+                  : "text-gray-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+              )}
+              aria-pressed={mode === m}
+            >
+              {m}
+            </button>
+          ))}
         </div>
         }
       />

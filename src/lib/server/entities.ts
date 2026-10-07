@@ -230,6 +230,9 @@ export const eventsDelegate: CrudDelegate<Record<string, unknown>, Record<string
         endDate: toDate(data.endDate) ?? null,
         allDay: data.allDay,
         color: data.color,
+        location: data.location,
+        repeat: data.repeat,
+        reminders: data.reminders,
       },
     });
   },
@@ -245,6 +248,9 @@ export const eventsDelegate: CrudDelegate<Record<string, unknown>, Record<string
         ...(patch.endDate !== undefined ? { endDate: toDate(patch.endDate) ?? null } : {}),
         ...(patch.allDay !== undefined ? { allDay: patch.allDay } : {}),
         ...(patch.color !== undefined ? { color: patch.color } : {}),
+        ...(patch.location !== undefined ? { location: patch.location } : {}),
+        ...(patch.repeat !== undefined ? { repeat: patch.repeat } : {}),
+        ...(patch.reminders !== undefined ? { reminders: patch.reminders } : {}),
       },
     });
   },
@@ -275,6 +281,7 @@ export const timetableDelegate: CrudDelegate<Record<string, unknown>, Record<str
         room: data.room,
         teacher: data.teacher,
         color: data.color,
+        weekType: data.weekType,
       },
     });
   },

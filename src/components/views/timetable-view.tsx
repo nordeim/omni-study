@@ -6,17 +6,32 @@ import { useDataStore, mutations, type TimetableClass } from "@/lib/data";
 import { useSubjectMap, EmptyState, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { parseHHMM, WEEKDAY_SHORT, WEEKDAY_LONG } from "@/lib/date";
+import { addDays, parseHHMM, startOfDay, WEEKDAY_SHORT, WEEKDAY_LONG } from "@/lib/date";
 
-// Timetable — weekly class grid (Monday-first) + My Classes list. The
-// reference also has a month header; the grid is the primary surface.
+// Timetable — weekly class grid + My Classes cards. S5-J aligns the chrome
+// with the measured reference: a standalone week-nav bar (36px round
+// buttons + month title + week-range), an All Weeks / Week A / Week B
+// select (alternating-week timetables), Sunday-first day headers carrying
+// the date numbers, and My Classes as a 3-column card grid.
 
 const START_HOUR = 8;
 const END_HOUR = 20;
 const ROWS = END_HOUR - START_HOUR;
+
+/** Sunday-first header labels for the displayed week. */
+const WEEK_COLUMNS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+const WEEK_FILTERS = [
+  { value: "ALL", label: "All Weeks" },
+  { value: "A", label: "Week A" },
+  { value: "B", label: "Week B" },
+] as const;
+
+const FIELD_CLASS = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm";
 
 function classTop(cls: TimetableClass): number | null {
   const start = parseHHMM(cls.startTime);
@@ -38,6 +53,10 @@ export function TimetableView() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<TimetableClass | null>(null);
   const [gridBuilder, setGridBuilder] = React.useState(false);
+  const [weekFilter, setWeekFilter] = React.useState<string>("ALL");
+  const [weekTypeDraft, setWeekTypeDraft] = React.useState<string>("ALL");
+  /** The Sunday starting the displayed week (Sunday-first grid, measured). */
+  const [weekStart, setWeekStart] = React.useState(() => addDays(startOfDay(new Date()), -new Date().getDay()));
 
   React.useEffect(() => {
     void loadAll(["timetable", "subjects"]);
@@ -62,6 +81,7 @@ export function TimetableView() {
     setEndTime("10:30");
     setRoom("");
     setTeacher("");
+    setWeekTypeDraft("ALL");
     setDialogOpen(true);
   }
 
@@ -74,6 +94,7 @@ export function TimetableView() {
     setEndTime(cls.endTime);
     setRoom(cls.room);
     setTeacher(cls.teacher);
+    setWeekTypeDraft(cls.weekType ?? "ALL");
     setDialogOpen(true);
   }
 
@@ -97,6 +118,7 @@ export function TimetableView() {
       endTime,
       room: room.trim(),
       teacher: teacher.trim(),
+      weekType: weekTypeDraft,
     };
     try {
       if (editing) {
@@ -118,14 +140,19 @@ export function TimetableView() {
     const map = new Map<number, TimetableClass[]>();
     for (let d = 0; d < 7; d++) map.set(d, []);
     for (const c of classes) {
+      if (weekFilter !== "ALL" && (c.weekType ?? "ALL") === (weekFilter === "A" ? "B" : "A")) continue;
       map.get(c.dayOfWeek)?.push(c);
     }
     for (const list of map.values()) list.sort((a, b) => a.startTime.localeCompare(b.startTime));
     return map;
-  }, [classes]);
+  }, [classes, weekFilter]);
 
-  const today = (new Date().getDay() + 6) % 7;
-  const [cursor, setCursor] = React.useState(() => new Date());
+  const weekEnd = addDays(weekStart, 6);
+  const monthTitle = weekStart.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const rangeTitle = `${weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekEnd.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+  /** Column i is Sunday-first; classes are stored ISO (0 = Monday). */
+  const colToIso = (col: number) => (col + 1) % 7;
+  const todayIso = (new Date().getDay() + 6) % 7;
 
   return (
     <div className="flex flex-col gap-6">
@@ -134,16 +161,53 @@ export function TimetableView() {
         subtitle="Manage your class schedule"
         icon={Calendar}
         actions={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Select value={weekFilter} onValueChange={setWeekFilter}>
+            <SelectTrigger className="w-32" aria-label="Week filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {WEEK_FILTERS.map((f) => (
+                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button variant="outline" onClick={() => setGridBuilder((v) => !v)} aria-pressed={gridBuilder}>
             <Grid3x3 className="h-4 w-4" /> Grid Builder
           </Button>
-          <Button onClick={openCreate}>
+          <Button variant="gradient" onClick={openCreate}>
             <Plus className="h-4 w-4" /> Add Class
           </Button>
         </div>
         }
       />
+
+      {/* S5-J — standalone week-nav bar (measured): rounded-xl card, 36px
+          round outline buttons, centered month title + week range. */}
+      <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setWeekStart((w) => addDays(w, -7))}
+          aria-label="Previous week"
+          className="h-9 w-9 rounded-full"
+        >
+          <ChevronLeft className="h-4 w-4" strokeWidth={2} />
+        </Button>
+        <div className="text-center">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{monthTitle}</p>
+          <p className="text-xs text-slate-400">{rangeTitle}</p>
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setWeekStart((w) => addDays(w, 7))}
+          aria-label="Next week"
+          className="h-9 w-9 rounded-full"
+        >
+          <ChevronRight className="h-4 w-4" strokeWidth={2} />
+        </Button>
+      </div>
 
       {gridBuilder && (
         <div className="sf-card p-5 text-sm text-slate-600 dark:text-slate-300">
@@ -156,28 +220,21 @@ export function TimetableView() {
 
       {/* Week grid */}
       <section className="sf-card overflow-hidden">
-        <header className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-          <h2 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">
-            {cursor.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-          </h2>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="iconSm" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} aria-label="Previous month">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="iconSm" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} aria-label="Next month">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </header>
         <div className="sf-scroll overflow-x-auto p-4">
           <div className="min-w-[760px]">
+            {/* S5-J — Sunday-first day headers with the displayed week's
+                date numbers (measured: "Sunday 4", "Monday 5", …). */}
             <div className="grid grid-cols-[60px_repeat(7,1fr)] gap-1 pb-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
               <span />
-              {WEEKDAY_SHORT.map((d, i) => (
-                <span key={d} className={cn(i === today && "text-sf-primary-strong")}>
-                  {d}
-                </span>
-              ))}
+              {WEEK_COLUMNS.map((label, col) => {
+                const date = addDays(weekStart, col);
+                const isToday = colToIso(col) === todayIso;
+                return (
+                  <span key={label} className={cn(isToday && "text-sf-primary-strong")}>
+                    {label} {date.getDate()}
+                  </span>
+                );
+              })}
             </div>
             <div className="relative grid grid-cols-[60px_repeat(7,1fr)] gap-1">
               {/* hour labels */}
@@ -188,31 +245,35 @@ export function TimetableView() {
                   </div>
                 ))}
               </div>
-              {/* day columns */}
-              {WEEKDAY_SHORT.map((_, d) => (
-                <div key={d} className={cn("relative flex flex-col rounded-lg", d === today && "bg-sf-primary-soft/40")}>
+              {/* day columns (Sunday-first) */}
+              {WEEK_COLUMNS.map((label, col) => {
+                const isoDay = colToIso(col);
+                const isToday = isoDay === todayIso;
+                return (
+                <div key={label} className={cn("relative flex flex-col rounded-lg", isToday && "bg-sf-primary-soft/40")}>
                   {Array.from({ length: ROWS }).map((_, r) => (
                     <button
                       key={r}
                       type="button"
-                      aria-label={`Add class ${WEEKDAY_LONG[d]} ${(START_HOUR + r).toString().padStart(2, "0")}:00`}
+                      aria-label={`Add class ${WEEKDAY_LONG[isoDay]} ${(START_HOUR + r).toString().padStart(2, "0")}:00`}
                       onClick={() => {
                         if (!gridBuilder) return;
                         setEditing(null);
                         setName("");
                         setSubjectId("");
-                        setDay(d);
+                        setDay(isoDay);
                         setStartTime(`${(START_HOUR + r).toString().padStart(2, "0")}:00`);
                         setEndTime(`${(START_HOUR + r + 1).toString().padStart(2, "0")}:00`);
                         setRoom("");
                         setTeacher("");
+                        setWeekTypeDraft("ALL");
                         setDialogOpen(true);
                       }}
                       className="h-16 rounded-md border border-slate-100 transition-colors hover:border-slate-200 dark:border-slate-800/60 dark:hover:border-slate-700"
                     />
                   ))}
                   {/* absolutely-positioned class blocks */}
-                  {byDay.get(d)?.map((cls) => {
+                  {byDay.get(isoDay)?.map((cls) => {
                     const top = classTop(cls);
                     if (top === null) return null;
                     return (
@@ -220,7 +281,7 @@ export function TimetableView() {
                         key={cls.id}
                         type="button"
                         onClick={() => openEdit(cls)}
-                        aria-label={`Edit class "${cls.name}" — ${WEEKDAY_LONG[d]} ${cls.startTime} to ${cls.endTime}`}
+                        aria-label={`Edit class "${cls.name}" — ${WEEKDAY_LONG[isoDay]} ${cls.startTime} to ${cls.endTime}`}
                         className="absolute left-1 right-1 overflow-hidden rounded-md p-2 text-left text-white shadow-sm transition-transform hover:scale-[1.02]"
                         style={{
                           top,
@@ -237,13 +298,15 @@ export function TimetableView() {
                     );
                   })}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
 
-      {/* My Classes */}
+      {/* My Classes — S5-J: measured as a 1/2/3-column CARD grid (the
+          clone previously rendered a divided list). */}
       <section className="sf-card overflow-hidden">
         <header className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
           <h2 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">My Classes</h2>
@@ -253,44 +316,57 @@ export function TimetableView() {
             icon={CalendarClock}
             title="No classes yet"
             hint="Add your first class with the Add Class button."
-            action={<Button onClick={openCreate} variant="outline">Add Class</Button>}
+            action={<Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">Add Class</Button>}
           />
         ) : (
-          <ul className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 lg:grid-cols-3">
             {classes.map((cls) => {
               const subject = cls.subjectId ? subjectMap.get(cls.subjectId) : undefined;
+              const weekBadge =
+                cls.weekType === "A" || cls.weekType === "B"
+                  ? `Week ${cls.weekType}`
+                  : null;
               return (
-                <li key={cls.id} className="flex items-center gap-4 px-6 py-3.5">
-                  <span className="h-9 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: cls.color }} />
-                  <div className="w-24 shrink-0 text-sm font-medium text-slate-500">
-                    {WEEKDAY_LONG[cls.dayOfWeek]}
+                <div
+                  key={cls.id}
+                  className="flex flex-col gap-3 rounded-xl border border-slate-100 p-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: cls.color }} aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{cls.name}</p>
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        {WEEKDAY_LONG[cls.dayOfWeek]} · {cls.startTime}–{cls.endTime}
+                        {weekBadge ? ` · ${weekBadge}` : ""}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="iconSm" onClick={() => openEdit(cls)} aria-label={`Edit class "${cls.name}"`}>
+                      Edit
+                    </Button>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{cls.name}</p>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      {cls.startTime}–{cls.endTime}
-                      {subject ? ` · ${subject.name}` : ""}
-                      {cls.room ? ` · ${cls.room}` : ""}
-                      {cls.teacher ? ` · ${cls.teacher}` : ""}
+                  {(subject || cls.room || cls.teacher) && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {[subject?.name, cls.room, cls.teacher].filter(Boolean).join(" · ")}
                     </p>
+                  )}
+                  <div className="mt-auto flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="iconSm"
+                      aria-label={`Delete class "${cls.name}"`}
+                      onClick={() => {
+                        void mutations.deleteTimetableClass(cls.id);
+                        toast.success("Class deleted");
+                      }}
+                      className="text-slate-400 hover:text-red-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(cls)}>Edit</Button>
-                  <Button
-                    variant="ghost"
-                    size="iconSm"
-                    aria-label={`Delete class "${cls.name}"`}
-                    onClick={() => {
-                      void mutations.deleteTimetableClass(cls.id);
-                      toast.success("Class deleted");
-                    }}
-                    className="text-slate-400 hover:text-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </li>
+                </div>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
 
@@ -312,7 +388,7 @@ export function TimetableView() {
                   id="cls-day"
                   value={day}
                   onChange={(e) => setDay(Number(e.target.value))}
-                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm"
+                  className={FIELD_CLASS}
                 >
                   {WEEKDAY_LONG.map((d, i) => (
                     <option key={d} value={i}>{d}</option>
@@ -325,7 +401,7 @@ export function TimetableView() {
                   id="cls-subject"
                   value={subjectId}
                   onChange={(e) => setSubjectId(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm"
+                  className={FIELD_CLASS}
                 >
                   <option value="">None</option>
                   {subjects.map((s) => (
@@ -342,7 +418,7 @@ export function TimetableView() {
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm"
+                  className={FIELD_CLASS}
                   required
                 />
               </div>
@@ -353,7 +429,7 @@ export function TimetableView() {
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm"
+                  className={FIELD_CLASS}
                   required
                 />
               </div>
@@ -368,9 +444,22 @@ export function TimetableView() {
                 <Input id="cls-teacher" value={teacher} onChange={(e) => setTeacher(e.target.value)} maxLength={80} />
               </div>
             </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="cls-week">Week</Label>
+              <Select value={weekTypeDraft} onValueChange={setWeekTypeDraft}>
+                <SelectTrigger id="cls-week">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {WEEK_FILTERS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={busy || !name.trim()}>
+              <Button type="submit" variant="gradient" disabled={busy || !name.trim()}>
                 {busy ? "Saving…" : editing ? "Save changes" : "Add Class"}
               </Button>
             </DialogFooter>

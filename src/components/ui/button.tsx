@@ -14,6 +14,12 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-sf-primary-strong underline-offset-4 hover:underline",
+        // S5-A — the reference's primary CTAs are gradient buttons
+        // (violet-500 → indigo-600 + the v3 `shadow`, measured). The class
+        // pair lives in globals.css (sRGB-exact stops through the accent
+        // tokens); the tinted shadow-lg lives on the empty-state CTAs via
+        // className (see shared.tsx EmptyState).
+        gradient: "sf-gradient sf-gradient-shadow text-sf-primary-foreground",
       },
       size: {
         default: "h-9 px-4 py-2",

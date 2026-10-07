@@ -9,6 +9,7 @@ import {
   studyGroupSchema,
   subjectSchema,
   taskSchema,
+  timetableClassSchema,
 } from "@/lib/validation";
 
 describe("loginSchema", () => {
@@ -58,6 +59,66 @@ describe("eventSchema", () => {
     const parsed = eventSchema.parse({ title: "Study group", startDate: "2026-10-06T17:00:00" });
     expect(parsed.allDay).toBe(false);
     expect(parsed.color).toBe("#8b5cf6");
+  });
+
+  it("carries the S5-B2 reference dialog fields: location, repeat, reminders", () => {
+    // The reference's New Event dialog (measured) has Location / Link,
+    // Repeat (combobox, "No repeat" default) and multi-reminders (minutes
+    // before). Reminders persist as a JSON array of minute offsets.
+    const parsed = eventSchema.parse({ title: "Study group", startDate: "2026-10-06T17:00:00" });
+    expect(parsed.location).toBe("");
+    expect(parsed.repeat).toBe("none");
+    expect(parsed.reminders).toBe("[]");
+
+    const full = eventSchema.parse({
+      title: "Advising",
+      startDate: "2026-10-06T17:00:00",
+      location: "Room 210",
+      repeat: "weekly",
+      reminders: "[15,60]",
+    });
+    expect(full.location).toBe("Room 210");
+    expect(full.repeat).toBe("weekly");
+    expect(full.reminders).toBe("[15,60]");
+
+    expect(eventSchema.safeParse({ title: "X", startDate: "2026-10-06T17:00:00", repeat: "sometimes" }).success).toBe(false);
+    expect(eventSchema.safeParse({ title: "X", startDate: "2026-10-06T17:00:00", reminders: "not-json" }).success).toBe(false);
+    expect(eventSchema.safeParse({ title: "X", startDate: "2026-10-06T17:00:00", reminders: "[15," }).success).toBe(false);
+  });
+});
+
+describe("timetableClassSchema", () => {
+  it("defaults weekType to ALL and accepts Week A / Week B (S5-J)", () => {
+    // The reference's Timetable header carries an "All Weeks" select with
+    // options All Weeks / Week A / Week B (measured) — alternating-week
+    // timetables. The schema models it as weekType ALL|A|B.
+    const parsed = timetableClassSchema.parse({
+      name: "Calculus II",
+      dayOfWeek: 0,
+      startTime: "9:00",
+      endTime: "10:30",
+    });
+    expect(parsed.weekType).toBe("ALL");
+    expect(parsed.room).toBe("");
+
+    const weekA = timetableClassSchema.parse({
+      name: "Lab",
+      dayOfWeek: 1,
+      startTime: "14:00",
+      endTime: "16:00",
+      weekType: "A",
+    });
+    expect(weekA.weekType).toBe("A");
+
+    expect(
+      timetableClassSchema.safeParse({
+        name: "Lab",
+        dayOfWeek: 1,
+        startTime: "14:00",
+        endTime: "16:00",
+        weekType: "C",
+      }).success,
+    ).toBe(false);
   });
 });
 

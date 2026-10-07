@@ -190,7 +190,7 @@ export function ExamsView() {
         subtitle={`${upcomingCount} upcoming · ${thisWeekCount} this week`}
         icon={GraduationCap}
         actions={
-          <Button onClick={openCreate} className="gap-1.5">
+          <Button onClick={openCreate} variant="gradient" className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} />
             Add Exam
           </Button>
@@ -235,7 +235,7 @@ export function ExamsView() {
                     ? "Add your first exam to start preparing in good time."
                     : "Try adjusting the search or filter."
                 }
-                action={<Button variant="outline" onClick={openCreate}>Add Exam</Button>}
+                action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={openCreate}>Add Exam</Button>}
               />
             </div>
           ) : (
@@ -392,7 +392,7 @@ export function ExamsView() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={busy || !title.trim() || !date}>
+              <Button type="submit" variant="gradient" disabled={busy || !title.trim() || !date}>
                 {busy ? "Saving…" : editing ? "Save changes" : "Create Exam"}
               </Button>
             </DialogFooter>

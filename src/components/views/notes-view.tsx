@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, NotebookPen, Pin, PinOff, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, FolderPlus, NotebookPen, Pin, PinOff, Plus, Search, Trash2 } from "lucide-react";
 import { useDataStore, mutations, type Note, type Notebook } from "@/lib/data";
 import { EmptyState, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -84,98 +84,85 @@ export function NotesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <ViewHeader
-        title="Notes"
-        icon={BookOpen}
-        actions={
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setNotebookDialogOpen(true)}>New Notebook</Button>
-          <Button onClick={createNote}><Plus className="h-4 w-4" /> New Note</Button>
-        </div>
-        }
-      />
+      <ViewHeader title="Notes" icon={BookOpen} />
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search notes..."
-            aria-label="Search notes"
-            className="h-9 pl-9"
-          />
-        </div>
-        <select
-          value={notebookFilter}
-          onChange={(e) => setNotebookFilter(e.target.value)}
-          aria-label="Filter by notebook"
-          className="h-9 rounded-md border border-input bg-card px-3 text-sm shadow-sm"
-        >
-          <option value="">All Notebooks</option>
-          {notebooks.map((nb) => (
-            <option key={nb.id} value={nb.id}>{nb.name}</option>
-          ))}
-        </select>
-        <select
-          value={tagFilter}
-          onChange={(e) => setTagFilter(e.target.value)}
-          aria-label="Filter by tag"
-          className="h-9 rounded-md border border-input bg-card px-3 text-sm shadow-sm"
-        >
-          <option value="">All Tags</option>
-          {allTags.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
-        {/* List */}
-        <div className="sf-card flex max-h-[70vh] flex-col overflow-hidden">
-          {visible.length === 0 ? (
-            <EmptyState icon={NotebookPen} title="No notes yet" action={<Button variant="outline" onClick={createNote}>New Note</Button>} />
-          ) : (
-            <ul className="sf-scroll flex-1 divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800">
-              {visible.map((n) => {
-                const notebook = notebooks.find((nb) => nb.id === n.notebookId);
-                return (
-                  <li key={n.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedId(n.id)}
-                      aria-pressed={selectedId === n.id}
-                      className={cn(
-                        "flex w-full flex-col gap-1 px-4 py-3.5 text-left transition-colors",
-                        selectedId === n.id
-                          ? "bg-sf-primary-soft dark:bg-sf-primary-soft-dark"
-                          : "hover:bg-slate-50 dark:hover:bg-slate-800/40",
-                      )}
-                    >
-                      <span className="flex items-center gap-2">
-                        {n.pinned && <Pin className="h-3.5 w-3.5 shrink-0 text-amber-500" />}
-                        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
-                          {n.title || "Untitled"}
-                        </span>
-                      </span>
-                      <span className="truncate text-xs text-slate-400">
-                        {n.content ? n.content.replace(/\n/g, " ").slice(0, 60) : "Empty note"}
-                      </span>
-                      <span className="flex items-center gap-2 text-[11px] text-slate-400">
-                        {notebook && <span className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">{notebook.name}</span>}
-                        {new Date(n.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+      {/* S5-L — measured two-pane layout: left pane w-80 with a border-r
+          divider (NOT a card) carrying the pane header (title + icon-only
+          New Note gradient button), search, and the All Notebooks / All
+          Tags SELECTS side-by-side; the right pane holds the editor. */}
+      <div className="flex h-[calc(100vh-8rem)] min-h-[480px] gap-6">
+        {/* Left pane */}
+        <div className="hidden w-80 flex-col border-r border-slate-100 pr-6 dark:border-slate-800 lg:flex">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">Notes</h2>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setNotebookDialogOpen(true)}
+                aria-label="New notebook"
+                title="New notebook"
+              >
+                <FolderPlus className="h-4 w-4" strokeWidth={2} />
+              </Button>
+              <Button variant="gradient" size="icon" onClick={createNote} aria-label="New note" title="New note">
+                <Plus className="h-4 w-4" strokeWidth={2} />
+              </Button>
+            </div>
+          </div>
+          <div className="relative mb-4">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search notes..."
+              aria-label="Search notes"
+              className="pl-9"
+            />
+          </div>
+          <div className="mb-4 flex gap-2">
+            <select
+              value={notebookFilter}
+              onChange={(e) => setNotebookFilter(e.target.value)}
+              aria-label="Filter by notebook"
+              className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+            >
+              <option value="">All Notebooks</option>
+              {notebooks.map((nb) => (
+                <option key={nb.id} value={nb.id}>{nb.name}</option>
+              ))}
+            </select>
+            <select
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              aria-label="Filter by tag"
+              className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+            >
+              <option value="">All Tags</option>
+              {allTags.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-1 space-y-2 overflow-y-auto sf-scroll pb-4">
+            {visible.length === 0 ? (
+              <EmptyState icon={NotebookPen} title="No notes yet" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
+            ) : (
+              visible.map((n) => (
+                <NoteListItem
+                  key={n.id}
+                  note={n}
+                  selected={selectedId === n.id}
+                  notebookName={notebooks.find((nb) => nb.id === n.notebookId)?.name}
+                  onSelect={() => setSelectedId(n.id)}
+                />
+              ))
+            )}
+          </div>
         </div>
 
         {/* Editor — keyed by note id: switching notes remounts fresh state */}
-        <div className="sf-card flex min-h-[420px] flex-col overflow-hidden">
+        <div className="sf-card flex min-h-[420px] flex-1 flex-col overflow-hidden">
           {selected ? (
             <NoteEditor
               key={selected.id}
@@ -187,6 +174,37 @@ export function NotesView() {
             <EmptyState icon={NotebookPen} title="Select a note" hint="Pick a note from the list or create a new one." />
           )}
         </div>
+      </div>
+
+      {/* Mobile list — the reference's left pane is desktop-only; below lg
+          the clone keeps the notes reachable via a stacked list. */}
+      <div className="flex flex-col gap-3 lg:hidden">
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="gradient" onClick={createNote} className="gap-1.5">
+            <Plus className="h-4 w-4" /> New Note
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => setNotebookDialogOpen(true)} aria-label="New notebook">
+            <FolderPlus className="h-4 w-4" />
+          </Button>
+        </div>
+        {visible.length === 0 ? (
+          <div className="sf-card">
+            <EmptyState icon={NotebookPen} title="No notes yet" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
+          </div>
+        ) : (
+          <ul className="sf-card divide-y divide-slate-100 dark:divide-slate-800">
+            {visible.map((n) => (
+              <li key={n.id}>
+                <NoteListItem
+                  note={n}
+                  selected={selectedId === n.id}
+                  notebookName={notebooks.find((nb) => nb.id === n.notebookId)?.name}
+                  onSelect={() => setSelectedId(n.id)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Notebook dialog */}
@@ -208,6 +226,48 @@ export function NotesView() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/** A note row in the master list — extracted so the desktop pane and the
+ *  mobile stacked list render identical rows. */
+function NoteListItem({
+  note: n,
+  selected,
+  notebookName,
+  onSelect,
+}: {
+  note: Note;
+  selected: boolean;
+  notebookName?: string;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={cn(
+        "flex w-full flex-col gap-1 rounded-lg px-3 py-3 text-left transition-colors",
+        selected
+          ? "bg-sf-primary-soft dark:bg-sf-primary-soft-dark"
+          : "hover:bg-slate-50 dark:hover:bg-slate-800/40",
+      )}
+    >
+      <span className="flex items-center gap-2">
+        {n.pinned && <Pin className="h-3.5 w-3.5 shrink-0 text-amber-500" />}
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+          {n.title || "Untitled"}
+        </span>
+      </span>
+      <span className="truncate text-xs text-slate-400">
+        {n.content ? n.content.replace(/\n/g, " ").slice(0, 60) : "Empty note"}
+      </span>
+      <span className="flex items-center gap-2 text-[11px] text-slate-400">
+        {notebookName && <span className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">{notebookName}</span>}
+        {new Date(n.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+      </span>
+    </button>
   );
 }
 

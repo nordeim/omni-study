@@ -77,6 +77,29 @@ export const eventSchema = z.object({
   endDate: optionalIsoDate,
   allDay: z.boolean().default(false),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#8b5cf6"),
+  // S5-B2 — the reference's New Event dialog fields (measured):
+  // "Location / Link" free text, "Repeat" combobox, multi-"Reminders".
+  location: bounded(160).default(""),
+  repeat: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
+  // JSON array of minute-offsets before start, e.g. "[15,60]".
+  reminders: z
+    .string()
+    .max(200)
+    .default("[]")
+    .refine(
+      (v) => {
+        try {
+          const parsed: unknown = JSON.parse(v);
+          return (
+            Array.isArray(parsed) &&
+            parsed.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 10080)
+          );
+        } catch {
+          return false;
+        }
+      },
+      { message: "reminders must be a JSON array of minute offsets" },
+    ),
 });
 
 export const eventPatchSchema = eventSchema.partial();
@@ -90,6 +113,9 @@ export const timetableClassSchema = z.object({
   room: bounded(80).default(""),
   teacher: bounded(80).default(""),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#8b5cf6"),
+  // S5-J — the reference's "All Weeks / Week A / Week B" select (measured):
+  // alternating-week timetables.
+  weekType: z.enum(["ALL", "A", "B"]).default("ALL"),
 });
 
 export const timetableClassPatchSchema = timetableClassSchema.partial();

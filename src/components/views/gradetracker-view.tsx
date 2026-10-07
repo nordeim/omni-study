@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   Award,
-  CheckCircle2,
   ClipboardList,
   GraduationCap,
   LineChart,
@@ -13,7 +12,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useDataStore, mutations, type Grade } from "@/lib/data";
-import { useSubjectMap, ViewHeader, EmptyState, LoadingCards, ErrorText, SubjectChip, StatCard, SectionCard, STAT_COLORS } from "./shared";
+import { useSubjectMap, ViewHeader, EmptyState, LoadingCards, ErrorText, SubjectChip, SectionCard } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -156,7 +155,10 @@ export function GradeTrackerView() {
 
   // ---- Stats ----
   const overallPct = weightedPercent(grades);
+  // Passing count feeds the By Subject table's summary line (kept data,
+  // matched chrome — S5-M moved the 4th stat card out of the row).
   const passing = grades.filter((g) => g.maxScore > 0 && g.score / g.maxScore >= 0.5).length;
+  const passingLabel = `${passing} of ${grades.length} scores at 50% or above`;
 
   const bySubject = new Map<string, Grade[]>();
   for (const g of grades) {
@@ -185,6 +187,7 @@ export function GradeTrackerView() {
 
   const bestSubject = subjectStats[0]?.name ?? "—";
   const bestDisplay = bestSubject.length > 16 ? `${bestSubject.slice(0, 15)}…` : bestSubject;
+  const summaryLine = `Best subject: ${bestDisplay} · ${passingLabel}`;
 
   // ---- Trend chart points ----
   const trendPoints = [...grades]
@@ -218,7 +221,7 @@ export function GradeTrackerView() {
         subtitle="Monitor your academic performance"
         icon={TrendingUp}
         actions={
-          <Button onClick={openCreate} className="gap-1.5">
+          <Button onClick={openCreate} variant="gradient" className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} />
             Add Grade
           </Button>
@@ -233,39 +236,36 @@ export function GradeTrackerView() {
             icon={GraduationCap}
             title="No grades yet"
             hint="Add your first assessment score to start tracking performance."
-            action={<Button variant="outline" onClick={openCreate}>Add Grade</Button>}
+            action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={openCreate}>Add Grade</Button>}
           />
         </div>
       ) : (
         <>
-          {/* Stat cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="Overall"
-              value={`${Math.round(overallPct)}%`}
-              hint="weighted average"
-              icon={TrendingUp}
-              colors={STAT_COLORS.violet}
-            />
-            <StatCard label="Best Subject" value={bestDisplay} hint="highest average" icon={Award} colors={STAT_COLORS.blue} />
-            <StatCard
-              label="Total Grades"
-              value={String(grades.length)}
-              hint="recorded"
-              icon={ClipboardList}
-              colors={STAT_COLORS.blue}
-            />
-            <StatCard
-              label="Passing"
-              value={String(passing)}
-              hint="scores at 50% or above"
-              icon={CheckCircle2}
-              colors={STAT_COLORS.orange}
-            />
+          {/* Stat cards — S5-M: measured as THREE cards, the first a full
+              violet→indigo gradient card with white text ("Overall Average");
+              white cards carry colored 24px icons + text-4xl/700 values. The
+              clone's Best-Subject / Passing stats fold into the subjects
+              table below (kept data, matched chrome). */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sf-gradient rounded-2xl p-6 text-white shadow-lg">
+              <TrendingUp className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />
+              <p className="mt-2 text-sm opacity-90">Overall Average</p>
+              <p className="mt-2 text-4xl font-bold">{Math.round(overallPct)}%</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+              <ClipboardList className="h-6 w-6 text-emerald-500" strokeWidth={1.75} aria-hidden="true" />
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Total Grades</p>
+              <p className="mt-2 text-4xl font-bold text-slate-800 dark:text-slate-100">{grades.length}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+              <Award className="h-6 w-6 text-blue-500" strokeWidth={1.75} aria-hidden="true" />
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Subjects Tracked</p>
+              <p className="mt-2 text-4xl font-bold text-slate-800 dark:text-slate-100">{subjectStats.length}</p>
+            </div>
           </div>
 
           {/* Per-subject breakdown */}
-          <SectionCard title="By Subject" icon={PieChart}>
+          <SectionCard title="By Subject" icon={PieChart} action={subjectStats.length > 0 ? <span className="text-xs text-slate-400">{summaryLine}</span> : undefined}>
             {subjectStats.length === 0 ? (
               <EmptyState
                 icon={PieChart}
@@ -528,7 +528,7 @@ export function GradeTrackerView() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={busy || !assessment.trim() || score === ""}>
+              <Button type="submit" variant="gradient" disabled={busy || !assessment.trim() || score === ""}>
                 {busy ? "Saving…" : "Add Grade"}
               </Button>
             </DialogFooter>

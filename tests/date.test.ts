@@ -10,12 +10,26 @@ import {
   formatShortWithYear,
   formatTime12h,
   isSameDay,
+  isoWeekNumber,
   isoWeekday,
   minutesToHHMM,
   monthGrid,
   parseHHMM,
   startOfDay,
 } from "@/lib/date";
+
+describe("isoWeekNumber", () => {
+  it("computes the ISO calendar week (the Events panel's CW label)", () => {
+    // The reference rendered "Oct 2026 CW 41" for Wednesday, October 7 2026.
+    expect(isoWeekNumber(new Date(2026, 9, 7))).toBe(41);
+    // Year boundaries: Jan 1 2026 is in week 1; Dec 28 2026 is in week 53.
+    expect(isoWeekNumber(new Date(2026, 0, 1))).toBe(1);
+    expect(isoWeekNumber(new Date(2026, 11, 28))).toBe(53);
+    // Mon Oct 5 and Sun Oct 11 2026 share week 41.
+    expect(isoWeekNumber(new Date(2026, 9, 5))).toBe(41);
+    expect(isoWeekNumber(new Date(2026, 9, 11))).toBe(41);
+  });
+});
 
 describe("isoWeekday / startOfDay / isSameDay", () => {
   it("treats Monday as index 0 (ISO)", () => {

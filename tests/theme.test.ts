@@ -37,6 +37,40 @@ describe("ACCENT_TOKENS", () => {
     expect(ACCENT_TOKENS.violet.emptyTo).toBe("224 231 255"); // indigo-100
   });
 
+  it("carries the S5 gradient hover stop (adjacent-hue 700-level)", () => {
+    // The reference's gradient CTAs hover to from-violet-600 → to-indigo-700
+    // (class list measured) — the hover pair needs its own token because the
+    // 700-level of the ADJACENT hue cannot be derived from the accent.
+    expect(ACCENT_TOKENS.violet.gradientToStrong).toBe("67 56 202"); // indigo-700 #4338CA
+  });
+
+  it("migrated green to the EMERALD family (S5-F: the reference swatch is emerald-500)", () => {
+    // The reference's Appearance accent swatches measured: green =
+    // rgb(16,185,129) = emerald-500 (NOT green-500 rgb(34,197,94)). The
+    // applied accent tokens now match the swatch face exactly.
+    expect(ACCENT_TOKENS.green.primary).toBe("16 185 129"); // emerald-500
+    expect(ACCENT_TOKENS.green.strong).toBe("5 150 105"); // emerald-600
+    expect(ACCENT_TOKENS.green.deep).toBe("4 120 87"); // emerald-700
+    expect(ACCENT_TOKENS.green.soft).toBe("209 250 229"); // emerald-100
+    expect(ACCENT_TOKENS.green.softest).toBe("236 253 245"); // emerald-50
+    expect(ACCENT_TOKENS.green.softDark).toBe("6 78 59"); // emerald-900
+    expect(ACCENT_TOKENS.green.strongDark).toBe("110 231 183"); // emerald-300
+    expect(ACCENT_TOKENS.green.avatarFrom).toBe("52 211 153"); // emerald-400
+  });
+
+  it("migrated orange to the AMBER family (S5-F: the reference swatch is amber-500)", () => {
+    // The reference's orange swatch measured rgb(245,158,11) = amber-500
+    // (NOT orange-500 rgb(249,115,22)).
+    expect(ACCENT_TOKENS.orange.primary).toBe("245 158 11"); // amber-500
+    expect(ACCENT_TOKENS.orange.strong).toBe("217 119 6"); // amber-600
+    expect(ACCENT_TOKENS.orange.deep).toBe("180 83 9"); // amber-700
+    expect(ACCENT_TOKENS.orange.soft).toBe("254 243 199"); // amber-100
+    expect(ACCENT_TOKENS.orange.softest).toBe("255 251 235"); // amber-50
+    expect(ACCENT_TOKENS.orange.softDark).toBe("120 53 15"); // amber-900
+    expect(ACCENT_TOKENS.orange.strongDark).toBe("252 211 77"); // amber-300
+    expect(ACCENT_TOKENS.orange.avatarFrom).toBe("251 191 36"); // amber-400
+  });
+
   it("defines all seven reference accents", () => {
     expect([...ACCENTS]).toEqual([
       "violet",
@@ -90,10 +124,11 @@ describe("accentCssVars", () => {
     expect(vars["--sf-primary-softest-adjacent"]).toBe("238 242 255");
   });
 
-  it("emits the COMPLETE token set — deep/softest/adjacent + S4-G gradients included (S3-J regression pin)", () => {
+  it("emits the COMPLETE token set — deep/softest/adjacent + S4-G gradients + S5 hover stop included (S3-J regression pin)", () => {
     // applyToDocument historically wrote only 6 of the tokens; the rest kept
     // the violet :root defaults, so non-violet accents left the clock violet.
-    // S4-G extends the set with the gradient stops (14 vars total).
+    // S4-G extends the set with the gradient stops; S5 adds the gradient
+    // hover stop (15 vars total).
     for (const accent of ACCENTS) {
       const vars = accentCssVars(accent);
       const t = ACCENT_TOKENS[accent];
@@ -101,11 +136,12 @@ describe("accentCssVars", () => {
       expect(vars["--sf-primary-softest"]).toBe(t.softest);
       expect(vars["--sf-primary-softest-adjacent"]).toBe(t.softestAdjacent);
       expect(vars["--sf-primary-gradient-to"]).toBe(t.gradientTo);
+      expect(vars["--sf-primary-gradient-to-strong"]).toBe(t.gradientToStrong);
       expect(vars["--sf-primary-avatar-from"]).toBe(t.avatarFrom);
       expect(vars["--sf-primary-avatar-to"]).toBe(t.avatarTo);
       expect(vars["--sf-primary-empty-from"]).toBe(t.emptyFrom);
       expect(vars["--sf-primary-empty-to"]).toBe(t.emptyTo);
-      expect(Object.keys(vars)).toHaveLength(14);
+      expect(Object.keys(vars)).toHaveLength(15);
     }
   });
 });

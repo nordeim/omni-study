@@ -257,13 +257,23 @@ export function FilesView() {
         icon={FolderOpen}
         actions={
           <>
+            {/* S5-K — the reference toolbar carries New Folder (outline) +
+                Upload (gradient) only; the clone's Add-Link superset is
+                demoted to an icon-only outline button to keep the row
+                visually tight. */}
             <Button variant="outline" onClick={() => setFolderDialogOpen(true)} className="gap-1.5">
               <FolderPlus className="h-4 w-4" strokeWidth={1.75} /> New Folder
             </Button>
-            <Button variant="outline" onClick={() => setLinkDialogOpen(true)} className="gap-1.5">
-              <Link2 className="h-4 w-4" strokeWidth={1.75} /> Add Link
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setLinkDialogOpen(true)}
+              aria-label="Add link"
+              title="Add link"
+            >
+              <Link2 className="h-4 w-4" strokeWidth={1.75} />
             </Button>
-            <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-1.5">
+            <Button variant="gradient" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-1.5">
               <Upload className="h-4 w-4" strokeWidth={1.75} /> {uploading ? "Uploading…" : "Upload"}
             </Button>
             <input
@@ -278,17 +288,18 @@ export function FilesView() {
         }
       />
 
-      {/* Breadcrumb */}
+      {/* Breadcrumb — S5-K: measured as plain text links (h20,
+          hover:text-violet-600), not pills. */}
       <nav aria-label="Folder breadcrumb" className="flex flex-wrap items-center gap-1 text-sm">
         <button
           type="button"
           onClick={() => setCurrentFolderId(null)}
           aria-current={currentFolderId ? undefined : "page"}
           className={cn(
-            "rounded-md px-2 py-1 font-medium transition-colors",
+            "flex items-center gap-1 px-0.5 font-medium transition-colors",
             currentFolderId
-              ? "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
-              : "bg-sf-primary-soft text-sf-primary-strong dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark",
+              ? "text-slate-600 hover:text-sf-primary-strong dark:text-slate-400"
+              : "text-slate-800 dark:text-slate-200",
           )}
         >
           All Files
@@ -299,17 +310,14 @@ export function FilesView() {
             <span key={f.id} className="flex items-center gap-1">
               <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" aria-hidden="true" />
               {isLast ? (
-                <span
-                  aria-current="page"
-                  className="rounded-md bg-sf-primary-soft px-2 py-1 font-medium text-sf-primary-strong dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
-                >
+                <span aria-current="page" className="px-0.5 font-medium text-slate-800 dark:text-slate-200">
                   {f.name}
                 </span>
               ) : (
                 <button
                   type="button"
                   onClick={() => setCurrentFolderId(f.id)}
-                  className="rounded-md px-2 py-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+                  className="px-0.5 text-slate-600 transition-colors hover:text-sf-primary-strong dark:text-slate-400"
                 >
                   {f.name}
                 </button>
@@ -339,31 +347,38 @@ export function FilesView() {
             <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
+        {/* S5-K — segmented view toggle: measured as a bordered
+            rounded-lg strip with two icon buttons (74x38). */}
         <div
-          className="flex items-center gap-1 rounded-md border border-input bg-card p-0.5 shadow-sm"
+          className="flex items-center overflow-hidden rounded-lg border border-slate-200 shadow-sm dark:border-slate-700"
           role="group"
           aria-label="View mode"
         >
           <Button
             variant={viewMode === "grid" ? "secondary" : "ghost"}
-            size="iconSm"
+            size="icon"
             onClick={() => setViewMode("grid")}
             aria-label="Grid view"
             aria-pressed={viewMode === "grid"}
+            className="rounded-none"
           >
             <LayoutGrid className="h-4 w-4" strokeWidth={1.75} />
           </Button>
           <Button
             variant={viewMode === "list" ? "secondary" : "ghost"}
-            size="iconSm"
+            size="icon"
             onClick={() => setViewMode("list")}
             aria-label="List view"
             aria-pressed={viewMode === "list"}
+            className="rounded-none"
           >
             <List className="h-4 w-4" strokeWidth={1.75} />
           </Button>
         </div>
       </div>
+
+      {/* Section micro-label — measured: text-xs font-semibold uppercase. */}
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Files</p>
 
       {/* Content */}
       {loading ? (

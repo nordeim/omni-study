@@ -117,9 +117,11 @@ async function main() {
 
   await prisma.event.createMany({
     data: [
-      { userId: user.id, title: "Study group — calculus", startDate: day(0, 17), endDate: day(0, 18, 30), color: "#8b5cf6" },
-      { userId: user.id, title: "Library reservation", startDate: day(1, 14), endDate: day(1, 17), color: "#3b82f6" },
-      { userId: user.id, title: "Career fair", startDate: day(4, 10), endDate: day(4, 16), color: "#f97316" },
+      { userId: user.id, title: "Study group — calculus", startDate: day(0, 17), endDate: day(0, 18, 30), color: "#8b5cf6", location: "Library room 2B", reminders: "[30]" },
+      { userId: user.id, title: "Library reservation", startDate: day(1, 14), endDate: day(1, 17), color: "#3b82f6", location: "Main reading hall" },
+      { userId: user.id, title: "Career fair", startDate: day(4, 10), endDate: day(4, 16), color: "#f97316", location: "Sports hall", reminders: "[60,1440]" },
+      // S5-B2 — a weekly recurring event exercises the Repeat expansion.
+      { userId: user.id, title: "Weekly advisor check-in", startDate: day(0, 11), endDate: day(0, 11, 30), color: "#22c55e", repeat: "weekly", reminders: "[15]" },
     ],
   });
 
@@ -132,6 +134,9 @@ async function main() {
       { userId: user.id, name: "Organic Chemistry", subjectId: undefined, dayOfWeek: 2, startTime: "13:00", endTime: "15:00", room: "Lab 1", teacher: "Dr. Novak", color: "#14b8a6" },
       { userId: user.id, name: "Modern History", subjectId: undefined, dayOfWeek: 3, startTime: "10:00", endTime: "11:30", room: "C-301", teacher: "Mr. Kahn", color: "#f97316" },
       { userId: user.id, name: "Mechanics Lab", subjectId: physics.id, dayOfWeek: 4, startTime: "14:00", endTime: "16:00", room: "Lab 3", teacher: "Mr. Iyer", color: "#3b82f6" },
+      // S5-J — alternating-week classes exercise the Week A / Week B model.
+      { userId: user.id, name: "Discrete Math (A-week)", subjectId: math.id, dayOfWeek: 1, startTime: "13:00", endTime: "14:30", room: "D-102", teacher: "Dr. Rao", color: "#8b5cf6", weekType: "A" },
+      { userId: user.id, name: "Stats Lab (B-week)", subjectId: math.id, dayOfWeek: 3, startTime: "15:00", endTime: "17:00", room: "Lab 2", teacher: "Dr. Rao", color: "#ec4899", weekType: "B" },
     ].map((c) => ({ ...c, subjectId: c.subjectId ?? null })),
   });
 

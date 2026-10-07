@@ -16,7 +16,9 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm",
+      // S5-C/S5-D — shadcn-v3 stock trigger: h-9, TRANSPARENT bg, gray-200
+      // border (--input), shadow-sm (measured on the reference's selects).
+      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm",
       "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sf-primary/60",
       "disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
       className,

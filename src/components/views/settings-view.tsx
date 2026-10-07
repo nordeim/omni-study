@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, LogOut, Monitor, Moon, Plus, Settings as SettingsIcon, Sun, Trash2 } from "lucide-react";
+import { LogOut, Monitor, Moon, Plus, Settings as SettingsIcon, Sun, Trash2 } from "lucide-react";
 import { useDataStore, mutations } from "@/lib/data";
 import { ViewHeader } from "./shared";
 import { useThemeStore } from "@/lib/store";
@@ -108,31 +108,53 @@ export function SettingsView() {
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
-        {/* Appearance */}
+        {/* Appearance — S5-F: measured on the reference. Theme = 88px
+            border-2 cards (selected: accent border + 50-level tint); accent
+            swatches = 48px rounded-xl with ring+scale selection (no check
+            icon); avatars = 48px text-2xl tiles (selected: 100-level tint +
+            accent ring + scale-110). */}
         <TabsContent value="appearance">
           <div className="sf-card flex flex-col gap-8 p-6">
             <div>
               <h3 className="mb-3 text-[15px] font-semibold text-slate-800 dark:text-slate-100">Theme</h3>
-              <div className="flex flex-wrap gap-2">
-                {MODES.map((m) => (
-                  <Button
-                    key={m.id}
-                    variant={mode === m.id ? "default" : "outline"}
-                    onClick={() => {
-                      setMode(m.id);
-                      void savePreferences({ themeMode: m.id });
-                    }}
-                    className="gap-2"
-                  >
-                    <m.icon className="h-4 w-4" /> {m.label}
-                  </Button>
-                ))}
+              <div className="flex gap-3">
+                {MODES.map((m) => {
+                  const selected = mode === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => {
+                        setMode(m.id);
+                        void savePreferences({ themeMode: m.id });
+                      }}
+                      aria-pressed={selected}
+                      className={cn(
+                        "flex flex-1 flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all sf-focus",
+                        selected
+                          ? ""
+                          : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600",
+                      )}
+                      style={
+                        selected
+                          ? {
+                              borderColor: "rgb(var(--sf-primary))",
+                              backgroundColor: "rgb(var(--sf-primary-softest))",
+                            }
+                          : undefined
+                      }
+                    >
+                      <m.icon className="h-6 w-6" aria-hidden="true" />
+                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{m.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div>
-              <h3 className="mb-3 text-[15px] font-semibold text-slate-800 dark:text-slate-100">Accent color</h3>
-              <div className="flex flex-wrap gap-2">
+              <h3 className="mb-3 text-[15px] font-semibold text-slate-800 dark:text-slate-100">Accent Color</h3>
+              <div className="flex flex-wrap gap-3">
                 {ACCENTS.map((a) => {
                   const token = ACCENT_TOKENS[a];
                   const rgb = `rgb(${token.primary.split(" ").join(",")})`;
@@ -147,13 +169,11 @@ export function SettingsView() {
                       aria-label={`${a[0]!.toUpperCase()}${a.slice(1)} accent`}
                       aria-pressed={accent === a}
                       className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm transition-transform hover:scale-105 sf-focus",
-                        accent === a && "ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-slate-900",
+                        "h-12 w-12 rounded-xl transition-transform hover:scale-110 sf-focus",
+                        accent === a && "scale-110 ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-slate-900",
                       )}
                       style={{ backgroundColor: rgb }}
-                    >
-                      {accent === a && <Check className="h-4 w-4" strokeWidth={3} />}
-                    </button>
+                    />
                   );
                 })}
               </div>
@@ -163,28 +183,42 @@ export function SettingsView() {
             <div>
               <h3 className="mb-3 text-[15px] font-semibold text-slate-800 dark:text-slate-100">Avatar</h3>
               <div className="grid max-w-lg grid-cols-8 gap-2 sm:grid-cols-12">
-                {AVATAR_EMOJIS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => {
-                      setAvatar(emoji);
-                      void savePreferences({ avatarEmoji: emoji });
-                    }}
-                    aria-label={`Choose avatar ${emoji}`}
-                    aria-pressed={avatar === emoji}
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-xl text-xl transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
-                      avatar === emoji && "bg-sf-primary-soft dark:bg-sf-primary-soft-dark",
-                    )}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+                {AVATAR_EMOJIS.map((emoji) => {
+                  const selected = avatar === emoji;
+                  return (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        setAvatar(emoji);
+                        void savePreferences({ avatarEmoji: emoji });
+                      }}
+                      aria-label={`Choose avatar ${emoji}`}
+                      aria-pressed={selected}
+                      className={cn(
+                        "flex h-12 w-12 items-center justify-center rounded-xl text-2xl transition-all sf-focus",
+                        selected
+                          ? "scale-110 ring-2"
+                          : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700",
+                      )}
+                      style={
+                        selected
+                          ? {
+                              backgroundColor: "rgb(var(--sf-primary-soft))",
+                              boxShadow: "0 0 0 2px rgb(var(--sf-primary))",
+                            }
+                          : undefined
+                      }
+                    >
+                      {emoji}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <Button
+              variant="gradient"
               onClick={() => void savePreferences({})}
               disabled={busy}
               className="self-start"
@@ -324,7 +358,7 @@ export function SettingsView() {
                   type="date"
                   value={newHolidayDate}
                   onChange={(e) => setNewHolidayDate(e.target.value)}
-                  className="flex h-10 rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm"
+                  className="flex h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
                 />
               </div>
               <Button type="submit" disabled={!newHolidayName.trim() || !newHolidayDate}>

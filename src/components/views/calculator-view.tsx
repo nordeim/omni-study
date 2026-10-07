@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Calculator as CalcIcon, History, Plus, Trash2, X } from "lucide-react";
+import { Calculator as CalcIcon, Delete, History, Plus, Trash2, X } from "lucide-react";
 import {
   computeGpa,
   convert,
@@ -24,12 +24,17 @@ import { cn } from "@/lib/utils";
 // Calculator Suite — Basic / Scientific / GPA / Unit Converter tabs plus a
 // History drawer (persisted per user). Matches the reference's tab labels.
 
+const OPERATOR_KEYS = ["÷", "×", "-", "+"];
+
+/** S5-H — the reference's Basic keypad (measured): a 2-col row with
+ *  Clear (red text) + backspace (lucide-delete), then a 4×4 grid of
+ *  digits/operators; the minus key is ASCII "-" (codepoint 45). The %
+ *  function remains available via typed input (engine-supported). */
 const BASIC_KEYS = [
-  ["C", "⌫", "%", "÷"],
-  ["7", "8", "9", "×"],
-  ["4", "5", "6", "−"],
-  ["1", "2", "3", "+"],
-  ["0", ".", "="], // "=" spans the last two columns
+  ["7", "8", "9", "÷"],
+  ["4", "5", "6", "×"],
+  ["1", "2", "3", "-"],
+  ["0", ".", "=", "+"],
 ];
 
 const SCI_KEYS: string[][] = [
@@ -49,39 +54,46 @@ function BasicPad({
 }) {
   return (
     <div className="flex flex-col gap-2">
+      <div className="mb-1 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onKey("C")}
+          aria-label="Clear"
+          className="h-14 rounded-md bg-white text-lg font-semibold text-red-600 shadow-sm transition-transform hover:bg-slate-50 active:scale-95 sf-focus dark:bg-slate-900"
+        >
+          Clear
+        </button>
+        <button
+          type="button"
+          onClick={() => onKey("⌫")}
+          aria-label="Backspace"
+          className="h-14 rounded-md bg-white text-lg font-semibold text-gray-950 shadow-sm transition-transform hover:bg-slate-50 active:scale-95 sf-focus dark:bg-slate-900 dark:text-slate-100"
+        >
+          <Delete className="mx-auto h-5 w-5" strokeWidth={2} aria-hidden="true" />
+        </button>
+      </div>
       {BASIC_KEYS.map((row, ri) => (
         <div key={ri} className="grid grid-cols-4 gap-2">
-          {row.map((key, ki) => {
-            const isOp = ["÷", "×", "−", "+", "%"].includes(key);
+          {row.map((key) => {
+            const isOp = OPERATOR_KEYS.includes(key);
             const isEq = key === "=";
-            const isFn = key === "C" || key === "⌫";
-            const wide = key === "=";
             return (
               <button
-                key={`${ri}-${ki}`}
+                key={`${ri}-${key}`}
                 type="button"
                 onClick={() => onKey(key)}
                 aria-label={
-                  key === "="
-                    ? "Equals"
-                    : key === "⌫"
-                      ? "Backspace"
-                      : key === "C"
-                        ? "Clear"
-                        : `Insert ${key}`
+                  key === "=" ? "Equals" : `Insert ${key}`
                 }
                 className={cn(
-                  "h-14 rounded-xl text-lg font-medium shadow-sm transition-transform active:scale-95 sf-focus",
-                  wide && "col-span-2",
+                  "h-14 rounded-md text-lg font-semibold transition-transform active:scale-95 sf-focus",
                   isEq
-                    ? "text-white"
-                    : isFn
-                      ? "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-                      : isOp
-                        ? "bg-slate-800 text-white hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600"
-                        : "bg-white text-slate-800 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800",
+                    ? "sf-gradient text-white"
+                    : isOp
+                      ? "bg-slate-700 text-white hover:bg-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600"
+                      : "bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800",
                 )}
-                style={isEq ? { backgroundColor: accent } : undefined}
+                style={isEq ? { color: "#fff" } : undefined}
               >
                 {key}
               </button>
@@ -344,16 +356,22 @@ export function CalculatorView() {
         </TabsList>
 
         <TabsContent value="basic">
-          <div className="sf-card mx-auto max-w-sm p-5">
-            <div
-              className="mb-4 flex min-h-[64px] items-center justify-end rounded-xl bg-slate-900 px-4 py-3 text-right font-mono text-2xl text-white dark:bg-slate-800"
-              role="textbox"
-              aria-label="Calculator display"
-              aria-live="polite"
-            >
-              <span className="truncate">{display}</span>
+          {/* S5-H — measured card: rounded-2xl border-slate-200 shadow-lg,
+              display = violet-50→indigo-50 gradient with a 36px/700 value,
+              keypad on a slate-50 tray. */}
+          <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+            <div className="sf-calc-display p-6" aria-live="polite">
+              <p
+                className="mt-2 break-all text-4xl font-bold text-slate-800 dark:text-slate-100"
+                role="textbox"
+                aria-label="Calculator display"
+              >
+                {display}
+              </p>
             </div>
-            <BasicPad display={display} onKey={(k) => (k === "=" ? void submit() : press(k))} accent="rgb(var(--sf-primary))" />
+            <div className="bg-slate-50 p-4 dark:bg-slate-950/40">
+              <BasicPad display={display} onKey={(k) => (k === "=" ? void submit() : press(k))} accent="rgb(var(--sf-primary))" />
+            </div>
           </div>
         </TabsContent>
 

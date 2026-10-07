@@ -158,6 +158,11 @@ model Event {
   endDate     DateTime?
   allDay      Boolean  @default(false)
   color       String   @default("#8b5cf6")
+  // S5-B2 — the reference dialog's fields: Location / Link, Repeat
+  // (none|daily|weekly|monthly), Reminders (JSON minutes-before array).
+  location    String   @default("")
+  repeat      String   @default("none")
+  reminders   String   @default("[]")
   createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -176,6 +181,9 @@ model TimetableClass {
   room      String   @default("")
   teacher   String   @default("")
   color     String   @default("#8b5cf6")
+  // S5-J — the reference's "All Weeks / Week A / Week B" select:
+  // alternating-week timetables.
+  weekType  String   @default("ALL")
   createdAt DateTime @default(now())
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)

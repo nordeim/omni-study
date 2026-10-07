@@ -231,7 +231,7 @@ export function TasksView() {
             </h1>
             <p className="text-base text-slate-500">{visible.length} tasks</p>
           </div>
-          <Button onClick={openCreate} className="gap-1.5">
+          <Button onClick={openCreate} variant="gradient" className="gap-1.5">
             <Plus className="h-4 w-4" /> Add Task
           </Button>
         </div>
@@ -263,7 +263,7 @@ export function TasksView() {
             <EmptyState
               icon={ListChecks}
               title="No tasks yet"
-              action={<Button onClick={openCreate} variant="outline">Create Task</Button>}
+              action={<Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">Create Task</Button>}
             />
           </div>
         ) : (
@@ -389,7 +389,7 @@ export function TasksView() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={busy || !title.trim()}>
+              <Button type="submit" variant="gradient" disabled={busy || !title.trim()}>
                 {busy ? "Saving…" : editing ? "Save changes" : "Create Task"}
               </Button>
             </DialogFooter>

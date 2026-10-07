@@ -176,7 +176,7 @@ export function AssignmentsView() {
         subtitle="Track your homework and projects"
         icon={BookOpen}
         actions={
-          <Button onClick={openCreate} className="gap-1.5">
+          <Button onClick={openCreate} variant="gradient" className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} />
             Add Assignment
           </Button>
@@ -233,7 +233,7 @@ export function AssignmentsView() {
                     ? "Add your first assignment to start tracking coursework."
                     : "Try adjusting the search or filters."
                 }
-                action={<Button variant="outline" onClick={openCreate}>Add Assignment</Button>}
+                action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={openCreate}>Add Assignment</Button>}
               />
             </div>
           ) : (
@@ -389,7 +389,7 @@ export function AssignmentsView() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={busy || !title.trim()}>
+              <Button type="submit" variant="gradient" disabled={busy || !title.trim()}>
                 {busy ? "Saving…" : editing ? "Save changes" : "Create Assignment"}
               </Button>
             </DialogFooter>
