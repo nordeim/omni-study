@@ -1,0 +1,147 @@
+# Worklog — Omni-Study Clone Build
+
+---
+Task ID: 1
+Agent: Super Z (main agent)
+Task: Clone https://omni-study1.base44.app/ (AcademiaFlow/StudyFlow) into the nordeim/omni-study repo scaffold as a production-ready functional superset with visual parity.
+
+Work Log:
+- Read operating instructions (upload/Pasted Content_1791329164530.txt) — coding specialist contract: evidence-based verification, root-cause discipline, security-first.
+- Loaded fullstack-dev skill; per user instruction, will NOT run init-fullstack.sh — the omni-study repo clone IS the codebase root.
+- Cloned https://github.com/nordeim/omni-study.git → omni-study-clone (scaffold: package.json "orbital", db-path.ts, vitest/playwright configs, tests from prior ORBITAL sessions — STALE for this reference, skills/ catalog, docs/ incl. Tailwind-V4-Validation-Report.md).
+- Cloned scandihaven (reference for stack/architecture conventions: Next 16 + React 19 + TS strict + Tailwind v4 @theme + Radix/shadcn + Zod + Zustand + Vitest/Playwright).
+- Read docs/Tailwind-V4-Validation-Report.md — captured the 5 documented v3→v4 traps + 3 methodology findings (must apply in build):
+  1. @theme inline vars must be full hsl() colors (bare triplets → transparent)
+  2. Pin v3 palette hexes in @theme (oklch drift)
+  3. Use arbitrary bg-[linear-gradient(...)] for sRGB-exact gradients (oklab interpolation)
+  4. space-y/space-x v4 rewrite: :where() zero specificity — never mix explicit mt-*/mb-* children inside space-* containers
+  5. Pin --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05) (v4 shifted scale one notch)
+  + hover: probes must use Playwright (@media (hover:hover) false-fails on touch emulation)
+  + next.config allowedDevOrigins: ["127.0.0.1"] for dev-chunk access
+- RECON of live reference site (agent-browser, authed as sepnetflix2023@outlook.com):
+  - App = "AcademiaFlow (Copy)" branding on login; in-app brand = "StudyFlow — Your study companion"
+  - 20 sidebar views at PASCALCASE routes: /Dashboard /MyDay /Tasks /Calendar /Events /Timetable /Assignments /Exams /Notes /Flashcards /PracticeTests /StudyGroups /GradeTracker /Analytics /Files /Calculator /MathSolver /AIAssistant /FocusTimer /Settings
+  - SPA (rolldown React chunks, base44 entities API: User/Task/Assignment/Exam/Subject/FocusSession/Event)
+  - Mobile (390px): hamburger → drawer with brand header + close button + all 20 links; no bottom tab bar
+  - Design tokens MEASURED via computed styles: app bg linear-gradient(to right bottom, rgb(248,250,252), rgb(255,255,255), rgba(245,243,255,0.3)); sidebar 260px bg white/80; cards white, border 1px solid #f1f5f9, radius 16px, shadow rgba(0,0,0,.05) 0 1px 2px (v3 shadow-sm), padding 24px; stat value 30px/700 slate-800; section title 18px/600; View All links violet-600 #7C3AED; buttons radius 6px; theme vars RGB triplets (--primary: 139 92 246 = #8B5CF6); body font system sans; login card white/rounded ~16-20px on #F3F4F6-ish bg, Google button bordered white, Sign in dark slate.
+  - Settings Appearance tab: Light/Dark/System + 7 accent colors (Violet/Blue/Green/Orange/Pink/Red/Teal) + emoji avatar picker + Save Preferences.
+  - Calculator tabs: Basic/Scientific/GPA Calculator/Unit Converter + History. AI Assistant: 6 quick actions. FocusTimer: modes + presets (Pomodoro 25/5/15, Deep Work 50/10/30) + subject select. MathSolver: textarea + Upload Image + Solve.
+- Captured 27 reference screenshots + a11y trees → /home/z/my-project/ref-captures/
+- Note: docs/personalized-tutor-app-dashboard.png in repo is a STALE artifact (Thinkerwell — different app from an older session); live site is ground truth.
+
+Stage Summary (decisions):
+- Codebase root: /home/z/my-project/omni-study (the cloned repo); workspace root gets a thin package.json wrapper whose dev script delegates into the repo so the system auto dev server serves it on port 3000.
+- Stack (repo convention + user instruction): Next.js 16 App Router, React 19, TS strict, Tailwind v4 CSS-first with all 5 trap fixes, shadcn-style components on Radix, Prisma + SQLite at repo-root db/ (DATABASE_URL="file:../db/custom.db"), Zustand UI state, Zod validation, z-ai-web-dev-sdk (backend-only) for AI Assistant + Math Solver, Vitest unit + Playwright e2e.
+- Routing: single app page (/) + client-side view switching with location.pathname sync + next.config rewrites for the 20 PascalCase paths (matches reference SPA behavior); dedicated /login route (reference redirects unauthenticated users there).
+- Auth: email/password (scrypt) + HMAC-signed cookie session (repo .env.example convention) + rate limiting; Google button rendered for parity (honest "not configured" behavior).
+- Superset: all 20 views fully functional with real CRUD persistence (reference has many empty states), working AI features, theme system.
+- Next: workspace setup → deps → Prisma schema → design tokens → libs → UI kit → API routes → views → tests → browser verification → push → docs → screenshots → final push.
+
+---
+Task ID: 9-b
+Agent: View builder (4 views: PracticeTests, StudyGroups, Files, FocusTimer)
+Task: Create src/components/views/{practicetests,studygroups,files,focustimer}-view.tsx per reference-app specs, matching established tasks-view/myday-view patterns and shared.tsx APIs.
+
+Work Log:
+- Read worklog Task 1 + shared.tsx, tasks-view, myday-view, dashboard-view, lib/data.ts, lib/date.ts, lib/api.ts, lib/validation.ts, server entities/http, prisma schema, all relevant UI kit files (button/input/dialog/select/badge/primitives/dropdown-menu/toast) — used only verified APIs.
+- practicetests-view.tsx: Create/Edit dialog (title req, subject select, optional date, totalQuestions default 20, optional durationMinutes); status badges created=secondary / in_progress=warning / completed=success; Start Test → in_progress; inline correctCount input + Finish → completed with score=round(correct/total*100) (total=0 guarded); score% + correct/total shown when completed; edit (prefilled) + delete via DropdownMenu; empty "No practice tests yet" + Create Test.
+- studygroups-view.tsx: two-column lg layout (left: search + group cards w/ color dot, member count, next meeting; right: detail pane, "Select a group" empty state when none). Dialog: name req, description, subject, 7 color swatches, dynamic member rows (name + optional email, add/remove, max 10), nextMeeting date. Detail pane: subject chip, next meeting (formatFullDate), member list (initial avatar circles + name + email), inline add-member form, per-member remove, edit + delete group. NOTE: server stores members as JSON string while client interface says array → added defensive toMemberList() normalizer handling both shapes.
+- files-view.tsx: toolbar (New Folder + Add Link outline dialogs, Upload primary w/ hidden file input via apiUpload("/api/files", file, currentFolderId), ≤2MB client check + error toast); breadcrumb chain via parentId walk with clickable ancestors + back nav; search + type filter Select (All/Images/Documents/Other by mimeType; text/uri-list links get Link2 icon); grid/list toggle (LayoutGrid/List, aria-pressed); grid = folder cards (Folder icon + item count) + file cards (kind icon: FileImage/FileText/Link2/File, size B/KB/MB inline formatter, short date); list = divide-y rows; folder click navigates, file click window.open("/api/files/{id}"), trash delete w/ toast (confirm-less per spec); empty "No files yet".
+- focustimer-view.tsx: mode buttons Focus/Short Break/Long Break (Brain/Coffee/Moon; selected bg-sf-primary); presets Pomodoro 25/5/15 + Deep Work 50/10/30 (set all three durations + toast); SVG ring r=110 with progress stroke style rgb(var(--sf-primary)), mm:ss centered via pad() helper; Play/Pause (primary), Reset + Skip (outline). Timer is drift-free: endAtRef absolute deadline + 250ms interval recomputing remaining; pause freezes remaining, resume recomputes deadline; completion handler kept fresh via completeRef updated every render (no stale closure with [running]-only effect); on completion logs mutations.createFocusSession({durationMinutes: mode total, mode, subjectId|null, date: now ISO}) + toast.success("Focus session complete! 🎉") for focus (breaks get "… finished — time to focus!") + auto-advance focus→short_break, breaks→focus. Skip ends session early without logging (spec logs on completion only). Subject Radix Select w/ "Select subject" placeholder. Today's Sessions card: count + formatMinutes(total) + max-h-96 sf-scroll session list w/ subject names + mode icons.
+- All 4 views: "use client", flex gap-* only (no space-y/x), dark: variants on every slate color, aria-labels on icon-only buttons, loading = status idle|loading → LoadingCards, error → ErrorText, empty states via EmptyState, mutations via mutations object, strokeWidth 1.75.
+- Verification: bunx tsc --noEmit → ZERO errors in my 4 files (remaining errors are other agents' in-flight files: page.tsx missing view modules calendar/timetable/notes/flashcards/analytics/calculator/mathsolver/aiassistant/settings, api/math route model prop, sidebar.tsx style prop, calculator.ts Token union, greetingForHour missing in lib/date used by dashboard+myday). bunx eslint on the 4 files → exit 0 clean.
+- Constraint honored: modified nothing outside the 4 view files.
+
+Files created:
+- omni-study/src/components/views/practicetests-view.tsx
+- omni-study/src/components/views/studygroups-view.tsx
+- omni-study/src/components/views/files-view.tsx
+- omni-study/src/components/views/focustimer-view.tsx
+
+tsc status for my files: clean (0 errors). Full-record copy: /home/z/my-project/agent-ctx/9-b-views-agent.md
+
+---
+Task ID: 9-a
+Agent: 9-a view-builder (subagent)
+Task: Build 4 React view components for StudyFlow (omni-study repo): AssignmentsView, ExamsView, EventsView, GradeTrackerView.
+
+Work Log:
+- Read worklog Task 1 context + shared.tsx, dashboard/myday/tasks views, lib/data.ts (entities + mutations), lib/date.ts, ui kit (button/input/dialog/select/badge/primitives/dropdown-menu/toast), lib/calculator.ts, page.tsx (view registry), tsconfig, eslint config.
+- Verified lucide-react 0.525.0 icon exports and twMerge v3 conflict resolution (bg-sf-primary vs bg-[var(--x)] — later wins) before coding.
+- Created src/components/views/assignments-view.tsx: search + status/subject Radix Select filters (default all), sf-card list with SubjectChip, due-urgency badge (red/amber/slate), priority + status Badges, dropdown edit/delete, full create/edit dialog (title/description/subject/dueDate/priority/status), direct delete + toast, active-first then due-date sort.
+- Created src/components/views/exams-view.tsx: search + Upcoming(default)/Past/All filter (upcoming = status upcoming && date >= today), cards with "Tue, Oct 13 · 9:00 AM" formatting, MapPin location, countdown badge (Today/Tomorrow/N days sf-primary-soft; Past slate; Completed success), dropdown Edit / Mark as Done↔Upcoming (updateExam {status}) / Delete, dialog combining date+time inputs into local datetime ISO.
+- Created src/components/views/events-view.tsx: create/edit dialog (datetime-local start/end, all-day checkbox, 7 color swatches, aria-pressed), 7-day selectable date strip (weekday + day number + event dot, sf-primary selected state), selected-day SectionCard with dayBucketLabel title + "Nothing scheduled" empty state, day-grouped "Next 7 Days"⇄"All Events" list (Switch toggle) with Today/Tomorrow bucket headers, color-dot rows with time ranges, Trash2 delete + toast.
+- Created src/components/views/gradetracker-view.tsx: Add Grade dialog (assessment/score/maxScore 100/weight 1/type/date), StatCard row (Overall weighted %, Best Subject, Total Grades, Passing ≥50%), By Subject tiles with Progress bars colored per subject via indicatorClassName bg-[var(--subject-bar)] + inline CSS var, scrollable Recent Grades list (max-h-96 sf-scroll) with type badges + delete, pure inline-SVG trend chart (600×240 viewBox, non-scaling strokes, HTML-positioned dots for distortion-free circles, gridlines + y labels, first/last date labels, <2 points → guidance empty state).
+- Cross-cutting: ViewHeader/EmptyState/LoadingCards/ErrorText/SectionCard/StatCard/SubjectChip reuse, flex gap-* only (no space-y), dark: variants everywhere, aria-labels on icon-only controls, toasts on all mutations, local-timezone-safe ISO→input value helpers, status idle||loading → LoadingCards (matches 9-b convention).
+- Verification: bunx tsc --noEmit → zero errors in my 4 files (remaining errors are other agents' missing views + pre-existing sidebar/calculator/math-route/greetingForHour issues); bunx eslint on the 4 files → exit 0.
+- Work record also written to agent-ctx/9-a-views-agent.md.
+
+Stage Summary:
+- 4/4 views delivered and type-clean; page.tsx now resolves assignments/exams/events/gradetracker imports. Remaining for full app compile: calendar, timetable, notes, flashcards, analytics, calculator, mathsolver, aiassistant, settings views (other agents) + greetingForHour export in lib/date.
+
+---
+Task ID: 2-11
+Agent: Super Z (main agent) + subagents 9-a, 9-b (full-stack-developer)
+Task: Build the complete StudyFlow clone codebase, verify parity, add test suites.
+
+Work Log:
+- Workspace: repo moved to /home/z/my-project/omni-study; root wrapper package.json (dev → cd omni-study && bun run dev) so the system auto dev server serves the app on :3000.
+- DB contract fixed (empirically verified): Prisma CLI anchors ENV-provided relative file: URLs at CWD, but HARDCODED schema urls at the schema file. prisma/schema.prisma now pins url="file:../db/custom.db" (CLI → repo-root db/); runtime keeps .env DATABASE_URL="file:../db/custom.db" resolved by src/lib/db-path.ts (module anchor) → same file. e2e isolation via generated schema copy in global-setup.
+- Added deps: zod + radix tabs/dropdown-menu/checkbox/switch/progress/avatar/tooltip/separator/scroll-area.
+- Prisma schema: 20 models (User, Subject, TaskList, Task, Assignment, Exam, Event, TimetableClass, Notebook, Note, FlashcardDeck, Flashcard, PracticeTest, StudyGroup, Grade, FocusSession, FileFolder, FileItem, AiChatMessage, CalculatorHistoryEntry, Holiday). db:push + seed (demo@studyflow.app / Demo1234!) done at db/custom.db.
+- globals.css: all 5 Tailwind v4 traps applied (full hsl() theme vars; v3-pinned slate/violet hexes; --shadow-sm pin 0 1px 2px rgb(0 0 0/0.05); sRGB-exact sf-canvas gradient; gap-based layout convention — no space-* with margin children). Added .glass (sidebar backdrop), .sf-card, sf-skeleton/shimmer/toast animations.
+- libs: auth.ts (scrypt + HMAC cookie sessions + rate limit), router.ts (20-view map), date.ts, theme.ts (7 accents RGB-triplet vars), calculator.ts (shunting-yard engine w/ u- unary op, GPA, unit converter), validation.ts (Zod at every boundary), api.ts, store.ts (zustand app/theme), data.ts (data cache + mutations).
+- UI kit: button, card, input/textarea/label, dialog, select, tabs, badge, primitives (checkbox/switch/progress/separator/skeleton), dropdown-menu, toast (zustand toaster).
+- API: health; auth login/register/logout/me (rate-limited, no user enumeration); CRUD factory (src/lib/server/{http,entities}.ts) × 16 entities with userId-scoped WHERE; files upload/link/download (≤2MB base64); preferences; calculator history; ai/chat + ai/messages (z-ai-web-dev-sdk server-only); math/solve (text LLM + image createVision).
+- Views: dashboard (measured parity rewrite: stat grid cols-2/lg:4 gap-4, gradient chips violet/blue/orange/pink + w-32 opacity-10 blobs, lg:grid-cols-3 with Tasks col-span-2 + Exams, Assignments full width, text-3xl greeting, gradient Start My Day + Sparkles), myday, tasks, calendar, events, timetable, notes (keyed NoteEditor w/ autosave), flashcards (flip study mode), analytics (inline SVG charts), calculator (4 tabs + history), mathsolver (LLM+vision), aiassistant (6 quick actions + chat), settings (5 tabs incl. theme/accent/emoji). Subagents 9-a/9-b built assignments/exams/events/gradetracker + practicetests/studygroups/files/focustimer.
+- Login page: measured parity (white card, brand chip, Google button w/ honest not-configured toast, "or" divider, icon inputs, dark Sign in button, demo hint).
+- Shell: sidebar FIXED w-[260px] hidden lg:flex + glass + shadow-xl; active item gradient tint rgb(primary/0.1)+violet-600 text + trailing dot; brand p-6 border-b; clock gradient chip text-2xl/700 violet-700; mobile: h-16 app bar + drawer (all 20 links, Esc/backdrop close); main lg:ml-[260px] pt-16 lg:pt-0 p-4 lg:p-8.
+- Browser verification (agent-browser): login flow ✓; all 20 views render with ZERO console errors ✓; mobile drawer open/navigate/close ✓; lg breakpoint: sidebar 260px + margin-left 260px, no hamburger ✓; VLM parity check on dashboard: EXCELLENT (pixel-level match of layout/sidebar/stat cards/section headers/typography).
+- Tests: 82 vitest unit tests GREEN (router, theme, date, calculator, auth, validation, db-path). Playwright e2e suite rewritten for StudyFlow: auth.spec (login/logout/redirect), mobile-navigation.spec (KEY: drawer, 20 links, close behaviors, lg breakpoint), navigation.spec (sidebar active state computed pins, 20 views render, v3 shadow-sm pin, canvas gradient pin), tasks.spec (CRUD golden path), calculator.spec (keypad, tabs, GPA, converter, theme switching).
+- Fixed along the way: greetingForHour import location; math route createVision model param; sidebar icon type; calculator Token narrowing; notes-view effect-setState refactor (keyed editor); lint clean; tsc clean.
+
+Stage Summary:
+- Clone is feature-complete and visually verified; unit layer green. Next: production build + Playwright e2e run, then git push, docs, screenshots.
+
+---
+Task ID: 12-14
+Agent: Super Z (main agent)
+Task: DB contract fix, e2e green, push #1, docs (README/AGENTS/CLAUDE/PAD), screenshots, final push.
+
+Work Log:
+- DB contract root-caused with decisive experiments: Prisma CLI anchors SHELL-provided env file: URLs at the schema (correct) but .env-loaded ones at CWD; hardcoded schema urls embed into the generated client (kills e2e isolation). Final architecture: schema env("DATABASE_URL") + db:* scripts with inline shell env + db-path.ts correction for Next-dev's project-dir pre-resolution (absolute-missing → schema-anchored default). All pinned by tests (83 unit).
+- Keypad bug fixed (duplicate "=" key), Radix tab assertions corrected (aria-selected), theme test restores violet accent, unique e2e row titles, canvas race fixed (wait for hydration).
+- FINAL GATES: lint ✓ typecheck ✓ test 83 ✓ build ✓ test:e2e 54 ✓.
+- Push #1 via ssh_git_wrapper_v3.py + paramiko shim (/home/z/my-project/bin/ssh, outside repo): bd8f76d..715ab89 pushed, remote verified == local HEAD, key shredded. Dry-run performed first.
+- Screenshots captured to docs/screenshots/ (18 files: login, 14 desktop views, 3 mobile incl. drawer) after diagnosing an OOM kill of next-server (4GB container + multiple chrome sessions) — closed extra sessions, restarted, genuine distinct captures verified by file sizes.
+- Docs written per the four repo skills (agents-md, claude-md, readme-md, project-architecture-document-md):
+  - README.md: badges (verifiable only), features table (implemented only), architecture table + mermaid, file hierarchy, tested Quick Start, env vars, testing, API reference, design tokens, troubleshooting (real fixes incl. the db-path contract + OOM), status table.
+  - AGENTS.md: compact high-signal — commands, gate order, the 3-anchor DATABASE_URL contract, architecture facts (SPA+rewrites, stores, CRUD factory, server-only SDK), the 5 Tailwind traps, testing quirks (stale build, shared session, unique titles, accent restore, Radix tab semantics, OOM).
+  - CLAUDE.md: Meticulous Approach six-phase workflow + project principles, implementation standards (Next16/React19/Tailwind4/Zustand/Prisma conventions), workflow tables, testing strategy, quality/git/debugging standards, env vars, success metrics, anti-patterns.
+  - Project_Architecture_Document.md: full PAD — 7 ADRs (SPA rewrites, 3-anchor DB contract, HMAC/scrypt auth, v4 token pins, Zustand cache, CRUD factory, two-layer testing), mermaid topology + ER diagram, layer model, annotated tree, 4 critical code patterns, security rules/threat model, test distribution, build/deploy, developer handbook, honest known-issues table, key files, glossary.
+- Stale ORBITAL-era parity specs removed; auth.setup/global-setup/helpers adapted to StudyFlow (demo@studyflow.app / Demo1234!).
+- dev server restarted (setsid) and healthy at :3000 for the preview.
+
+Stage Summary:
+- All deliverables complete: working superset clone, 137 green tests, parity verified (VLM verdict EXCELLENT on dashboard), pushed to git@github.com:nordeim/omni-study.git (715ab89), docs + screenshots committed for final push.
+
+---
+Task ID: 15
+Agent: Super Z (main agent)
+Task: Final push, stability verification, handoff.
+
+Work Log:
+- Final push #2 via ssh_git_wrapper_v3.py: f3d67e2 (docs + screenshots) verified on remote main == local HEAD.
+- Operator deploy key shredded (wrapper already shredded its own temp copy per contract).
+- Diagnosed recurring dev-server deaths: OOM killer targets next-server (1.6GB RSS under browser load) in the 4GB container. With browser sessions closed, server stable at ~375MB idle; health endpoint green across repeated probes.
+- Final state: git tree clean, 2 commits pushed (715ab89 codebase + tests, f3d67e2 docs + screenshots), dev server running on :3000 for preview, db/custom.db seeded (demo@studyflow.app / Demo1234!).
+
+Stage Summary — ALL DELIVERABLES COMPLETE:
+1. Working clone (functional superset) of omni-study1.base44.app — 20 views, 20 Prisma models, 40+ API endpoints, auth, AI features.
+2. Visual parity verified (VLM verdict EXCELLENT; computed-style pins in e2e).
+3. 137 tests green (83 Vitest unit + 54 Playwright e2e vs production build).
+4. DATABASE_URL="file:../db/custom.db" with db/ at repo root; 3-anchor contract documented + regression-pinned.
+5. Mobile navigation verified (drawer, 20 links, navigation, close behaviors, lg breakpoint).
+6. Pushed to git@github.com:nordeim/omni-study.git via SSH wrapper (both commits remote-verified).
+7. AGENTS.md / CLAUDE.md / README.md / Project_Architecture_Document.md created per the four repo skills.
+8. 18 dev-server screenshots under docs/screenshots/.
