@@ -1,0 +1,92 @@
+import { expect, test } from "@playwright/test";
+
+// Calculator + theme switching: the pure engines are unit-tested in
+// Vitest (tests/calculator.test.ts, tests/theme.test.ts); these specs pin
+// the UI wiring — keypad arithmetic, tabs, and accent/mode persistence.
+
+test.use({ viewport: { width: 1440, height: 900 } });
+
+test.describe("calculator suite", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/Calculator");
+  });
+
+  test("basic arithmetic through the keypad", async ({ page }) => {
+    // Scope to the Basic tabpanel: the Scientific pane keeps its own keypad
+    // mounted in the DOM, so unscoped role lookups are ambiguous.
+    const basic = page.getByRole("tabpanel", { name: "Basic" });
+    await basic.getByRole("button", { name: "Insert 7" }).click();
+    await basic.getByRole("button", { name: "Insert ×" }).click();
+    await basic.getByRole("button", { name: "Insert 8" }).click();
+    await basic.getByRole("button", { name: "Equals" }).click();
+    await expect(page.getByLabel("Calculator display")).toContainText("56");
+  });
+
+  test("chain operations and clear", async ({ page }) => {
+    const basic = page.getByRole("tabpanel", { name: "Basic" });
+    await basic.getByRole("button", { name: "Insert 1" }).click();
+    await basic.getByRole("button", { name: "Insert 2" }).click();
+    await basic.getByRole("button", { name: "Insert +" }).click();
+    await basic.getByRole("button", { name: "Insert 3" }).click();
+    await basic.getByRole("button", { name: "Equals" }).click();
+    await expect(page.getByLabel("Calculator display")).toContainText("15");
+    await basic.getByRole("button", { name: "Clear" }).click();
+    await expect(page.getByLabel("Calculator display")).toContainText("0");
+  });
+
+  test("all four calculator tabs switch", async ({ page }) => {
+    for (const tab of ["Basic", "Scientific", "GPA Calculator", "Unit Converter"]) {
+      await page.getByRole("tab", { name: tab }).click();
+      // Radix tabs expose data-state="active" + aria-selected (not "selected").
+      await expect(page.getByRole("tab", { name: tab })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+    }
+    await expect(page.getByRole("tabpanel", { name: "Unit Converter" }).getByLabel("Value")).toBeVisible();
+  });
+
+  test("the GPA tab computes a weighted GPA", async ({ page }) => {
+    await page.getByRole("tab", { name: "GPA Calculator" }).click();
+    // Seeded rows: A (4.0 × 3cr) + B+ (3.3 × 4cr) → 25.2/7 = 3.6
+    await expect(page.getByText("3.60")).toBeVisible();
+  });
+
+  test("the converter converts meters to feet", async ({ page }) => {
+    await page.getByRole("tab", { name: "Unit Converter" }).click();
+    const panel = page.getByRole("tabpanel", { name: "Unit Converter" });
+    await panel.getByLabel("Value").fill("1");
+    // defaults: m -> ft (1 / 0.3048 = 3.2808398…)
+    await expect(page.getByText(/3\.2808/).first()).toBeVisible();
+  });
+});
+
+test.describe("theme system", () => {
+  test("switching the accent recolors the active nav chip", async ({ page }) => {
+    await page.goto("/Settings");
+    await page.getByRole("button", { name: "Teal accent" }).click();
+    // The token change is applied to <html> as an RGB triplet var.
+    const primary = await page.evaluate(
+      () => getComputedStyle(document.documentElement).getPropertyValue("--sf-primary").trim(),
+    );
+    expect(primary).toBe("20 184 166"); // teal-500 triplet
+    // It persists (saved to the user record).
+    await page.goto("/Dashboard");
+    const after = await page.evaluate(
+      () => getComputedStyle(document.documentElement).getPropertyValue("--sf-primary").trim(),
+    );
+    expect(after).toBe("20 184 166");
+    // Restore the default accent — later specs (and the shared user record)
+    // must not inherit this test's teal.
+    await page.goto("/Settings");
+    await page.getByRole("button", { name: "Violet accent" }).click();
+  });
+
+  test("dark mode toggles the html class", async ({ page }) => {
+    await page.goto("/Settings");
+    await page.getByRole("button", { name: "Dark", exact: true }).click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await page.getByRole("button", { name: "Light", exact: true }).click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+  });
+});

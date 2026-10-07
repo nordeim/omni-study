@@ -1,0 +1,120 @@
+import { describe, expect, it } from "vitest";
+import {
+  addDays,
+  addMonths,
+  dayBucketLabel,
+  daysUntil,
+  formatHHMMRange,
+  formatLongDate,
+  formatMinutes,
+  formatShortWithYear,
+  formatTime12h,
+  isSameDay,
+  isoWeekday,
+  minutesToHHMM,
+  monthGrid,
+  parseHHMM,
+  startOfDay,
+} from "@/lib/date";
+
+describe("isoWeekday / startOfDay / isSameDay", () => {
+  it("treats Monday as index 0 (ISO)", () => {
+    expect(isoWeekday(new Date(2026, 9, 5))).toBe(0); // Mon Oct 5 2026
+    expect(isoWeekday(new Date(2026, 9, 6))).toBe(1); // Tue
+    expect(isoWeekday(new Date(2026, 9, 11))).toBe(6); // Sun
+  });
+
+  it("startOfDay zeroes the clock", () => {
+    const d = startOfDay(new Date(2026, 9, 6, 23, 59, 30));
+    expect(d.getHours()).toBe(0);
+    expect(d.getMinutes()).toBe(0);
+    expect(d.getSeconds()).toBe(0);
+  });
+
+  it("isSameDay compares calendar days only", () => {
+    expect(isSameDay(new Date(2026, 9, 6, 1), new Date(2026, 9, 6, 23))).toBe(true);
+    expect(isSameDay(new Date(2026, 9, 6), new Date(2026, 9, 7))).toBe(false);
+  });
+});
+
+describe("addDays / addMonths", () => {
+  it("addDays crosses month boundaries", () => {
+    expect(addDays(new Date(2026, 9, 30), 2).getDate()).toBe(1); // Oct 30 + 2 = Nov 1
+  });
+
+  it("addMonths clamps to the first of the month", () => {
+    const next = addMonths(new Date(2026, 9, 31), 1);
+    expect(next.getMonth()).toBe(10);
+    expect(next.getDate()).toBe(1);
+  });
+});
+
+describe("formatters", () => {
+  it("formatLongDate renders 'October 6, 2026'", () => {
+    expect(formatLongDate(new Date(2026, 9, 6))).toBe("October 6, 2026");
+  });
+
+  it("formatTime12h renders 12-hour clock with padded minutes", () => {
+    expect(formatTime12h(new Date(2026, 9, 6, 0, 5))).toBe("12:05 AM");
+    expect(formatTime12h(new Date(2026, 9, 6, 13, 29))).toBe("1:29 PM");
+    expect(formatTime12h(new Date(2026, 9, 6, 23, 0))).toBe("11:00 PM");
+    expect(formatTime12h(new Date(2026, 9, 6, 12, 0))).toBe("12:00 PM");
+  });
+
+  it("formatShortWithYear renders 'Tue, Oct 6'", () => {
+    expect(formatShortWithYear(new Date(2026, 9, 6))).toBe("Tue, Oct 6");
+  });
+
+  it("formatMinutes renders hours and minutes", () => {
+    expect(formatMinutes(45)).toBe("45m");
+    expect(formatMinutes(60)).toBe("1h");
+    expect(formatMinutes(135)).toBe("2h 15m");
+  });
+});
+
+describe("monthGrid", () => {
+  it("produces a 6×7 Monday-first grid with leading days", () => {
+    const cells = monthGrid(2026, 9); // October 2026 starts on Thursday
+    expect(cells).toHaveLength(42);
+    expect(cells[0]!.date.getDay()).toBe(1); // Monday
+    expect(cells[0]!.inMonth).toBe(false); // Sep 28
+    expect(cells.filter((c) => c.inMonth)).toHaveLength(31);
+  });
+});
+
+describe("dayBucketLabel / daysUntil", () => {
+  const today = new Date(2026, 9, 6);
+  it("labels Today, Tomorrow and full dates", () => {
+    expect(dayBucketLabel(today, today)).toBe("Today");
+    expect(dayBucketLabel(addDays(today, 1), today)).toBe("Tomorrow");
+    expect(dayBucketLabel(addDays(today, 2), today)).toBe("Thursday, October 8, 2026");
+  });
+
+  it("daysUntil counts whole days and goes negative in the past", () => {
+    expect(daysUntil(addDays(today, 0), today)).toBe(0);
+    expect(daysUntil(addDays(today, 7), today)).toBe(7);
+    expect(daysUntil(addDays(today, -3), today)).toBe(-3);
+  });
+});
+
+describe("HH:MM helpers", () => {
+  it("parseHHMM accepts valid stamps and rejects the rest", () => {
+    expect(parseHHMM("09:00")).toBe(540);
+    expect(parseHHMM("23:59")).toBe(1439);
+    expect(parseHHMM("9:5")).toBeNull();
+    expect(parseHHMM("24:00")).toBeNull();
+    expect(parseHHMM("09:60")).toBeNull();
+    expect(parseHHMM("")).toBeNull();
+  });
+
+  it("minutesToHHMM zero-pads", () => {
+    expect(minutesToHHMM(540)).toBe("09:00");
+    expect(minutesToHHMM(1439)).toBe("23:59");
+  });
+
+  it("formatHHMMRange renders the span between two stamps", () => {
+    expect(formatHHMMRange("09:00", "10:30")).toBe("1h 30m");
+    expect(formatHHMMRange("10:30", "09:00")).toBe("0m"); // reversed clamps to 0
+    expect(formatHHMMRange("bad", "inputs")).toBe("");
+  });
+});

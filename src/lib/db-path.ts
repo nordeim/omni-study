@@ -52,7 +52,21 @@ export function resolveDatabaseUrl(envUrl: string | undefined, anchors: string[]
   if (/^file:/i.test(url)) {
     const raw = url.replace(/^file:/i, "");
     // Windows drive letters (file:C:\...) are absolute too.
-    if (path.isAbsolute(raw) || /^[A-Za-z]:[\\/]/.test(raw)) return `file:${raw}`;
+    if (path.isAbsolute(raw) || /^[A-Za-z]:[\\/]/.test(raw)) {
+      // Next.js dev (Turbopack) pre-resolves RELATIVE file: DATABASE_URLs
+      // against the PROJECT directory and injects an absolute value one
+      // level off from this module's schema-anchored contract (observed
+      // live: .env "file:../db/custom.db" arrived as
+      // "file:<project>/../db/custom.db"). When such a pre-resolved target
+      // does not exist but the documented default DOES, prefer the default;
+      // a genuinely valid absolute URL (production deployments) still passes
+      // through untouched.
+      if (!existsSync(raw)) {
+        const fallback = path.resolve(schemaRoot, "prisma", DEFAULT_RELATIVE_DB);
+        if (existsSync(fallback)) return `file:${fallback}`;
+      }
+      return `file:${raw}`;
+    }
     return `file:${path.resolve(schemaRoot, "prisma", raw)}`;
   }
   return url;
