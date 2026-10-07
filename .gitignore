@@ -25,6 +25,7 @@ yarn-error.log*
 pnpm-debug.log*
 dev.log
 server.log
+dev-server.pid
 
 # local env files — never commit secrets
 .env

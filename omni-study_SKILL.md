@@ -25,7 +25,7 @@ tags:
 
 > **What this is:** the single-source-of-truth reference for working in
 > `nordeim/omni-study`. Every fact below is verified against the codebase
-> (222 tests green at last update: 99 Vitest unit + 123 Playwright e2e).
+> (259 tests green at last update: 100 Vitest unit + 159 Playwright e2e).
 > Sections marked with ⚠️ encode non-obvious contracts — violating them has
 > historically produced silent visual or data-path bugs.
 
@@ -415,6 +415,12 @@ notes, decks, grades; `avatarEmoji: ""` (reference default state).
 | AP-29 | MEDIUM | Study-group swatches green-500/orange-500; practice-test dialog a different field set | measured: the swatch picker is emerald-500/amber-500 red-before-pink; the test dialog is Test Title + Time Limit (60) + AI Generate Questions + a scrollable question list | palette fix + `PracticeTest.questions` JSON + `/api/ai/generate-questions` (session-7 S7-B) |
 | AP-30 | HIGH | Timetable week grid compact "Sun 4" heads + 64px hour rows + NO mobile accordion; **columns rendered two days ahead of their headers** (`(col+1)%7` bug) | measured: grid-cols-8 with full day names + `text-lg` dates + 60px "7 AM" hour rows + accordion + My Classes today date | full S7-C rework + the `(col+6)%7` mapping fix (session-7) |
 | AP-31 | MEDIUM | Analytics stat cards r16 bordered with different labels; 14-day charts | measured: r12 border-0 cards + 48px tinted icon blocks (violet/blue/green/orange-100) + "X/Y" fraction values + "Last 7 Days" chart cards | S7-D rework; green-100 `#dcfce7` pinned (NOT emerald-100) (session-7) |
+| AP-32 | HIGH | Sidebar chrome drift: 6 wrong nav icons (Tasks/Calendar/Events/Notes/Files/Math Solver), active-nav gradient stop-2 violet-600 instead of **indigo-500**, tagline `truncate`d, 28px collapse button | measured live: `lucide-square-check-big`/`calendar`/`calendar-days`/`book-open`/`folder-open`/`calculator`; gradient `rgba(139,92,246,0.1)→rgba(99,102,241,0.1)`; `text-overflow: clip`; `h-9 w-9` buttons | S8-A: icon swaps + stop-2 via `--sf-primary-avatar-to` (pinned `NAV_ACTIVE_GRADIENT_STOPS`), tagline un-truncated, h-9 w-9 rounded-lg (session-8) |
+| AP-33 | HIGH | Dashboard cards rendered inset bordered row-cards inside padded bodies | measured: `rounded-2xl border-slate-100 shadow-sm overflow-hidden` cards with header `p-6 border-b` + **flush** `divide-y divide-slate-50` bodies — rows run edge-to-edge as `p-4 hover:bg-slate-50` | S8-B: `SectionCard` `flush` prop + dashboard exam/assignment/task rows rebuilt (session-8) |
+| AP-34 | HIGH | Calendar semantics inverted (today = solid accent fill, NO selected state, 3 nav buttons, header-split card); MyDay amber card misplaced; Timetable today tint rode the BODY column via the **dead** `bg-sf-primary-softest/50` utility | measured by clicking day 15: SELECTED = solid accent fill + white text, TODAY (unselected) = violet-100 tint + strong text — both hover-stripped; simple `p-6 border-slate-200` month card with 2 ghost navs; today tint rides the column HEADER (`bg-violet-50`) | S8-C/D/E: calendar rework + MyDay header block + suggestions + header-cell tint (inline style; the only sf-primary color utilities are `{-foreground,-soft,-soft-dark,-strong,-strong-dark}`) (session-8) |
+| AP-35 | HIGH | Tasks/Notes/Study Groups rendered as single padded cards (page-header + card lists) | measured: full-height two-pane layouts — `w-80 border-r border-slate-100 pr-6` left pane (h1 + icon INSIDE, 36px gradient New button, icon search) + a BARE right pane (centered empty state / editor) | S8-F/G/H: tasks two-pane + single-row main header; Notes dropdown New + Radix combobox filters; Study Groups two-pane (session-8) |
+| AP-36 | MEDIUM | Analytics chart cards had no per-card icons, no Assignment Status donut, no Subject Workload, no priority chips; Math Solver rendered input + solution side-by-side | measured: trending-up/clock/book-open/target icon headers, an SVG donut (Not-Started `#94a3b8`), an `h-[250px]` workload body, flame + slate-50 chip card; Math Solver is a single max-w-4xl column (input card + solution BELOW) | S8-I/L: ChartCard `icon` prop + donut + workload + priority chips; mathsolver single-column rework with camera/refresh-cw/sparkles footer buttons (session-8) |
+| AP-37 | LOW | Icon-level drifts: Calculator Clear, AI quick actions, FocusTimer complete (skip-forward), assignment/exam search inputs (no icon), exam card location row + topics counter, Settings tab list chrome | measured: rotate-ccw, the reference quick-action set, check, inline `search` icons + pl-9 inputs, date+time·duration rows ONLY, bg-white wrapped tab list | S8-K/M/N/O/P + the dead-utility sweep (S8-J) (session-8) |
 
 ---
 
@@ -463,7 +469,7 @@ tail -40 dev.log                            # request traces + prisma queries
 ```bash
 bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
-Current green state: lint ✓ · tsc ✓ · 99 unit ✓ · build ✓ · 123 e2e ✓.
+Current green state: lint ✓ · tsc ✓ · 100 unit ✓ · build ✓ · 159 e2e ✓.
 
 **Pre-deployment:** set a real `AUTH_SECRET` (`openssl rand -hex 32`); use an
 ABSOLUTE `DATABASE_URL` (see `docs/DEPLOYMENT.md` §4); never ship `.env`,
