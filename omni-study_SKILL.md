@@ -25,7 +25,7 @@ tags:
 
 > **What this is:** the single-source-of-truth reference for working in
 > `nordeim/omni-study`. Every fact below is verified against the codebase
-> (202 tests green at last update: 96 Vitest unit + 106 Playwright e2e).
+> (222 tests green at last update: 99 Vitest unit + 123 Playwright e2e).
 > Sections marked with ⚠️ encode non-obvious contracts — violating them has
 > historically produced silent visual or data-path bugs.
 
@@ -411,6 +411,10 @@ notes, decks, grades; `avatarEmoji: ""` (reference default state).
 | AP-25 | MEDIUM | Dialogs render rounded-2xl max-w-lg h-10 inputs | the reference's dialogs are shadcn-v3 stock: rounded-lg (8px), max-w-md (448px), h-9 transparent inputs | `dialog.tsx`/`input.tsx` reworked (session-5 S5-C) |
 | AP-26 | LOW | Unpinned palette classes read back as `lab()` in computed styles | v4's oklch defaults — `text-cyan-400` computed `lab(76.6 -40.9 -29.6)` | pin every asserted color (cyan-300/400, red-600 now pinned) (session-5, trap 10) |
 | AP-27 | LOW | `getByRole({ name })` strict-mode collisions in e2e | Playwright role names are substring + case-insensitive — "New note" matches "New notebook" | use `exact: true` when names collide (session-5) |
+| AP-28 | HIGH | Flashcards rendered as two sf-cards with plain rows + an inline flip card | the reference's view is a two-panel layout: `w-80 border-r` deck sidebar with 40px colored icon blocks + swatch picker + `lg:grid-cols-3` card grid + 3D-flip study mode (measured with a live reference deck) | full S7-A rework + `FlashcardDeck.color` + `Flashcard.difficulty` + `/api/ai/generate-cards` (session-7) |
+| AP-29 | MEDIUM | Study-group swatches green-500/orange-500; practice-test dialog a different field set | measured: the swatch picker is emerald-500/amber-500 red-before-pink; the test dialog is Test Title + Time Limit (60) + AI Generate Questions + a scrollable question list | palette fix + `PracticeTest.questions` JSON + `/api/ai/generate-questions` (session-7 S7-B) |
+| AP-30 | HIGH | Timetable week grid compact "Sun 4" heads + 64px hour rows + NO mobile accordion; **columns rendered two days ahead of their headers** (`(col+1)%7` bug) | measured: grid-cols-8 with full day names + `text-lg` dates + 60px "7 AM" hour rows + accordion + My Classes today date | full S7-C rework + the `(col+6)%7` mapping fix (session-7) |
+| AP-31 | MEDIUM | Analytics stat cards r16 bordered with different labels; 14-day charts | measured: r12 border-0 cards + 48px tinted icon blocks (violet/blue/green/orange-100) + "X/Y" fraction values + "Last 7 Days" chart cards | S7-D rework; green-100 `#dcfce7` pinned (NOT emerald-100) (session-7) |
 
 ---
 
@@ -459,7 +463,7 @@ tail -40 dev.log                            # request traces + prisma queries
 ```bash
 bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
-Current green state: lint ✓ · tsc ✓ · 96 unit ✓ · build ✓ · 106 e2e ✓.
+Current green state: lint ✓ · tsc ✓ · 99 unit ✓ · build ✓ · 123 e2e ✓.
 
 **Pre-deployment:** set a real `AUTH_SECRET` (`openssl rand -hex 32`); use an
 ABSOLUTE `DATABASE_URL` (see `docs/DEPLOYMENT.md` §4); never ship `.env`,

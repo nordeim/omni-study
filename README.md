@@ -1,6 +1,6 @@
 # StudyFlow (Omni-Study)
 
-![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-202%20green-22c55e)
+![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-222%20green-22c55e)
 
 **StudyFlow — your study companion.** A production-ready, self-hosted clone (functional superset) of the [`omni-study1.base44.app`](https://omni-study1.base44.app/) study-planning app, rebuilt as a single Next.js application you fully own: your database, your AI keys, your deployment.
 
@@ -13,7 +13,7 @@ The reference app is a study companion that keeps a student's whole life in one 
 | ![Dashboard](docs/screenshots/desktop-Dashboard.png) | ![Timetable](docs/screenshots/desktop-Timetable.png) | ![Flashcards](docs/screenshots/desktop-Flashcards.png) |
 | ![Calculator](docs/screenshots/desktop-Calculator.png) | ![Mobile nav](docs/screenshots/mobile-navigation-drawer.png) | ![Grade tracker](docs/screenshots/desktop-GradeTracker.png) |
 
-All 20 views (plus the login card and three mobile captures) are in [`docs/screenshots/`](docs/screenshots/) — refreshed after the session-6 populated-state remediation (`node scripts/capture-studyflow.mjs` regenerates them).
+All 20 views (plus the login card and three mobile captures) are in [`docs/screenshots/`](docs/screenshots/) — refreshed after the session-7 lightly-probed-views remediation (`node scripts/capture-studyflow.mjs` regenerates them).
 
 ## Key Features
 
@@ -24,14 +24,14 @@ All 20 views (plus the login card and three mobile captures) are in [`docs/scree
 | ✅ | Tasks | Lists (custom lists + Important), search, filters, full CRUD — priority (colored round checkbox), repeat, My Day toggle, subtasks |
 | 📅 | Calendar | Month grid + day detail (border-l-4 colored rows), timeline agenda mode, legend |
 | 🔔 | Events & Reminders | Dark terminal-style panel: 7-day sections, recurring events, multi-reminders, color-coded |
-| 🏫 | Timetable | Weekly grid with class blocks, Grid Builder, alternating Week A/B timetables, My Classes cards |
+| 🏫 | Timetable | grid-cols-8 week table with full day heads + 60px hour rows, mobile day accordion, Grid Builder, alternating Week A/B, My Classes with today's date |
 | 📚 | Assignments / Exams | Subject-tagged, urgency badges, status tracking — type + priority pills, interactive progress sliders; exam cards with subject color strips, durations, topics |
 | 🗒️ | Notes | Notebooks, tags, pinned notes, autosaving editor |
-| 🃏 | Flashcards | Decks, flip-card study mode, mastered progress |
-| 📝 | Practice Tests | Score recording with completion % |
+| 🃏 | Flashcards | Two-panel view with colored deck swatches, card grid with difficulty badges, 3D-flip study mode, AI card generation |
+| 📝 | Practice Tests | Question builder (manual + AI generation), score recording with completion % |
 | 👥 | Study Groups | Members, next meeting, subject linking |
-| 📈 | Grade Tracker | Gradient summary cards, weighted averages per subject, GPA, SVG trend chart |
-| 🧠 | Analytics | Task completion, focus minutes, grade trend, subject distribution |
+| 📈 | Grade Tracker | Gradient summary card + target/chart icons, weighted averages per subject, GPA, SVG trend chart |
+| 🧠 | Analytics | Icon-block stat cards (Tasks Completed, Assignments, Focus Time, Upcoming Exams), 7-day activity charts, grade trend, subject distribution |
 | 📁 | Files | Folders, uploads (≤ 2 MiB), links, grid/list views |
 | 🧮 | Calculator Suite | Basic, scientific (shunting-yard engine, no `eval`), GPA, unit converter + history |
 | ƒ | Math Solver | AI step-by-step solutions — typed or photographed (vision) |
@@ -93,8 +93,8 @@ flowchart TB
 │   ├── 📄 schema.prisma         ← 21 models; DATABASE PATH CONTRACT header
 │   └── 📄 seed.ts               ← idempotent demo data
 ├── 📂 tests/
-│   ├── 📄 *.test.ts             ← Vitest unit layer (96 tests)
-│   └── 📂 e2e/                  ← Playwright specs (106 specs)
+│   ├── 📄 *.test.ts             ← Vitest unit layer (99 tests)
+│   └── 📂 e2e/                  ← Playwright specs (123 specs)
 └── 📂 docs/
     ├── 📄 Tailwind-V4-Validation-Report.md  ← the five documented v3→v4 traps
     ├── 📄 remediation-plan.md   ← session-2 parity audit: evidence, fixes, non-gaps
@@ -102,6 +102,7 @@ flowchart TB
     ├── 📄 remediation-plan-session4.md ← session-4 text-metrics & login audit
     ├── 📄 remediation-plan-session5.md ← session-5 interactive-chrome & view-body audit
     ├── 📄 remediation-plan-session6.md ← session-6 populated-state & row-design audit
+    ├── 📄 remediation-plan-session7.md ← session-7 lightly-probed-views & flashcards audit
     ├── 📂 screenshots/          ← dev-server captures of every view
     └── 📄 DEPLOYMENT.md         ← production notes
 ```
@@ -142,12 +143,12 @@ Copy `.env.example` to `.env` (the defaults above already work locally):
 ## Testing
 
 ```bash
-bun run test        # Vitest — 96 unit tests (router, theme, date, calculator, auth, validation, db-path)
+bun run test        # Vitest — 99 unit tests (router, theme, date, calculator, auth, validation, db-path)
 bun run build       # REQUIRED before e2e — the suite boots the standalone server
-bun run test:e2e    # Playwright — 106 specs against the production build on :3100
+bun run test:e2e    # Playwright — 123 specs against the production build on :3100
 ```
 
-E2E notes: the suite pushes and seeds an isolated `db/e2e.db` (never touches `custom.db`), signs the demo user in **once** via a setup project (the login endpoints are rate-limited — 10 attempts/IP/15 min), and asserts the reference-measured design pins (sidebar geometry, v3 `shadow-sm`, canvas gradient, view-title model, stat-card text metrics, empty-state design, brand-gradient stops, login chrome, the session-5 interactive-chrome pins, and the session-6 populated-row pins). Full gate order: `lint → typecheck → test → build → test:e2e`.
+E2E notes: the suite pushes and seeds an isolated `db/e2e.db` (never touches `custom.db`), signs the demo user in **once** via a setup project (the login endpoints are rate-limited — 10 attempts/IP/15 min), and asserts the reference-measured design pins (sidebar geometry, v3 `shadow-sm`, canvas gradient, view-title model, stat-card text metrics, empty-state design, brand-gradient stops, login chrome, the session-5 interactive-chrome pins, the session-6 populated-row pins, and the session-7 flashcards/timetable/analytics/dialog pins). Full gate order: `lint → typecheck → test → build → test:e2e`.
 
 ## API Reference
 
@@ -163,6 +164,8 @@ All endpoints are same-origin JSON; sessions ride the `sf_session` cookie. 🔒 
 | `/api/settings/preferences` | PATCH 🔒 | Theme mode, accent, avatar, display name |
 | `/api/calculator/history` | GET POST DELETE 🔒 | Persisted calculations |
 | `/api/ai/chat`, `/api/ai/messages` | POST GET DELETE 🔒 | Study assistant (server-side SDK only) |
+| `/api/ai/generate-cards` | POST 🔒 | AI flashcard generation for a deck |
+| `/api/ai/generate-questions` | POST 🔒 | AI practice-test question generation |
 | `/api/math/solve` | POST 🔒 | Text or photographed problems (vision) |
 
 ## Design System
@@ -178,6 +181,9 @@ Measured from the live reference (see `docs/Tailwind-V4-Validation-Report.md` fo
 | Assignment rows | 24px round checkbox, blue due-in pill, priority/type pills, gradient progress slider + violet % label (session-6 pin) | Assignments |
 | Exam cards | 3-col grid, `h-2` subject color strip, amber urgency badge, icon detail rows, type footer (session-6 pin) | Exams |
 | Calendar cells | `aspect-square` centered cells, 4-color dots, solid-accent TODAY fill, legend + border-l-4 day-detail rows (session-6 pin) | Calendar |
+| Flashcards | two-panel layout: `w-80 border-r` deck sidebar with colored 40px icon blocks, deck color swatches, `lg:grid-cols-3` card grid with difficulty pills, 3D-flip study mode (session-7 pin) | Flashcards |
+| Timetable grid | `grid-cols-8` week table, full day-name heads + `text-lg` dates, 60px hour rows with "7 AM" labels, mobile day accordion (session-7 pin) | Timetable |
+| Analytics stats | r12 border-0 cards, 48px tinted icon blocks (violet/blue/green/orange-100), fraction values (session-7 pin) | Analytics |
 | View titles | `h1 text-2xl font-bold text-slate-800` + 24px accent icon (MyDay/FocusTimer are 30px) | Every view header (session-4 pin) |
 | Form controls | gray-200 borders, gray-950 text, gray-400 placeholders, `h-9` transparent inputs, v3 `shadow-sm` (session-5 pin) | Dialogs, selects, tabs, outline buttons |
 | Dialogs | `max-w-md` (448px), `rounded-lg` (8px), 36px inputs (session-5 pin) | Every modal |
@@ -236,6 +242,7 @@ The verification gate before any push: `bun run lint && bun run typecheck && bun
 | Session-4 text-metrics & second-order remediation (v4 blur trap, stat-card metrics, reference empty states, view-title h1+icon model, login card, measured gradient stops, heading hierarchy) | ✅ Complete | `docs/remediation-plan-session4.md` |
 | Session-5 interactive-chrome & view-body remediation (gradient CTAs, Events dark panel + repeat/reminders, FocusTimer/Settings/Calculator/Timetable/Notes/GradeTracker/Files/MyDay/AI reworks, gray form-control palette, dialog chrome, emerald/amber accents) | ✅ Complete | `docs/remediation-plan-session5.md` |
 | Session-6 populated-state remediation (task card rows + priority/repeat/myDay/subtasks, MyDay amber progress card + Suggestions, dashboard bare rows, assignment sliders, exam card grid, calendar grid/legend/day-detail — measured against live reference data) | ✅ Complete | `docs/remediation-plan-session6.md` |
+| Session-7 lightly-probed-views remediation (Flashcards two-panel view + deck colors + card grid + 3D study mode + AI card generation, Study Groups/Practice Tests measured dialogs + AI question generation, Timetable grid-cols-8 week grid + mobile accordion + week-alignment bug fix, Analytics icon-block stat cards + 7-day charts, Grade Tracker icons, Notes title input) | ✅ Complete | `docs/remediation-plan-session7.md` |
 | Docs (README / AGENTS / CLAUDE / PAD / SKILL) | ✅ Complete | repo root |
 
 No license file is present in this repository; treat the code as proprietary to the repo owner.
