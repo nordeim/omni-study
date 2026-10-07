@@ -145,3 +145,29 @@ Stage Summary — ALL DELIVERABLES COMPLETE:
 6. Pushed to git@github.com:nordeim/omni-study.git via SSH wrapper (both commits remote-verified).
 7. AGENTS.md / CLAUDE.md / README.md / Project_Architecture_Document.md created per the four repo skills.
 8. 18 dev-server screenshots under docs/screenshots/.
+
+---
+Task ID: S2 (session 2)
+Agent: Super Z (main agent)
+Task: Post-delivery parity audit, remediation, SKILL distillation, final push.
+
+Work Log:
+- git pull → merged remote session log (eab559e); reviewed AGENTS/CLAUDE/README/PAD + docs/session_1.md + worklog.md; validated understanding against the codebase (configs, db contract, rewrites, 21 models).
+- Baseline gates: lint ✓ tsc ✓ 83 unit ✓ dev healthy; swept all 20 views — zero console errors.
+- Live parity audit (agent-browser, BOTH apps measured side by side + VLM on dashboard/login):
+  - Mobile nav verified identical (drawer, 20 links, navigate+close, 64px app bar).
+  - GAP R1 (HIGH, Tailwind v4 bug): radius scale inflated one notch by a mistaken pin block — cards 20px vs ref 16px, buttons 8px vs 6px. v4 defaults are v3-identical from md up (verified in node_modules/tailwindcss/theme.css). Fixed: only --radius-sm: 0.125rem pinned; e2e "corner radii" spec added (TDD).
+  - GAP R2: stat icons — Pending Tasks ListChecks→SquareCheckBig, Focus Time Sparkles→Flame.
+  - GAP R3: footer avatar — new UserAvatar (36px gradient circle, initial fallback when avatar empty); store/seed default "" ; settings/mobile-chrome rewired.
+  - GAP R4: collapse glyph PanelLeftClose/Open → ChevronLeft/Right (ref-measured).
+  - GAP R5: canvas third stop hsl-approximation → exact rgb(245 243 255 / 0.3) + e2e pin.
+  - R7 (found during verification): clock chip one notch too saturated — added deep(700)/softest(50) tokens for all 7 accents; chip = violet-50 gradient, time violet-700, date violet-600 (all now EXACT vs measured reference).
+  - R8: e2e robustness — hydration gate (inline --sf-primary var on <html>) for theme specs; deleted stale db/e2e.db (old "🎓" seed).
+- Remediation plan saved: docs/remediation-plan.md (evidence, fixes, execution log, audited non-gaps incl. VLM false positives).
+- Docs aligned: 21 models, 139 tests, trap 6 documented, clock tokens, UserAvatar in key-files, remediation references in README/AGENTS/CLAUDE/PAD.
+- omni-study_SKILL.md distilled (676 lines, 20 sections + 2 appendices) per skills/distill-codebase-skill + skills/to-distill-project-into-skill; all facts verified (versions, tokens, counts, patterns compile).
+- Screenshots refreshed: 24 captures (login + ALL 20 desktop views + 3 mobile) post-remediation.
+- Final gates: lint ✓ tsc ✓ 83 unit ✓ build ✓ 56 e2e ✓ (54 prior + 2 new parity pins). Dev probes: every measured token matches; VLM verdict EXCELLENT.
+
+Stage Summary:
+- Push (this commit) includes: 6 parity fixes + clock polish + e2e hardening + remediation plan + SKILL.md + refreshed screenshots + aligned docs. Visual parity now measured-exact on all pinned tokens; clone remains the functional superset.

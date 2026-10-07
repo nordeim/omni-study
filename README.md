@@ -1,6 +1,6 @@
 # StudyFlow (Omni-Study)
 
-![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-137%20green-22c55e)
+![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-139%20green-22c55e)
 
 **StudyFlow — your study companion.** A production-ready, self-hosted clone (functional superset) of the [`omni-study1.base44.app`](https://omni-study1.base44.app/) study-planning app, rebuilt as a single Next.js application you fully own: your database, your AI keys, your deployment.
 
@@ -12,6 +12,8 @@ The reference app is a study companion that keeps a student's whole life in one 
 |---|---|---|
 | ![Dashboard](docs/screenshots/desktop-Dashboard.png) | ![Timetable](docs/screenshots/desktop-Timetable.png) | ![Flashcards](docs/screenshots/desktop-Flashcards.png) |
 | ![Calculator](docs/screenshots/desktop-Calculator.png) | ![Mobile nav](docs/screenshots/mobile-navigation-drawer.png) | ![Grade tracker](docs/screenshots/desktop-GradeTracker.png) |
+
+All 20 views (plus the login card and three mobile captures) are in [`docs/screenshots/`](docs/screenshots/) — refreshed after the session-2 parity remediation.
 
 ## Key Features
 
@@ -88,13 +90,14 @@ flowchart TB
 │   ├── 📄 theme.ts              ← 7 accents, RGB-triplet tokens
 │   └── 📂 server/               ← http helpers + entity CRUD delegates
 ├── 📂 prisma/
-│   ├── 📄 schema.prisma         ← 20 models; DATABASE PATH CONTRACT header
+│   ├── 📄 schema.prisma         ← 21 models; DATABASE PATH CONTRACT header
 │   └── 📄 seed.ts               ← idempotent demo data
 ├── 📂 tests/
 │   ├── 📄 *.test.ts             ← Vitest unit layer (83 tests)
-│   └── 📂 e2e/                  ← Playwright specs (54 tests)
+│   └── 📂 e2e/                  ← Playwright specs (56 tests)
 └── 📂 docs/
     ├── 📄 Tailwind-V4-Validation-Report.md  ← the five documented v3→v4 traps
+    ├── 📄 remediation-plan.md   ← session-2 parity audit: evidence, fixes, non-gaps
     ├── 📂 screenshots/          ← dev-server captures of every view
     └── 📄 DEPLOYMENT.md         ← production notes
 ```
@@ -137,7 +140,7 @@ Copy `.env.example` to `.env` (the defaults above already work locally):
 ```bash
 bun run test        # Vitest — 83 unit tests (router, theme, date, calculator, auth, validation, db-path)
 bun run build       # REQUIRED before e2e — the suite boots the standalone server
-bun run test:e2e    # Playwright — 54 specs against the production build on :3100
+bun run test:e2e    # Playwright — 56 specs against the production build on :3100
 ```
 
 E2E notes: the suite pushes and seeds an isolated `db/e2e.db` (never touches `custom.db`), signs the demo user in **once** via a setup project (the login endpoints are rate-limited — 10 attempts/IP/15 min), and asserts the reference-measured design pins (sidebar geometry, v3 `shadow-sm`, canvas gradient). Full gate order: `lint → typecheck → test → build → test:e2e`.
@@ -206,9 +209,10 @@ The verification gate before any push: `bun run lint && bun run typecheck && bun
 | Phase | Status | Deliverables |
 |-------|--------|--------------|
 | Reference recon (all 20 views, computed-style tokens) | ✅ Complete | Traps + measured tokens in `docs/Tailwind-V4-Validation-Report.md` |
-| Codebase build (20 views, 20 models, 40+ endpoints) | ✅ Complete | `src/**`, `prisma/**` |
-| Test suites (83 unit + 54 e2e) | ✅ Complete | `tests/**` |
-| Visual parity verification | ✅ Complete | `docs/screenshots/**` |
-| Docs (README / AGENTS / CLAUDE / PAD) | ✅ Complete | repo root |
+| Codebase build (20 views, 21 models, 40+ endpoints) | ✅ Complete | `src/**`, `prisma/**` |
+| Test suites (83 unit + 56 e2e) | ✅ Complete | `tests/**` |
+| Visual parity verification | ✅ Complete | `docs/screenshots/**`, `docs/remediation-plan.md` |
+| Session-2 parity remediation (radius trap, icons, avatar, clock) | ✅ Complete | `docs/remediation-plan.md` |
+| Docs (README / AGENTS / CLAUDE / PAD / SKILL) | ✅ Complete | repo root |
 
 No license file is present in this repository; treat the code as proprietary to the repo owner.

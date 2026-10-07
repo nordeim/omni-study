@@ -112,7 +112,7 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 **ADR-007: Two-layer testing with an isolated e2e database**
 
 - **Context:** The value concentrated in this codebase is (a) pure domain seams (calculator engine, date math, auth primitives, path resolution, schemas) and (b) cross-cutting UI contracts (the SPA chrome, parity pins, golden-path CRUD).
-- **Decision:** Vitest for unit seams (`tests/*.test.ts`, 83 tests). Playwright for e2e (`tests/e2e/*.spec.ts`, 54 specs) against the production standalone build on `:3100` with its own `db/e2e.db` (pushed + seeded by `global-setup.ts` using the ADR-002 shell-env mechanism), one shared authenticated storageState (rate-limiter budget), unique row titles per run, and accent restoration in the theme spec.
+- **Decision:** Vitest for unit seams (`tests/*.test.ts`, 83 tests). Playwright for e2e (`tests/e2e/*.spec.ts`, 56 specs) against the production standalone build on `:3100` with its own `db/e2e.db` (pushed + seeded by `global-setup.ts` using the ADR-002 shell-env mechanism), one shared authenticated storageState (rate-limiter budget), unique row titles per run, accent restoration in the theme spec, a hydration gate before post-`goto` clicks, and computed-style parity pins (shadow, canvas gradient, sidebar geometry, corner radii, footer avatar default).
 - **Rationale:** Fast feedback where logic lives; end-to-end confidence where integration lives; zero collision between dev and e2e data.
 - **Consequences:** E2E requires a fresh `bun run build` after component changes (stale-build false failures — documented); suite runtime ~1 min single-worker.
 - **Alternatives Rejected:** Running e2e against `next dev` (slower, different engine than production); per-test logins (trips the rate limiter); a shared db (cross-run pollution).
@@ -210,7 +210,7 @@ omni-study/
 │   │   └── server/{http,entities}.ts    ← CRUD factory + 16 delegates
 │   └── hooks/                           ← (reserved)
 ├── prisma/
-│   ├── schema.prisma                    ← 20 models + the DATABASE PATH CONTRACT header
+│   ├── schema.prisma                    ← 21 models + the DATABASE PATH CONTRACT header
 │   └── seed.ts                          ← idempotent demo data (uses db.ts for env-aware resolution)
 ├── tests/
 │   ├── *.test.ts                        ← Vitest: router, theme, date, calculator, auth, validation, db-path
@@ -357,13 +357,17 @@ System sans stack (`ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", �
 | Token | Value | Usage / Notes |
 |-------|-------|---------------|
 | `--sf-primary` | `139 92 246` (#8b5cf6) | Accent RGB triplet on `<html>`; buttons, active nav, chips |
-| `--sf-primary-strong` | `124 58 237` (#7c3aed) | Links ("View All"), active nav text (measured live) |
-| `--sf-primary-soft` | `243 232 255` | Active nav gradient tint, clock chip, avatar bg |
+| `--sf-primary-strong` | `124 58 237` (#7c3aed) | Links ("View All"), active nav text, clock date (measured live) |
+| `--sf-primary-deep` | `109 40 217` (#6d28d9) | Clock time text (reference violet-700, measured) |
+| `--sf-primary-softest` | `245 243 255` (#f5f3ff) | Clock chip gradient start (reference violet-50) |
+| `--sf-primary-soft` | `243 232 255` | Active nav gradient tint, icon chips |
 | Card surface | white / `#f1f5f9` border / 16px radius | `sf-card` + SectionCard |
 | Shadow | `0 1px 2px 0 rgb(0 0 0 / 0.05)` | v3 `shadow-sm` — **pinned** (trap 5) |
-| Canvas | `linear-gradient(to right bottom, #f8fafc, #fff, #f5f3ff4d)` | `.sf-canvas` — measured from the reference parent element |
+| Radius scale | md 6px / lg 8px / xl 12px / 2xl 16px / 3xl 24px | v4 defaults = v3 semantics; only `--radius-sm: 0.125rem` pinned (trap 6) |
+| Canvas | `linear-gradient(to right bottom, #f8fafc, #fff, #f5f3ff4d)` | `.sf-canvas` — measured from the reference; exact third stop pinned |
 | Slate ramp | 50–950 | v3 hexes pinned in `@theme` (trap 2) |
 | Dark mode | slate-950 family + `--sf-primary-soft-dark` tokens | `.dark` class + token swap |
+| Footer avatar | 36px gradient circle (`primary → primary-strong`), white initial when no emoji | `UserAvatar` (reference default state, R3) |
 
 Seven accent sets (violet/blue/green/orange/pink/red/teal) × Light/Dark/System × 24 emoji avatars, persisted on `User` and applied by `useThemeStore.loadFromUser`.
 
@@ -423,7 +427,7 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 | Unit — pure seams | 7 | 83 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
 | E2E — auth | 1 | 5 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
 | E2E — mobile navigation | 1 | 7 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
-| E2E — desktop nav + views + parity pins | 1 | 29 | `tests/e2e/navigation.spec.ts` | Playwright |
+| E2E — desktop nav + views + parity pins | 1 | 31 | `tests/e2e/navigation.spec.ts` | Playwright |
 | E2E — task CRUD golden path | 1 | 6 | `tests/e2e/tasks.spec.ts` | Playwright |
 | E2E — calculator + theme | 1 | 8 | `tests/e2e/calculator.spec.ts` | Playwright |
 
@@ -513,6 +517,8 @@ Enforced: ESLint flat config + `tsc --noEmit` (both gate). Convention (review-en
 | LOW | No `prefers-reduced-motion` handling for CSS animations | Motion-sensitive users still see shimmer/slide | Open |
 | LOW | Prisma `db push` workflow (no migrations history) | Schema changes are not versioned | Accepted for SQLite/single-user; revisit if multi-user |
 | INFO | `space-*` ban is convention, not lint rule | A new contributor could reintroduce trap 4 | Accepted (e2e parity pins would not catch spacing regressions) |
+| RESOLVED | Session-2 remediation: radius scale inflated one notch by a mistaken pin block (cards 20px vs reference 16px, buttons 8px vs 6px) | Every corner ~33% larger than the reference | **Fixed** — `--radius-sm: 0.125rem` is the only radius pin; pinned by the e2e "corner radii" spec (see `docs/remediation-plan.md` R1) |
+| RESOLVED | Session-2 remediation: dashboard stat icons (Pending→ListChecks, Focus→Sparkles), footer avatar default (emoji vs initial), collapse glyph, canvas third-stop drift, clock chip one-notch-too-saturated | Minor visual parity drifts vs the live reference | **Fixed** — all measured against the reference DOM and re-verified (VLM verdict EXCELLENT); see `docs/remediation-plan.md` |
 
 ---
 
@@ -528,13 +534,14 @@ Enforced: ESLint flat config + `tsc --noEmit` (both gate). Convention (review-en
 | `src/lib/data.ts` | ~560 | Client entity cache + typed mutations |
 | `src/lib/calculator.ts` | ~250 | Shunting-yard engine, GPA, unit converter |
 | `src/lib/auth.ts` | ~150 | scrypt, HMAC sessions, rate limiter |
-| `src/components/layout/sidebar.tsx` | ~200 | Fixed glass sidebar (measured parity) |
+| `src/components/layout/user-avatar.tsx` | ~60 | Footer avatar: gradient circle, initial fallback (R3) |
+| `src/components/layout/sidebar.tsx` | ~230 | Fixed glass sidebar (measured parity, clock chip tokens) |
 | `src/components/views/dashboard-view.tsx` | ~250 | The parity-pinned dashboard layout |
-| `prisma/schema.prisma` | ~330 | 20 models + the DB contract header |
+| `prisma/schema.prisma` | ~330 | 21 models + the DB contract header |
 | `prisma/seed.ts` | ~230 | Idempotent demo data |
 | `tests/e2e/mobile-navigation.spec.ts` | ~100 | The highest-regression-risk chrome (drawer + lg breakpoint) |
 | `tests/e2e/navigation.spec.ts` | ~145 | 20-view render matrix + computed parity pins |
-| `src/app/globals.css` | ~230 | Token pins (traps 1–3, 5), `.glass`, `.sf-*` utilities |
+| `src/app/globals.css` | ~230 | Token pins (traps 1–3, 5–6), `.glass`, `.sf-*` utilities |
 
 ---
 

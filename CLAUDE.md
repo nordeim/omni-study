@@ -46,6 +46,7 @@ Key decisions that shape everything else: **Next.js 16 App Router as a one-page 
 - No `tailwind.config.js`. All tokens live in `src/app/globals.css` under `@theme inline`.
 - Layout with `flex gap-*` exclusively — margin utilities inside `space-y/x-*` containers are forbidden (v4 trap 4).
 - Accent colors via `rgb(var(--sf-*))` inline styles or the generated `*-sf-primary-*` utilities; the v3-pinned palette and `--shadow-sm` pin must not be removed (traps 2 & 5, pinned by e2e specs).
+- The radius scale is v3-identical from `md` up — do NOT re-pin it upward (trap 6); only `--radius-sm: 0.125rem` is pinned for v3 semantics.
 
 **State (Zustand)**
 - `useAppStore` (view/sidebar/drawer), `useThemeStore` (mode/accent/avatar), `useDataStore` + `mutations` (entity cache; every mutation refreshes the touched collections). No React Context for app state, no new state libraries.
@@ -83,7 +84,7 @@ bun run dev                           # http://localhost:3000 (demo@studyflow.ap
 ### Test Pyramid
 
 - **Unit (Vitest, 83 tests)** — pure seams: router mapping, date math, calculator engine (incl. unary ops), auth primitives (scrypt/HMAC/rate-limit), Zod schemas, db-path resolution (the full anchor contract).
-- **E2E (Playwright, 54 specs)** — auth flows, mobile drawer navigation (the highest-regression-risk chrome), desktop sidebar active states, all 20 views render, task CRUD golden path, calculator + theme switching; computed-style parity pins (v3 `shadow-sm`, canvas gradient, sidebar geometry).
+- **E2E (Playwright, 56 specs)** — auth flows, mobile drawer navigation (the highest-regression-risk chrome), desktop sidebar active states, all 20 views render, task CRUD golden path, calculator + theme switching; computed-style parity pins (v3 `shadow-sm`, canvas gradient, sidebar geometry, corner radii, footer avatar default).
 
 ### Test Commands
 
@@ -94,7 +95,7 @@ bun run build && bun run test:e2e              # e2e (build first — always)
 bunx playwright test tests/e2e/mobile-navigation.spec.ts --project=chromium
 ```
 
-Rules: unique row titles in e2e (the db persists across runs); exactly one shared login via storageState (rate limiter!); the theme spec restores the default accent; Radix tabs assert `aria-selected` (not `data-state="selected"`).
+Rules: unique row titles in e2e (the db persists across runs); exactly one shared login via storageState (rate limiter!); the theme spec restores the default accent; Radix tabs assert `aria-selected` (not `data-state="selected"`); gate clicks on hydration when a spec clicks right after `goto` (see `hydrated()` in `calculator.spec.ts`).
 
 ## Code Quality Standards
 
@@ -114,8 +115,8 @@ Rules: unique row titles in e2e (the db persists across runs); exactly one share
 
 ## Communication & Documentation
 
-- Comments explain *why*, not *what* — the five Tailwind v4 traps and the db-path anchors are commented at their sources; keep those comments true.
-- `README.md` (users) → `AGENTS.md` (agent quick-reference) → `Project_Architecture_Document.md` (full blueprint + ADRs). Update the right layer for the change you made.
+- Comments explain *why*, not *what* — the six Tailwind v4 traps and the db-path anchors are commented at their sources; keep those comments true.
+- `README.md` (users) → `AGENTS.md` (agent quick-reference) → `Project_Architecture_Document.md` (full blueprint + ADRs) → `omni-study_SKILL.md` (distilled engineering knowledge — traps, anti-patterns, debugging, lessons). Update the right layer for the change you made.
 
 ## Project-Specific Standards
 
@@ -126,7 +127,7 @@ One-page SPA shell + rewrites; fixed glass sidebar ≥ lg, mobile drawer below; 
 REST-ish `/api/<entity>` collections with `/[id]` items; Zod at every boundary; ownership in the WHERE clause; destructive ops are plain DELETE behind auth (no tokens/approvals — single-user contexts).
 
 ### Database / Data Layer
-20 models (see `prisma/schema.prisma`); SQLite via Prisma 6.19; `db/` at repo root, gitignored; idempotent seed; e2e gets its own `db/e2e.db`.
+20 views over 21 models (see `prisma/schema.prisma`); SQLite via Prisma 6.19; `db/` at repo root, gitignored; idempotent seed; e2e gets its own `db/e2e.db`.
 
 ### Environment Variables
 
