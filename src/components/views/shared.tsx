@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useDataStore, type Subject } from "@/lib/data";
@@ -11,18 +12,35 @@ export function ViewHeader({
   title,
   subtitle,
   actions,
+  icon: Icon,
+  size = "md",
 }: {
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
+  /** Reference view titles carry a 24px violet lucide icon on 16 of 18
+   *  non-dashboard views (measured map — Tasks/MyDay have none). */
+  icon?: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  /** Reference exception: MyDay + FocusTimer titles are text-3xl (30px). */
+  size?: "md" | "lg";
 }) {
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+        {/* Reference (measured on every view): <h1 class="text-2xl font-bold
+            text-slate-800 flex items-center gap-2"> + optional 24px
+            text-violet-500 icon; tracking is NORMAL (not tracking-tight).
+            Subtitle: p.text-slate-500 → 16px. */}
+        <h1
+          className={cn(
+            "flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100",
+            size === "lg" ? "text-3xl" : "text-2xl",
+          )}
+        >
+          {Icon && <Icon className="h-6 w-6 text-sf-primary" strokeWidth={2} />}
           {title}
-        </h2>
-        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+        </h1>
+        {subtitle && <p className="text-base text-slate-500">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>
@@ -40,13 +58,24 @@ export function EmptyState({
   hint?: string;
   action?: React.ReactNode;
 }) {
+  // Reference pattern (measured on Tasks/Notes): flex flex-col
+  // items-center justify-center py-16 px-4 text-center — an 80px
+  // rounded-2xl gradient block (violet-100 → indigo-100) holding a 40px
+  // violet-500 icon, an h3 20px/600 slate-800 title, and a 16px
+  // slate-500 hint (S4-C). Gradient routes through the accent tokens.
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl px-6 py-12 text-center">
-      <div className="mb-1 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800/60">
-        <Icon className="h-7 w-7 text-slate-300 dark:text-slate-600" strokeWidth={1.5} />
+    <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+      <div
+        className="flex h-20 w-20 items-center justify-center rounded-2xl"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right bottom, rgb(var(--sf-primary-empty-from)), rgb(var(--sf-primary-empty-to)))",
+        }}
+      >
+        <Icon className="h-10 w-10 text-sf-primary" strokeWidth={2} />
       </div>
-      <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-200">{title}</p>
-      {hint && <p className="max-w-sm text-sm text-slate-400">{hint}</p>}
+      <h3 className="mt-4 text-xl font-semibold text-slate-800 dark:text-slate-100">{title}</h3>
+      {hint && <p className="text-base text-slate-500">{hint}</p>}
       {action && <div className="mt-3">{action}</div>}
     </div>
   );
@@ -93,7 +122,9 @@ export function ViewAllLink({ label = "View All", onClick }: { label?: string; o
       className="inline-flex h-8 items-center gap-0 rounded-md px-3 text-xs font-medium transition-colors text-sf-primary-strong hover:opacity-80 sf-focus"
     >
       {label}
-      <span aria-hidden="true" className="ml-1">→</span>
+      {/* Reference (measured): lucide-arrow-right w-4 h-4 ml-1 — the
+          clone previously rendered a unicode "→" span (S4-E). */}
+      <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
     </button>
   );
 }
@@ -127,13 +158,16 @@ export function StatCard({
         className="absolute -right-8 -bottom-8 h-32 w-32 rounded-full opacity-10"
         style={{ backgroundImage: gradient }}
       />
+      {/* Reference internals (S4-B, measured): label text-sm font-medium
+          slate-500 mb-1; value <h3 class="text-3xl font-bold"> — 30px/700
+          with v4's 36px text-3xl line-height and NORMAL tracking; hint
+          text-sm slate-400 mt-1. The clone previously rendered
+          p.text-[30px].leading-none.tracking-tight with a 12px hint. */}
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm text-slate-500">{label}</p>
-          <p className="mt-1.5 text-[30px] font-bold leading-none tracking-tight text-slate-800 dark:text-slate-100">
-            {value}
-          </p>
-          <p className="mt-1.5 text-xs text-slate-400">{hint}</p>
+          <p className="mb-1 text-sm font-medium text-slate-500">{label}</p>
+          <h3 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{value}</h3>
+          <p className="mt-1 text-sm text-slate-400">{hint}</p>
         </div>
         <span
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white"
@@ -159,7 +193,8 @@ export const STAT_COLORS = {
   pink: { from: "#ec4899", to: "#e11d48", shadow: "rgba(236, 72, 153, 0.25)" },
 } as const;
 
-/** Simple section empty state — measured: p-8 text-center + w-12 icon. */
+/** Simple section empty state — reference pattern (S4-C): py-16 px-4,
+ *  80px gradient block, h3 20px/600, 16px slate-500 hint. */
 export function SimpleEmptyState({
   icon: Icon,
   message,
@@ -168,9 +203,17 @@ export function SimpleEmptyState({
   message: string;
 }) {
   return (
-    <div className="p-8 text-center text-slate-500">
-      <Icon className="mx-auto mb-3 h-12 w-12 text-slate-300 dark:text-slate-600" strokeWidth={2} />
-      <p>{message}</p>
+    <div className="flex flex-col items-center justify-center px-4 py-16 text-center text-slate-500">
+      <div
+        className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right bottom, rgb(var(--sf-primary-empty-from)), rgb(var(--sf-primary-empty-to)))",
+        }}
+      >
+        <Icon className="h-10 w-10 text-sf-primary" strokeWidth={2} />
+      </div>
+      <p className="text-base">{message}</p>
     </div>
   );
 }
@@ -198,10 +241,12 @@ export function SectionCard({
       )}
     >
       <header className="flex items-center justify-between border-b border-slate-100 p-6 dark:border-slate-800">
-        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+        {/* Reference (measured): dashboard card titles are <h2> 18px/600
+            with a 20px icon — the h3 level belongs to stat values (S4-J). */}
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
           <Icon className="h-5 w-5 text-sf-primary" strokeWidth={2} />
           {title}
-        </h3>
+        </h2>
         {action}
       </header>
       <div className={cn("p-6", bodyClassName)}>{children}</div>

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { BookOpen, GraduationCap, Languages, Lightbulb, ListChecks, Loader2, Send, Sparkles, Wand2 } from "lucide-react";
 import { useDataStore, mutations } from "@/lib/data";
+import { ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
@@ -66,18 +67,7 @@ export function AIAssistantView() {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <span
-          className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm"
-          style={{ backgroundColor: "rgb(var(--sf-primary))" }}
-        >
-          <Sparkles className="h-6 w-6" strokeWidth={1.75} />
-        </span>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">AI Study Assistant</h1>
-          <p className="mt-0.5 text-sm text-slate-500">Ask anything — explanations, summaries, plans and problems</p>
-        </div>
-      </div>
+      <ViewHeader title="AI Study Assistant" subtitle="Your personal AI tutor, available 24/7" icon={Sparkles} />
 
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

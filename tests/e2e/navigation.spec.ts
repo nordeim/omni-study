@@ -193,6 +193,148 @@ test.describe("view chrome (computed parity pins)", () => {
     expect(Math.round(box?.width ?? 0)).toBe(24);
   });
 
+  test("stat card text metrics mirror the reference (S4-B pin)", async ({ page }) => {
+    await page.goto("/Dashboard");
+    // Reference (measured): label text-sm font-medium slate-500 mb-1;
+    // value <h3 class="text-3xl font-bold"> — 30px/700 with the 36px
+    // text-3xl line-height and NORMAL tracking; hint text-sm slate-400 mt-1.
+    // The clone previously rendered p.text-[30px].leading-none.tracking-tight
+    // with a 12px hint.
+    const value = page.getByRole("heading", { name: /^[\d/]+/ }).first();
+    await expect(value).toBeVisible();
+    await expect(value).toHaveCSS("font-size", "30px");
+    await expect(value).toHaveCSS("line-height", "36px");
+    await expect(value).toHaveCSS("letter-spacing", "normal");
+    const valueBox = await value.evaluate((el) => {
+      const label = el.previousElementSibling!;
+      const hint = el.nextElementSibling!;
+      const cs = getComputedStyle;
+      return {
+        labelWeight: cs(label).fontWeight,
+        labelMB: cs(label).marginBottom,
+        hintSize: cs(hint).fontSize,
+        hintMT: cs(hint).marginTop,
+      };
+    });
+    expect(valueBox.labelWeight).toBe("500");
+    expect(valueBox.labelMB).toBe("4px");
+    expect(valueBox.hintSize).toBe("14px");
+    expect(valueBox.hintMT).toBe("4px");
+  });
+
+  test("view titles render the reference model: h1, slate-800, icon (S4-D pin)", async ({ page }) => {
+    // Reference (measured on every view): <h1 class="text-2xl font-bold
+    // text-slate-800 flex items-center gap-2"> with a 24px text-violet-500
+    // lucide icon on 16 views; MyDay/FocusTimer titles are text-3xl (30px).
+    await page.goto("/Events");
+    const h1 = page.getByRole("heading", { name: "Events & Reminders", exact: true });
+    await expect(h1).toBeVisible();
+    await expect(h1).toHaveCSS("color", "rgb(30, 41, 59)"); // slate-800
+    await expect(h1).toHaveCSS("letter-spacing", "normal"); // NOT tracking-tight
+    const icon = h1.locator("svg").first();
+    const box = await icon.boundingBox();
+    expect(Math.round(box?.width ?? 0)).toBe(24);
+    const iconColor = await icon.evaluate((el) => getComputedStyle(el).color);
+    expect(iconColor).toBe("rgb(139, 92, 246)"); // violet-500 = --sf-primary
+
+    // Subtitle: 16px slate-500 with the reference's exact wording.
+    const sub = h1.locator("xpath=following-sibling::p").first();
+    await expect(sub).toHaveText("Manage your events with custom reminders");
+    await expect(sub).toHaveCSS("font-size", "16px");
+  });
+
+  test("FocusTimer renders the reference's larger text-3xl title (S4-D pin)", async ({ page }) => {
+    await page.goto("/FocusTimer");
+    const h1 = page.getByRole("heading", { name: "Focus Timer", exact: true });
+    await expect(h1).toBeVisible();
+    await expect(h1).toHaveCSS("font-size", "30px");
+    await expect(h1.locator("svg").first()).toBeVisible();
+  });
+
+  test("the MyDay subtitle omits the year (S4-D pin)", async ({ page }) => {
+    await page.goto("/MyDay");
+    // Reference (measured): "Wednesday, October 7" — no year on MyDay
+    // (the DASHBOARD date keeps the year; this one does not).
+    const sub = page.locator("main h1 + p").first();
+    await expect(sub).toHaveText(/^[A-Z][a-z]+, [A-Z][a-z]+ \d{1,2}$/);
+  });
+
+  test("empty states render the reference's gradient-block design (S4-C pin)", async ({ page }) => {
+    // Reference (measured on Tasks/Notes): an 80px rounded-2xl block with
+    // linear-gradient(to right bottom, rgb(237,233,254), rgb(224,231,255))
+    // (violet-100 → indigo-100), a 40px violet icon, an h3 20px/600 title,
+    // and a 16px slate-500 hint, inside py-16 px-4. Verified on /Files —
+    // the one view the seed leaves empty (files/folders are never seeded).
+    await page.goto("/Files");
+    const empty = page.locator("main [class*='py-16']").first();
+    await expect(empty).toBeVisible();
+    const block = empty.locator("div.rounded-2xl").first();
+    const box = await block.boundingBox();
+    expect(Math.round(box?.width ?? 0)).toBe(80);
+    const grad = await block.evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(grad.replace(/\s+/g, " ")).toContain("rgb(237, 233, 254)");
+    expect(grad.replace(/\s+/g, " ")).toContain("rgb(224, 231, 255)");
+    const icon = block.locator("svg").first();
+    const iconBox = await icon.boundingBox();
+    expect(Math.round(iconBox?.width ?? 0)).toBe(40);
+    const iconColor = await icon.evaluate((el) => getComputedStyle(el).color);
+    expect(iconColor).toBe("rgb(139, 92, 246)");
+    const title = empty.getByRole("heading", { name: /no files yet/i });
+    await expect(title).toHaveCSS("font-size", "20px");
+    await expect(title).toHaveCSS("font-weight", "600");
+    const hint = empty.locator("p").last();
+    await expect(hint).toHaveCSS("font-size", "16px");
+  });
+
+  test("brand gradients end at the measured indigo stops (S4-G pin)", async ({ page }) => {
+    await page.goto("/Dashboard");
+    // CTA: linear-gradient(to right, rgb(139,92,246), rgb(79,70,229)) —
+    // violet-500 → indigo-600 (the clone previously ended violet-600).
+    const cta = page.getByRole("button", { name: "Start My Day" });
+    const ctaBg = await cta.evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(ctaBg.replace(/\s+/g, " ")).toContain("rgb(139, 92, 246)");
+    expect(ctaBg.replace(/\s+/g, " ")).toContain("rgb(79, 70, 229)");
+
+    // Sidebar brand chip: same measured pair.
+    const chip = page.locator("aside span.rounded-xl").first();
+    const chipBg = await chip.evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(chipBg.replace(/\s+/g, " ")).toContain("rgb(79, 70, 229)");
+  });
+
+  test("the footer avatar renders the measured violet-400 → indigo-500 pair (S4-G pin)", async ({ page }) => {
+    await page.goto("/Dashboard");
+    // Reference avatar gradient (measured): rgb(167,139,250) → rgb(99,102,241)
+    // — the LIGHTER pair, unlike the brand chips' 500→600.
+    const avatar = page.locator("aside span.rounded-full").filter({ hasText: /./ }).first();
+    const bg = await avatar.evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(bg.replace(/\s+/g, " ")).toContain("rgb(167, 139, 250)");
+    expect(bg.replace(/\s+/g, " ")).toContain("rgb(99, 102, 241)");
+  });
+
+  test("the dashboard date renders at 16px like the reference (S4-I pin)", async ({ page }) => {
+    await page.goto("/Dashboard");
+    const date = page.locator("main h1 + p").first();
+    await expect(date).toHaveCSS("font-size", "16px");
+    await expect(date).toHaveText(/^[A-Z][a-z]+, [A-Z][a-z]+ \d{1,2}, \d{4}$/);
+  });
+
+  test("dashboard section titles resolve as h2 (S4-J pin)", async ({ page }) => {
+    await page.goto("/Dashboard");
+    // Reference: "Today's Tasks" & co are <h2> (18px/600 + 20px icon);
+    // stat values are the h3 level (S4-B).
+    const h2 = page.getByRole("heading", { level: 2, name: "Today's Tasks" });
+    await expect(h2).toBeVisible();
+    await expect(h2).toHaveCSS("font-size", "18px");
+  });
+
+  test("View All buttons carry the lucide arrow icon (S4-E pin)", async ({ page }) => {
+    await page.goto("/Dashboard");
+    const viewAll = page.getByRole("button", { name: /^View All/ }).first();
+    await expect(viewAll.locator("svg").first()).toBeVisible();
+    const box = await viewAll.locator("svg").first().boundingBox();
+    expect(Math.round(box?.width ?? 0)).toBe(16);
+  });
+
   test("the sidebar clock chip and time format match the reference (S3-B/S3-C pins)", async ({ page }) => {
     await page.goto("/Dashboard");
     // Reference (measured): linear-gradient(to right bottom,

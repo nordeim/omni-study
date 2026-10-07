@@ -12,6 +12,7 @@ import {
   UNITS,
 } from "@/lib/calculator";
 import { useDataStore, mutations, type CalculatorHistoryEntry } from "@/lib/data";
+import { ViewHeader } from "./shared";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -323,15 +324,16 @@ export function CalculatorView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Calculator Suite</h1>
-          <p className="mt-1 text-sm text-slate-500">Basic, scientific, GPA and unit conversion tools</p>
-        </div>
+      <ViewHeader
+        title="Calculator Suite"
+        subtitle="All your calculation needs in one place"
+        icon={CalcIcon}
+        actions={
         <Button variant="outline" onClick={() => setHistoryOpen(true)}>
           <History className="h-4 w-4" /> History
         </Button>
-      </div>
+        }
+      />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList>

@@ -4,7 +4,7 @@ import * as React from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
 import { useDataStore, type AppEvent } from "@/lib/data";
 import { useAppStore } from "@/lib/store";
-import { EmptyState, useSubjectMap } from "./shared";
+import { EmptyState, useSubjectMap, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { addMonths, formatFullDate, isSameDay, monthGrid, WEEKDAY_SHORT } from "@/lib/date";
@@ -81,8 +81,10 @@ export function CalendarView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Calendar</h1>
+      <ViewHeader
+        title="Calendar"
+        subtitle="View all your tasks, assignments and classes"
+        actions={
         <div className="flex items-center gap-2">
           <div className="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
             {(["calendar", "timeline"] as const).map((m) => (
@@ -103,7 +105,8 @@ export function CalendarView() {
             ))}
           </div>
         </div>
-      </div>
+        }
+      />
 
       {mode === "calendar" ? (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">

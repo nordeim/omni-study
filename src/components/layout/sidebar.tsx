@@ -60,7 +60,7 @@ export function Sidebar() {
           <span
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
             style={{
-              backgroundImage: "linear-gradient(to bottom right, rgb(var(--sf-primary)), rgb(var(--sf-primary-strong)))",
+              backgroundImage: "linear-gradient(to bottom right, rgb(var(--sf-primary)), rgb(var(--sf-primary-gradient-to)))",
               boxShadow: "0 10px 15px -3px rgb(var(--sf-primary) / 0.3)",
             }}
             aria-hidden="true"

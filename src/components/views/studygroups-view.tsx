@@ -337,7 +337,7 @@ export function StudyGroupsView() {
     <div className="flex flex-col gap-6">
       <ViewHeader
         title="Study Groups"
-        subtitle="Study with classmates and stay accountable together"
+        icon={Users}
         actions={
           <Button onClick={openCreate} className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} /> Create Group

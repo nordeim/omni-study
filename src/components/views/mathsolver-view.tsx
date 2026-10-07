@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Eraser, ImageIcon, Loader2, Sigma, Sparkles } from "lucide-react";
+import { Calculator, Eraser, ImageIcon, Loader2, Sigma, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ViewHeader } from "./shared";
 import { Textarea } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { apiSend, ApiError } from "@/lib/api";
@@ -59,18 +60,11 @@ export function MathSolverView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span
-          className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm"
-          style={{ backgroundColor: "rgb(var(--sf-primary))" }}
-        >
-          <Sigma className="h-6 w-6" strokeWidth={1.75} />
-        </span>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Math Solver</h1>
-          <p className="mt-0.5 text-sm text-slate-500">Step-by-step solutions for any problem</p>
-        </div>
-      </div>
+      <ViewHeader
+        title="Math Solver"
+        subtitle="Type a problem or upload an image to get step-by-step solutions"
+        icon={Calculator}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Input */}

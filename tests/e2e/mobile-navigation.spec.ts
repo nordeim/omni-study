@@ -93,13 +93,15 @@ test.describe("mobile navigation", () => {
     await expect(panel).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await expect(panel).toHaveCSS("border-right-width", "0px");
 
-    // Backdrop: bg-black/20 + backdrop-blur-sm (reference measured; the
+    // Backdrop: bg-black/20 + a 4px backdrop blur (reference measured; the
     // computed color serializes as oklab(0 0 0 / 0.2) in Chromium — same
     // 20% black the reference's rgba(0,0,0,0.2) produces).
+    // S4-A pin: v4's backdrop-blur-sm computes 8px — v3's blur-sm (the
+    // reference's class) is v4's blur-xs. The amount must be 4px.
     const backdrop = dialog.getByRole("button", { name: "Close navigation menu" });
     const backdropBg = await backdrop.evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(backdropBg).toMatch(/rgba\(0, 0, 0, 0\.2\)|oklab\(0 0 0 \/ 0\.2\)/);
-    await expect(backdrop).toHaveCSS("backdrop-filter", /blur/);
+    await expect(backdrop).toHaveCSS("backdrop-filter", /blur\(4px\)/);
 
     // Nav items carry icons (20px) + labels like the desktop sidebar.
     const firstLink = dialog.getByRole("link", { name: "Dashboard", exact: true });

@@ -205,7 +205,7 @@ export function GradeTrackerView() {
   if (loadStatus === "error") {
     return (
       <div className="flex flex-col gap-6">
-        <ViewHeader title="Grade Tracker" subtitle="Track your performance across subjects" />
+        <ViewHeader title="Grade Tracker" subtitle="Monitor your academic performance" icon={TrendingUp} />
         <ErrorText message={error ?? "Failed to load grades"} />
       </div>
     );
@@ -215,7 +215,8 @@ export function GradeTrackerView() {
     <div className="flex flex-col gap-6">
       <ViewHeader
         title="Grade Tracker"
-        subtitle="Track your performance across subjects"
+        subtitle="Monitor your academic performance"
+        icon={TrendingUp}
         actions={
           <Button onClick={openCreate} className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} />

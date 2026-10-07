@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { CalendarClock, ChevronLeft, ChevronRight, Grid3x3, Plus, Trash2 } from "lucide-react";
+import { Calendar, CalendarClock, ChevronLeft, ChevronRight, Grid3x3, Plus, Trash2 } from "lucide-react";
 import { useDataStore, mutations, type TimetableClass } from "@/lib/data";
-import { useSubjectMap, EmptyState } from "./shared";
+import { useSubjectMap, EmptyState, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -129,11 +129,11 @@ export function TimetableView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Timetable</h1>
-          <p className="mt-1 text-sm text-slate-500">Your weekly class schedule</p>
-        </div>
+      <ViewHeader
+        title="Timetable"
+        subtitle="Manage your class schedule"
+        icon={Calendar}
+        actions={
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setGridBuilder((v) => !v)} aria-pressed={gridBuilder}>
             <Grid3x3 className="h-4 w-4" /> Grid Builder
@@ -142,7 +142,8 @@ export function TimetableView() {
             <Plus className="h-4 w-4" /> Add Class
           </Button>
         </div>
-      </div>
+        }
+      />
 
       {gridBuilder && (
         <div className="sf-card p-5 text-sm text-slate-600 dark:text-slate-300">

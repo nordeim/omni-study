@@ -233,7 +233,7 @@ export function EventsView() {
   if (loadStatus === "error") {
     return (
       <div className="flex flex-col gap-6">
-        <ViewHeader title="Events & Reminders" subtitle="Stay on top of your schedule" />
+        <ViewHeader title="Events & Reminders" subtitle="Manage your events with custom reminders" icon={CalendarDays} />
         <ErrorText message={error ?? "Failed to load events"} />
       </div>
     );
@@ -243,7 +243,8 @@ export function EventsView() {
     <div className="flex flex-col gap-6">
       <ViewHeader
         title="Events & Reminders"
-        subtitle="Stay on top of your schedule"
+        subtitle="Manage your events with custom reminders"
+        icon={CalendarDays}
         actions={
           <Button onClick={openCreate} className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} />

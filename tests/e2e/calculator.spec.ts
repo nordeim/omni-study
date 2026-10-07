@@ -89,10 +89,24 @@ test.describe("theme system", () => {
     );
     expect(after).toBe("20 184 166");
     // Restore the default accent — later specs (and the shared user record)
-    // must not inherit this test's teal.
+    // must not inherit this test's teal. The restore PATCH must LAND before
+    // the test ends: ending right after the click can abort the in-flight
+    // request (page teardown), persisting teal and poisoning every later
+    // violet-computed pin (observed as an order-dependent full-suite flake,
+    // session 4).
     await page.goto("/Settings");
     await hydrated(page);
-    await page.getByRole("button", { name: "Violet accent" }).click();
+    await Promise.all([
+      page.waitForResponse(
+        (r) => r.url().includes("/api/settings/preferences") && r.request().method() === "PATCH",
+      ),
+      page.getByRole("button", { name: "Violet accent" }).click(),
+    ]);
+    // And the applied token is violet again.
+    const restored = await page.evaluate(
+      () => getComputedStyle(document.documentElement).getPropertyValue("--sf-primary").trim(),
+    );
+    expect(restored).toBe("139 92 246");
   });
 
   test("dark mode toggles the html class", async ({ page }) => {

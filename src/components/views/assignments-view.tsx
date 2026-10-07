@@ -163,7 +163,7 @@ export function AssignmentsView() {
   if (loadStatus === "error") {
     return (
       <div className="flex flex-col gap-6">
-        <ViewHeader title="Assignments" subtitle="Track homework and coursework" />
+        <ViewHeader title="Assignments" subtitle="Track your homework and projects" icon={BookOpen} />
         <ErrorText message={error ?? "Failed to load assignments"} />
       </div>
     );
@@ -173,7 +173,8 @@ export function AssignmentsView() {
     <div className="flex flex-col gap-6">
       <ViewHeader
         title="Assignments"
-        subtitle="Track homework and coursework"
+        subtitle="Track your homework and projects"
+        icon={BookOpen}
         actions={
           <Button onClick={openCreate} className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} />

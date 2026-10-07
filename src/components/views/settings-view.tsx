@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Check, LogOut, Monitor, Moon, Plus, Sun, Trash2 } from "lucide-react";
+import { Check, LogOut, Monitor, Moon, Plus, Settings as SettingsIcon, Sun, Trash2 } from "lucide-react";
 import { useDataStore, mutations } from "@/lib/data";
+import { ViewHeader } from "./shared";
 import { useThemeStore } from "@/lib/store";
 import { ACCENTS, ACCENT_TOKENS, AVATAR_EMOJIS, type ThemeMode } from "@/lib/theme";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -96,10 +97,7 @@ export function SettingsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Settings</h1>
-        <p className="mt-1 text-sm text-slate-500">Personalize StudyFlow to match your style</p>
-      </div>
+      <ViewHeader title="Settings" subtitle="Customize your StudyFlow experience" icon={SettingsIcon} />
 
       <Tabs defaultValue="appearance">
         <TabsList>

@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3, ChartColumn, TrendingUp } from "lucide-react";
 import { useDataStore } from "@/lib/data";
-import { EmptyState, StatCard, STAT_COLORS, useSubjectMap } from "./shared";
+import { EmptyState, StatCard, STAT_COLORS, useSubjectMap, ViewHeader } from "./shared";
 import { formatMinutes } from "@/lib/date";
 
 // Analytics — custom inline-SVG charts (no chart library). Superset of the
@@ -184,10 +184,7 @@ export function AnalyticsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Analytics</h1>
-        <p className="mt-1 text-sm text-slate-500">Insights into your study habits</p>
-      </div>
+      <ViewHeader title="Analytics" subtitle="Track your study progress and productivity" icon={ChartColumn} />
 
       {!hasAnyData ? (
         <div className="sf-card">

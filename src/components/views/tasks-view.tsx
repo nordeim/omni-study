@@ -166,7 +166,10 @@ export function TasksView() {
           ))}
 
           <div className="mt-3 flex items-center justify-between px-3 pb-1">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">My Lists</h3>
+            {/* Reference (measured): text-sm font-semibold text-slate-500
+                uppercase tracking-wider — the clone was one step small and
+                light (text-xs slate-400; S4-H). */}
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">My Lists</h3>
             <button
               type="button"
               onClick={() => setListDialogOpen(true)}
@@ -220,9 +223,14 @@ export function TasksView() {
       {/* Main column */}
       <div className="min-w-0 flex-1">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            {bucketLabel(bucket, taskLists.find((l) => typeof bucket === "object" && l.id === bucket.list)?.name)}
-          </h1>
+          {/* Reference (measured): h1 text-2xl font-bold text-slate-800
+              (tracking normal) + a dynamic "{N} tasks" subtitle (16px). */}
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+              {bucketLabel(bucket, taskLists.find((l) => typeof bucket === "object" && l.id === bucket.list)?.name)}
+            </h1>
+            <p className="text-base text-slate-500">{visible.length} tasks</p>
+          </div>
           <Button onClick={openCreate} className="gap-1.5">
             <Plus className="h-4 w-4" /> Add Task
           </Button>

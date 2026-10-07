@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Layers, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useDataStore, mutations, type FlashcardDeck, type Flashcard } from "@/lib/data";
-import { useSubjectMap, EmptyState, SubjectChip } from "./shared";
+import { useSubjectMap, EmptyState, SubjectChip, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -118,13 +118,13 @@ export function FlashcardsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Flashcards</h1>
-          <p className="mt-1 text-sm text-slate-500">Spaced-repetition style deck practice</p>
-        </div>
-        <Button onClick={openCreateDeck}><Plus className="h-4 w-4" /> Create Deck</Button>
-      </div>
+      <ViewHeader
+        title="Flashcards"
+        icon={Layers}
+        actions={
+          <Button onClick={openCreateDeck}><Plus className="h-4 w-4" /> Create Deck</Button>
+        }
+      />
 
       <div className="relative max-w-md">
         <Input

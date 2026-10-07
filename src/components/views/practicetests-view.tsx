@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, ClipboardList, MoreHorizontal, Play, Plus } from "lucide-react";
+import { CheckCircle2, ClipboardList, FileQuestion, MoreHorizontal, Play, Plus } from "lucide-react";
 import { useDataStore, mutations, type PracticeTest, type Subject } from "@/lib/data";
 import { EmptyState, ErrorText, LoadingCards, SubjectChip, ViewHeader, useSubjectMap } from "./shared";
 import { Badge } from "@/components/ui/badge";
@@ -239,7 +239,8 @@ export function PracticeTestsView() {
     <div className="flex flex-col gap-6">
       <ViewHeader
         title="Practice Tests"
-        subtitle="Sharpen your skills with self-made tests"
+        subtitle="Test yourself with practice exams"
+        icon={FileQuestion}
         actions={
           <Button onClick={openCreate} className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} /> Create Test

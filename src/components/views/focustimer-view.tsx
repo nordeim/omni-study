@@ -173,10 +173,7 @@ export function FocusTimerView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <ViewHeader
-        title="Focus Timer"
-        subtitle="Stay on task with structured focus sessions and breaks"
-      />
+      <ViewHeader title="Focus Timer" subtitle="Stay focused and productive" icon={Timer} size="lg" />
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         {/* Timer card */}

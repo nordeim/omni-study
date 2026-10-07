@@ -16,7 +16,7 @@ import { NavItemLink } from "./nav-items";
 //           pt-16 (64px) — content starts at 80px (64 + the content's own
 //           16px padding). The brand + clock NEVER change with the view.
 //
-// Drawer:   fixed inset-0 z-50 backdrop (bg-black/20 + backdrop-blur-sm)
+// Drawer:   fixed inset-0 z-50 backdrop (bg-black/20 + backdrop-blur-xs)
 //           + a 288px (w-72) white panel, shadow-2xl, no right border.
 //           Brand header p-6 (40px gradient chip) + nav items IDENTICAL
 //           to the desktop sidebar (icon + label + trailing dot). The
@@ -52,7 +52,7 @@ function MobileHeader() {
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-sm"
             style={{
               backgroundImage:
-                "linear-gradient(to bottom right, rgb(var(--sf-primary)), rgb(var(--sf-primary-strong)))",
+                "linear-gradient(to bottom right, rgb(var(--sf-primary)), rgb(var(--sf-primary-gradient-to)))",
             }}
             aria-hidden="true"
           >
@@ -91,7 +91,7 @@ function MobileDrawer() {
       <button
         type="button"
         aria-label="Close navigation menu"
-        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/20 backdrop-blur-xs"
         onClick={() => setMobileMenu(false)}
       />
       <div className="sf-toast-in absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-2xl dark:bg-slate-950">
@@ -101,7 +101,7 @@ function MobileDrawer() {
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
               style={{
                 backgroundImage:
-                  "linear-gradient(to bottom right, rgb(var(--sf-primary)), rgb(var(--sf-primary-strong)))",
+                  "linear-gradient(to bottom right, rgb(var(--sf-primary)), rgb(var(--sf-primary-gradient-to)))",
                 boxShadow: "0 10px 15px -3px rgb(var(--sf-primary) / 0.3)",
               }}
               aria-hidden="true"

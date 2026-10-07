@@ -100,19 +100,14 @@ export function MyDayView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span
-          className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm"
-          style={{ backgroundColor: "rgb(var(--sf-primary))" }}
-        >
-          <Sun className="h-6 w-6" strokeWidth={1.75} />
-        </span>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">My Day</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
-            {now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-          </p>
-        </div>
+      <div>
+        {/* Reference (measured): bare text-3xl h1 (30px, slate-800, no icon
+            chip) + "Wednesday, October 7" — the MyDay subtitle carries NO
+            year (unlike the dashboard date). */}
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">My Day</h1>
+        <p className="text-base text-slate-500">
+          {now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+        </p>
       </div>
 
       {/* Quick add */}

@@ -253,7 +253,8 @@ export function FilesView() {
     <div className="flex flex-col gap-6">
       <ViewHeader
         title="Files"
-        subtitle="Upload materials, save links, and keep everything organized"
+        subtitle="Store and organize your documents"
+        icon={FolderOpen}
         actions={
           <>
             <Button variant="outline" onClick={() => setFolderDialogOpen(true)} className="gap-1.5">

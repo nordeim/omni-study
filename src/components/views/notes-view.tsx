@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { NotebookPen, Pin, PinOff, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, NotebookPen, Pin, PinOff, Plus, Search, Trash2 } from "lucide-react";
 import { useDataStore, mutations, type Note, type Notebook } from "@/lib/data";
-import { EmptyState } from "./shared";
+import { EmptyState, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -84,16 +84,16 @@ export function NotesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Notes</h1>
-          <p className="mt-1 text-sm text-slate-500">Capture and organize your study notes</p>
-        </div>
+      <ViewHeader
+        title="Notes"
+        icon={BookOpen}
+        actions={
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setNotebookDialogOpen(true)}>New Notebook</Button>
           <Button onClick={createNote}><Plus className="h-4 w-4" /> New Note</Button>
         </div>
-      </div>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">

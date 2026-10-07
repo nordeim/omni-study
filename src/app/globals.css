@@ -109,6 +109,15 @@
   /* Adjacent-hue 50-level (indigo-50 #EEF2FF) — the clock chip gradient's
      SECOND stop, measured exactly on the reference: rgb(238,242,255). */
   --sf-primary-softest-adjacent: 238 242 255;
+  /* S4-G gradient stops (measured on the reference, session 4): brand
+     chips + CTA end at indigo-600; the avatar uses the lighter
+     violet-400 → indigo-500 pair; the empty-state block runs
+     violet-100 → indigo-100. */
+  --sf-primary-gradient-to: 79 70 229;
+  --sf-primary-avatar-from: 167 139 250;
+  --sf-primary-avatar-to: 99 102 241;
+  --sf-primary-empty-from: 237 233 254;
+  --sf-primary-empty-to: 224 231 255;
 }
 
 .dark {

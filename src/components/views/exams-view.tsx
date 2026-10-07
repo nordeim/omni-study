@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CalendarClock, MapPin, Plus } from "lucide-react";
+import { CalendarClock, GraduationCap, MapPin, Plus } from "lucide-react";
 import { useDataStore, mutations, type Exam } from "@/lib/data";
 import { useSubjectMap, ViewHeader, EmptyState, LoadingCards, ErrorText, SubjectChip } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -150,6 +150,14 @@ export function ExamsView() {
 
   // ---- Filtering ----
   const now = new Date();
+  // Reference subtitle (measured): "N upcoming · N this week" — dynamic
+  // counts of upcoming exams and those within the next 7 days.
+  const upcomingCount = exams.filter(
+    (e) => e.status === "upcoming" && daysUntil(new Date(e.date), now) >= 0,
+  ).length;
+  const thisWeekCount = exams.filter(
+    (e) => e.status === "upcoming" && daysUntil(new Date(e.date), now) >= 0 && daysUntil(new Date(e.date), now) <= 7,
+  ).length;
   const visible = exams.filter((exam) => {
     if (search && !exam.title.toLowerCase().includes(search.toLowerCase())) return false;
     const upcoming = exam.status === "upcoming" && daysUntil(new Date(exam.date), now) >= 0;
@@ -165,7 +173,11 @@ export function ExamsView() {
   if (loadStatus === "error") {
     return (
       <div className="flex flex-col gap-6">
-        <ViewHeader title="Exams" subtitle="Stay on top of your exam schedule" />
+        <ViewHeader
+          title="Exams"
+          subtitle={`${upcomingCount} upcoming · ${thisWeekCount} this week`}
+          icon={GraduationCap}
+        />
         <ErrorText message={error ?? "Failed to load exams"} />
       </div>
     );
@@ -175,7 +187,8 @@ export function ExamsView() {
     <div className="flex flex-col gap-6">
       <ViewHeader
         title="Exams"
-        subtitle="Stay on top of your exam schedule"
+        subtitle={`${upcomingCount} upcoming · ${thisWeekCount} this week`}
+        icon={GraduationCap}
         actions={
           <Button onClick={openCreate} className="gap-1.5">
             <Plus className="h-4 w-4" strokeWidth={1.75} />
