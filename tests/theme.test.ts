@@ -16,6 +16,13 @@ describe("ACCENT_TOKENS", () => {
     expect(ACCENT_TOKENS.violet.strong).toBe("124 58 237"); // violet-600 links
   });
 
+  it("pins the clock chip's second gradient stop to the measured indigo-50", () => {
+    // Reference clock chip (measured): linear-gradient(to right bottom,
+    // rgb(245,243,255), rgb(238,242,255)) — violet-50 → indigo-50 exactly.
+    expect(ACCENT_TOKENS.violet.softest).toBe("245 243 255");
+    expect(ACCENT_TOKENS.violet.softestAdjacent).toBe("238 242 255");
+  });
+
   it("defines all seven reference accents", () => {
     expect([...ACCENTS]).toEqual([
       "violet",
@@ -66,6 +73,19 @@ describe("accentCssVars", () => {
     expect(vars["--sf-primary"]).toBe("139 92 246");
     expect(Object.keys(vars)).toContain("--sf-primary-soft");
     expect(Object.keys(vars)).toContain("--sf-primary-strong-dark");
+    expect(vars["--sf-primary-softest-adjacent"]).toBe("238 242 255");
+  });
+
+  it("emits the COMPLETE token set — deep/softest/adjacent included (S3-J regression pin)", () => {
+    // applyToDocument historically wrote only 6 of the tokens; the rest kept
+    // the violet :root defaults, so non-violet accents left the clock violet.
+    for (const accent of ACCENTS) {
+      const vars = accentCssVars(accent);
+      const t = ACCENT_TOKENS[accent];
+      expect(vars["--sf-primary-deep"]).toBe(t.deep);
+      expect(vars["--sf-primary-softest"]).toBe(t.softest);
+      expect(vars["--sf-primary-softest-adjacent"]).toBe(t.softestAdjacent);
+    }
   });
 });
 

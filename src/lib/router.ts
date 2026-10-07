@@ -80,9 +80,10 @@ export function pathForView(view: ViewId): string {
   return item?.path ?? "/Dashboard";
 }
 
-/** Greeting bucket by hour — matches the reference ("Good evening, … 👋"). */
+/** Greeting bucket by hour — fake-clock-probed across all 24 hours on the
+ *  live reference: 0–11 morning, 12–16 afternoon, 17–23 evening. The
+ *  reference has NO "Good night" greeting bucket. */
 export function greetingForHour(hour: number): string {
-  if (hour < 5) return "Good night";
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";

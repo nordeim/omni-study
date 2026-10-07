@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
 test.use({ viewport: { width: 1440, height: 900 } });
 
 const VIEWS: { path: string; heading: string | RegExp }[] = [
-  { path: "/Dashboard", heading: /Good (morning|afternoon|evening|night)/ },
+  { path: "/Dashboard", heading: /Good (morning|afternoon|evening)/ },
   { path: "/MyDay", heading: "My Day" },
   { path: "/Tasks", heading: "All Tasks" },
   { path: "/Calendar", heading: "Calendar" },
@@ -180,5 +180,31 @@ test.describe("view chrome (computed parity pins)", () => {
     expect(style.bg).toContain("linear-gradient");
     expect(style.color).toBe("rgb(255, 255, 255)");
     expect(await avatar.textContent()).toMatch(/^[A-Za-z]$/); // single initial
+  });
+
+  test("stat card icons render at the reference's 24px (S3-A pin)", async ({ page }) => {
+    await page.goto("/Dashboard");
+    // Reference stat chips: 48px chip with a w-6 h-6 (24px) white glyph —
+    // the clone previously rendered h-5 w-5 (20px).
+    const chip = page.locator("main .overflow-hidden.rounded-2xl span.rounded-xl").first();
+    await expect(chip).toBeVisible();
+    const icon = chip.locator("svg").first();
+    const box = await icon.boundingBox();
+    expect(Math.round(box?.width ?? 0)).toBe(24);
+  });
+
+  test("the sidebar clock chip and time format match the reference (S3-B/S3-C pins)", async ({ page }) => {
+    await page.goto("/Dashboard");
+    // Reference (measured): linear-gradient(to right bottom,
+    // rgb(245,243,255), rgb(238,242,255)) — violet-50 → indigo-50 EXACTLY.
+    // The time text renders a 2-digit hour ("03:43 AM").
+    const clockChip = page.locator("aside div.rounded-xl").filter({ hasText: /AM|PM/ }).first();
+    await expect(clockChip).toBeVisible();
+    const grad = await clockChip.evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(grad.replace(/\s+/g, " ")).toContain("rgb(245, 243, 255)");
+    expect(grad.replace(/\s+/g, " ")).toContain("rgb(238, 242, 255)");
+
+    const time = clockChip.locator("p").first();
+    await expect(time).toHaveText(/^\d{2}:\d{2} (AM|PM)$/);
   });
 });

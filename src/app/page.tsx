@@ -110,6 +110,10 @@ export default function StudyFlowApp() {
     <div className="sf-canvas min-h-screen">
       <Sidebar />
       <MobileChrome />
+      {/* pt-20 (80px) offsets the FIXED mobile app bar: 64px of bar + the
+          16px the reference's content keeps below it (its main is pt-16 and
+          an inner p-4 wrapper adds the rest — measured: first heading at
+          y=80 on BOTH apps). At lg the bar is hidden and lg:pt-8 applies. */}
       <main className="sf-scroll min-h-screen overflow-x-clip p-4 pt-20 transition-all duration-300 lg:ml-[260px] lg:p-8 lg:pt-8">
         <CurrentView />
       </main>

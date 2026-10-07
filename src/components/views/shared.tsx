@@ -142,7 +142,9 @@ export function StatCard({
             boxShadow: `0 10px 15px -3px ${colors.shadow}`,
           }}
         >
-          <Icon className="h-5 w-5" strokeWidth={2} />
+          {/* Reference stat chips carry a w-6 h-6 (24px) white glyph —
+              measured live (session 3; the clone previously used 20px). */}
+          <Icon className="h-6 w-6" strokeWidth={2} />
         </span>
       </div>
     </div>

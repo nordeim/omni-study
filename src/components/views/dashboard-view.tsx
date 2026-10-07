@@ -101,10 +101,13 @@ export function DashboardView() {
           </h1>
           <p className="mt-1 text-sm text-slate-500">{formatFullDate(now)}</p>
         </div>
+        {/* self-start: the greeting row is flex-col below md — without it the
+            CTA stretches full-width (measured 358px); the reference keeps it
+            content-sized (155px) at mobile. */}
         <button
           type="button"
           onClick={() => navigate("myday")}
-          className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 sf-focus"
+          className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 self-start sf-focus"
           style={{
             backgroundImage: "linear-gradient(to right, rgb(var(--sf-primary)), rgb(var(--sf-primary-strong)))",
             boxShadow: "0 10px 15px -3px rgb(var(--sf-primary) / 0.25)",

@@ -48,14 +48,26 @@ describe("NAV_ITEMS", () => {
 });
 
 describe("greetingForHour", () => {
-  it("buckets hours like the reference app", () => {
-    expect(greetingForHour(0)).toBe("Good night");
-    expect(greetingForHour(4)).toBe("Good night");
+  // Fake-clock probe of the live reference (all 24 hours mapped):
+  // 0-11 → morning, 12-16 → afternoon, 17-23 → evening. "Good night"
+  // never appears in the reference's greeting.
+  it("buckets hours like the reference app (morning covers 0-11, no night bucket)", () => {
+    expect(greetingForHour(0)).toBe("Good morning");
+    expect(greetingForHour(3)).toBe("Good morning");
+    expect(greetingForHour(4)).toBe("Good morning");
     expect(greetingForHour(6)).toBe("Good morning");
     expect(greetingForHour(11)).toBe("Good morning");
+    expect(greetingForHour(12)).toBe("Good afternoon");
     expect(greetingForHour(13)).toBe("Good afternoon");
     expect(greetingForHour(16)).toBe("Good afternoon");
+    expect(greetingForHour(17)).toBe("Good evening");
     expect(greetingForHour(18)).toBe("Good evening");
     expect(greetingForHour(23)).toBe("Good evening");
+  });
+
+  it("never returns 'Good night' (the reference has no such bucket)", () => {
+    for (let h = 0; h < 24; h++) {
+      expect(greetingForHour(h)).not.toBe("Good night");
+    }
   });
 });

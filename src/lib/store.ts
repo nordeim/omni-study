@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { NAV_ITEMS, pathForView, viewFromPath, type ViewId } from "@/lib/router";
-import { ACCENT_TOKENS, resolveMode, type Accent, type ThemeMode } from "@/lib/theme";
+import { ACCENT_TOKENS, accentCssVars, resolveMode, type Accent, type ThemeMode } from "@/lib/theme";
 
 // ---------------------------------------------------------------------------
 // App store — view routing (synced with location.pathname), sidebar collapse,
@@ -109,15 +109,11 @@ function applyToDocument(mode: ThemeMode, accent: Accent) {
   const effective = resolveMode(mode, window.matchMedia("(prefers-color-scheme: dark)").matches);
   root.classList.toggle("dark", effective === "dark");
   root.dataset.accent = accent;
-  const tokens = ACCENT_TOKENS[accent];
-  for (const [k, v] of Object.entries({
-    "--sf-primary": tokens.primary,
-    "--sf-primary-foreground": tokens.primaryFg,
-    "--sf-primary-soft": tokens.soft,
-    "--sf-primary-soft-dark": tokens.softDark,
-    "--sf-primary-strong": tokens.strong,
-    "--sf-primary-strong-dark": tokens.strongDark,
-  })) {
+  // The COMPLETE token set — a previous version wrote only six of the nine
+  // vars, so deep/softest (and now softest-adjacent) kept the violet :root
+  // defaults under every non-violet accent (clock text/chip stayed violet).
+  // accentCssVars is the single source of truth; keep it that way.
+  for (const [k, v] of Object.entries(accentCssVars(accent))) {
     root.style.setProperty(k, v);
   }
 }

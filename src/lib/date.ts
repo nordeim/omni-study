@@ -78,14 +78,15 @@ export function formatShortWithYear(d: Date): string {
   return `${wd}, ${mon} ${d.getDate()}`;
 }
 
-/** "11:29 PM" / "09:05 AM" (sidebar clock, 12-hour). */
+/** "03:05 PM" / "09:05 AM" (sidebar clock + mobile app bar, 12-hour with
+ *  a 2-digit hour — measured live on the reference: "03:43 AM"). */
 export function formatTime12h(d: Date): string {
   let h = d.getHours();
   const m = d.getMinutes().toString().padStart(2, "0");
   const ap = h >= 12 ? "PM" : "AM";
   h = h % 12;
   if (h === 0) h = 12;
-  return `${h}:${m} ${ap}`;
+  return `${h.toString().padStart(2, "0")}:${m} ${ap}`;
 }
 
 /**

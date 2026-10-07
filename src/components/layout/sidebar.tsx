@@ -1,59 +1,12 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import {
-  BarChart3,
-  BookOpen,
-  Calendar,
-  CalendarDays,
-  CalendarPlus,
-  Calculator,
-  ChevronLeft,
-  ChevronRight,
-  FileQuestion,
-  Folder,
-  GraduationCap,
-  LayoutDashboard,
-  Layers,
-  Notebook,
-  Settings as SettingsIcon,
-  Sparkles,
-  SquareRadical,
-  Sun,
-  Timer,
-  TrendingUp,
-  Users,
-  ListChecks,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, GraduationCap } from "lucide-react";
 import { NAV, useAppStore, useThemeStore } from "@/lib/store";
 import { formatShortWithYear, formatTime12h } from "@/lib/date";
 import { cn } from "@/lib/utils";
-import type { ViewId } from "@/lib/router";
+import { NavItemLink } from "./nav-items";
 import { UserAvatar } from "./user-avatar";
-
-const ICONS: Record<ViewId, React.ComponentType<{ className?: string; strokeWidth?: number; style?: React.CSSProperties }>> = {
-  dashboard: LayoutDashboard,
-  myday: Sun,
-  tasks: ListChecks,
-  calendar: CalendarDays,
-  events: CalendarPlus,
-  timetable: Calendar,
-  assignments: BookOpen,
-  exams: GraduationCap,
-  notes: Notebook,
-  flashcards: Layers,
-  practicetests: FileQuestion,
-  studygroups: Users,
-  gradetracker: TrendingUp,
-  analytics: BarChart3,
-  files: Folder,
-  calculator: Calculator,
-  mathsolver: SquareRadical,
-  aiassistant: Sparkles,
-  focustimer: Timer,
-  settings: SettingsIcon,
-};
 
 function SidebarClock() {
   const [now, setNow] = React.useState(() => new Date());
@@ -66,11 +19,13 @@ function SidebarClock() {
       className="mb-3 rounded-xl p-3"
       style={{
         // Reference (measured): bg-gradient-to-br from-violet-50 to-indigo-50
-        // — a 50-level tint gradient, NOT the violet-100 soft chip. The
-        // second stop blends the accent's strong tone into white (the
-        // reference's adjacent-hue indigo-50 analog, accent-aware).
+        // = linear-gradient(to right bottom, rgb(245,243,255), rgb(238,242,255)).
+        // The second stop is a FIXED adjacent-hue tint (indigo-50) — a hue
+        // rotation that cannot be approximated by mixing toward white —
+        // so it lives in its own --sf-primary-softest-adjacent token
+        // (accent-aware: each accent maps to its adjacent hue's 50-level).
         backgroundImage:
-          "linear-gradient(to bottom right, rgb(var(--sf-primary-softest)), color-mix(in srgb, rgb(var(--sf-primary-strong)) 7%, white))",
+          "linear-gradient(to bottom right, rgb(var(--sf-primary-softest)), rgb(var(--sf-primary-softest-adjacent)))",
       }}
     >
       <p
@@ -87,8 +42,6 @@ function SidebarClock() {
 }
 
 export function Sidebar() {
-  const view = useAppStore((s) => s.view);
-  const navigate = useAppStore((s) => s.navigate);
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const userName = useThemeStore((s) => s.userName);
@@ -112,7 +65,7 @@ export function Sidebar() {
             }}
             aria-hidden="true"
           >
-            <GraduationCap className="h-5 w-5" strokeWidth={1.75} />
+            <GraduationCap className="h-5 w-5" strokeWidth={2} />
           </span>
           {!collapsed && (
             <div className="min-w-0">
@@ -149,55 +102,11 @@ export function Sidebar() {
       {/* Navigation */}
       <nav aria-label="Primary" className="sf-scroll flex-1 overflow-y-auto p-4">
         <ul className="flex flex-col gap-1">
-          {NAV.map((item) => {
-            const Icon = ICONS[item.id];
-            const active = view === item.id;
-            return (
-              <li key={item.id}>
-                <Link
-                  href={item.path}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate(item.id);
-                  }}
-                  aria-current={active ? "page" : undefined}
-                  title={collapsed ? item.label : undefined}
-                  className="group block cursor-pointer"
-                >
-                  <span
-                    className={cn(
-                      "flex items-center rounded-xl px-4 py-3 transition-all duration-200",
-                      collapsed && "justify-center px-0",
-                      active ? "font-medium" : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60",
-                    )}
-                    style={
-                      active
-                        ? {
-                            backgroundImage:
-                              "linear-gradient(to right, rgb(var(--sf-primary) / 0.1), rgb(var(--sf-primary-strong) / 0.1))",
-                            color: "rgb(var(--sf-primary-strong))",
-                          }
-                        : undefined
-                    }
-                  >
-                    <Icon
-                      className={cn("h-5 w-5 shrink-0 transition-colors", !active && "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200")}
-                      strokeWidth={2}
-                      style={active ? { color: "rgb(var(--sf-primary))" } : undefined}
-                    />
-                    {!collapsed && <span className="ml-3 truncate">{item.label}</span>}
-                    {!collapsed && active && (
-                      <span
-                        className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: "rgb(var(--sf-primary))" }}
-                        aria-hidden="true"
-                      />
-                    )}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
+          {NAV.map((item) => (
+            <li key={item.id}>
+              <NavItemLink id={item.id} collapsed={collapsed} />
+            </li>
+          ))}
         </ul>
       </nav>
 

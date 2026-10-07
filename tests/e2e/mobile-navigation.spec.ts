@@ -13,12 +13,33 @@ test.describe("mobile navigation", () => {
     await page.goto("/Dashboard");
   });
 
-  test("app bar renders with hamburger, brand and view title", async ({ page }) => {
+  test("app bar renders fixed+glass with hamburger, brand and live clock", async ({ page }) => {
+    // Reference (measured 390×844): lg:hidden fixed top-0 left-0 right-0 h-16
+    // glass z-40 … justify-between px-4 shadow-sm — left: hamburger + 32px
+    // gradient brand chip + "StudyFlow"; right: a live clock "03:45 AM".
     const bar = page.getByRole("banner");
     await expect(bar).toBeVisible();
     await expect(bar).toHaveCSS("height", "64px");
+    await expect(bar).toHaveCSS("position", "fixed");
+    await expect(bar).toHaveCSS("background-color", "rgba(255, 255, 255, 0.8)");
+    await expect(bar).toHaveCSS("backdrop-filter", /blur\(20px\)/);
     await expect(bar.getByRole("button", { name: "Open navigation menu" })).toBeVisible();
-    await expect(bar.getByText("Dashboard")).toBeVisible();
+    await expect(bar.getByText("StudyFlow", { exact: true })).toBeVisible();
+    // The header clock renders the reference's 2-digit-hour 12-hour format.
+    await expect(bar.getByText(/^\d{2}:\d{2} (AM|PM)$/, { exact: true })).toBeVisible();
+  });
+
+  test("mobile content starts at 80px — no dead gap under the fixed bar (S3-E pin)", async ({ page }) => {
+    // Reference: fixed header overlays content; its main is pt-16 (64px)
+    // plus an inner p-4 wrapper — first heading at 80px. The clone models
+    // the same offset as main pt-20 (64 bar + 16 breathing room). The old
+    // sticky-header + pt-20 model STACKED both offsets (144px dead gap).
+    const h1 = page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ });
+    await expect(h1).toBeVisible();
+    const box = await h1.boundingBox();
+    expect(Math.round(box?.y ?? 0)).toBe(80);
+    const main = page.locator("main");
+    await expect(main).toHaveCSS("padding-top", "80px");
   });
 
   test("the sidebar is hidden below lg", async ({ page }) => {
@@ -60,6 +81,38 @@ test.describe("mobile navigation", () => {
     await expect(dialog.getByRole("button", { name: "Close menu" })).toBeVisible();
   });
 
+  test("the drawer panel mirrors the reference: 288px, light blurred backdrop, icon nav items, no footer (S3-F pin)", async ({ page }) => {
+    await page.getByRole("button", { name: "Open navigation menu" }).tap();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // Panel: w-72 = 288px, white, shadow-2xl, no right border.
+    const panel = dialog.locator("div.absolute.inset-y-0.left-0");
+    const box = await panel.boundingBox();
+    expect(Math.round(box?.width ?? 0)).toBe(288);
+    await expect(panel).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(panel).toHaveCSS("border-right-width", "0px");
+
+    // Backdrop: bg-black/20 + backdrop-blur-sm (reference measured; the
+    // computed color serializes as oklab(0 0 0 / 0.2) in Chromium — same
+    // 20% black the reference's rgba(0,0,0,0.2) produces).
+    const backdrop = dialog.getByRole("button", { name: "Close navigation menu" });
+    const backdropBg = await backdrop.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(backdropBg).toMatch(/rgba\(0, 0, 0, 0\.2\)|oklab\(0 0 0 \/ 0\.2\)/);
+    await expect(backdrop).toHaveCSS("backdrop-filter", /blur/);
+
+    // Nav items carry icons (20px) + labels like the desktop sidebar.
+    const firstLink = dialog.getByRole("link", { name: "Dashboard", exact: true });
+    const icon = firstLink.locator("svg").first();
+    await expect(icon).toBeVisible();
+    const iconBox = await icon.boundingBox();
+    expect(Math.round(iconBox?.width ?? 0)).toBe(20);
+
+    // The reference drawer has NO footer section (brand header + nav only).
+    await expect(panel.locator("footer, [data-testid=drawer-footer]")).toHaveCount(0);
+    await expect(panel.getByText(/@/)).toHaveCount(0);
+  });
+
   test("drawer links navigate and the drawer closes", async ({ page }) => {
     await page.getByRole("button", { name: "Open navigation menu" }).tap();
     const dialog = page.getByRole("dialog");
@@ -87,18 +140,32 @@ test.describe("mobile navigation", () => {
     await page.getByRole("button", { name: "Open navigation menu" }).tap();
     await expect(dialog).toBeVisible();
     // Tap the backdrop on the RIGHT side (the drawer panel spans the left
-    // 290px at 390px wide, so the element's center is covered by it).
+    // 288px at 390px wide, so the element's center is covered by it).
     await page
       .getByRole("button", { name: "Close navigation menu" })
       .click({ position: { x: 360, y: 400 } });
     await expect(dialog).toBeHidden();
   });
 
-  test("the app bar shows the current view title after navigation", async ({ page }) => {
+  test("the app bar keeps the brand and clock after navigation (reference behavior)", async ({ page }) => {
     await page.getByRole("button", { name: "Open navigation menu" }).tap();
     await page.getByRole("dialog").getByRole("link", { name: "Calendar", exact: true }).tap();
     await expect(page).toHaveURL(/\/Calendar\/?$/);
-    await expect(page.getByRole("banner").getByText("Calendar")).toBeVisible();
+    // The reference header always shows the StudyFlow brand + clock — it
+    // does NOT switch to the current view's title.
+    const bar = page.getByRole("banner");
+    await expect(bar.getByText("StudyFlow", { exact: true })).toBeVisible();
+    await expect(bar.getByText(/^\d{2}:\d{2} (AM|PM)$/, { exact: true })).toBeVisible();
+  });
+
+  test("the Start My Day CTA hugs its content on mobile (S3-G pin)", async ({ page }) => {
+    // Reference: 155×36 inline-flex CTA at 390px — NOT stretched. The old
+    // flex-col parent stretched the unconstrained child to 358px.
+    const cta = page.getByRole("button", { name: "Start My Day" });
+    await expect(cta).toBeVisible();
+    const box = await cta.boundingBox();
+    expect(Math.round(box?.height ?? 0)).toBe(36);
+    expect(Math.round(box?.width ?? 0)).toBeLessThan(200);
   });
 });
 

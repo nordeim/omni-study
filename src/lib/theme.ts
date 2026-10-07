@@ -30,6 +30,12 @@ export interface AccentToken {
   deep: string;
   /** Lightest tint (50-level) — reference sidebar clock chip gradient start. */
   softest: string;
+  /** 50-level tint of the ADJACENT hue — the clock chip gradient's second
+   *  stop. The reference (violet default) ends its chip gradient at
+   *  indigo-50 `rgb(238,242,255)` exactly — a hue rotation that cannot be
+   *  reproduced by mixing the accent toward white, so it gets its own
+   *  token (v3-pinned hexes for the other accents' adjacent hues). */
+  softestAdjacent: string;
 }
 
 export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
@@ -45,6 +51,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     strongDark: "196 181 253",
     deep: "109 40 217",
     softest: "245 243 255",
+    softestAdjacent: "238 242 255", // indigo-50 #EEF2FF (measured on the reference)
   },
   blue: {
     primary: "59 130 246",
@@ -55,6 +62,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     strongDark: "191 219 254",
     deep: "29 78 216",
     softest: "239 246 255",
+    softestAdjacent: "238 242 255", // indigo-50 (blue's adjacent hue)
   },
   green: {
     primary: "34 197 94",
@@ -65,6 +73,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     strongDark: "187 247 208",
     deep: "21 128 61",
     softest: "240 253 244",
+    softestAdjacent: "236 253 245", // emerald-50 #ECFDF5
   },
   orange: {
     primary: "249 115 22",
@@ -75,6 +84,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     strongDark: "253 186 116",
     deep: "194 65 12",
     softest: "255 247 237",
+    softestAdjacent: "255 251 235", // amber-50 #FFFBEB
   },
   pink: {
     primary: "236 72 153",
@@ -85,6 +95,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     strongDark: "251 207 232",
     deep: "190 24 93",
     softest: "253 242 248",
+    softestAdjacent: "255 241 242", // rose-50 #FFF1F2
   },
   red: {
     primary: "239 68 68",
@@ -95,6 +106,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     strongDark: "252 165 165",
     deep: "185 28 28",
     softest: "254 242 242",
+    softestAdjacent: "255 241 242", // rose-50 #FFF1F2
   },
   teal: {
     primary: "20 184 166",
@@ -105,6 +117,7 @@ export const ACCENT_TOKENS: Record<Accent, AccentToken> = {
     strongDark: "153 246 228",
     deep: "15 118 110",
     softest: "240 253 250",
+    softestAdjacent: "236 254 255", // cyan-50 #ECFEFF
   },
 };
 
@@ -134,6 +147,7 @@ export function accentCssVars(accent: Accent): Record<string, string> {
     "--sf-primary-strong-dark": t.strongDark,
     "--sf-primary-deep": t.deep,
     "--sf-primary-softest": t.softest,
+    "--sf-primary-softest-adjacent": t.softestAdjacent,
   };
 }
 

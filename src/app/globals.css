@@ -106,6 +106,9 @@
   --sf-primary-deep: 109 40 217;
   /* 50-level (violet-50 #F5F3FF) — reference sidebar clock chip gradient. */
   --sf-primary-softest: 245 243 255;
+  /* Adjacent-hue 50-level (indigo-50 #EEF2FF) — the clock chip gradient's
+     SECOND stop, measured exactly on the reference: rgb(238,242,255). */
+  --sf-primary-softest-adjacent: 238 242 255;
 }
 
 .dark {
@@ -215,14 +218,17 @@
 }
 
 
-/* Glass panel — the reference sidebar: rgba(255,255,255,0.8) + backdrop blur. */
+/* Glass panel — the reference sidebar + mobile app bar (measured):
+   rgba(255,255,255,0.8), backdrop blur(20px), and a 1px white/50 hairline. */
 .glass {
   background-color: rgb(255 255 255 / 0.8);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  border: 1px solid rgb(255 255 255 / 0.5);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 .dark .glass {
   background-color: rgb(2 6 23 / 0.8);
+  border-color: rgb(30 41 59 / 0.6);
 }
 
 /* Flashcard 3D flip. */

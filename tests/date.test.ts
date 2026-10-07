@@ -54,9 +54,11 @@ describe("formatters", () => {
     expect(formatLongDate(new Date(2026, 9, 6))).toBe("October 6, 2026");
   });
 
-  it("formatTime12h renders 12-hour clock with padded minutes", () => {
+  it("formatTime12h renders 12-hour clock with padded minutes and 2-digit hour (measured: '03:43 AM')", () => {
     expect(formatTime12h(new Date(2026, 9, 6, 0, 5))).toBe("12:05 AM");
-    expect(formatTime12h(new Date(2026, 9, 6, 13, 29))).toBe("1:29 PM");
+    expect(formatTime12h(new Date(2026, 9, 6, 3, 43))).toBe("03:43 AM");
+    expect(formatTime12h(new Date(2026, 9, 6, 9, 7))).toBe("09:07 AM");
+    expect(formatTime12h(new Date(2026, 9, 6, 13, 29))).toBe("01:29 PM");
     expect(formatTime12h(new Date(2026, 9, 6, 23, 0))).toBe("11:00 PM");
     expect(formatTime12h(new Date(2026, 9, 6, 12, 0))).toBe("12:00 PM");
   });
