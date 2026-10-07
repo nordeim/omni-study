@@ -1,0 +1,251 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   StudyFlow design tokens — Tailwind CSS v4 CSS-first configuration.
+
+   Tailwind v4 trap fixes applied here (see docs/Tailwind-V4-Validation-Report.md
+   "Project Trap Log" — every rule below is a measured fix, not style):
+
+   TRAP 1 — bare-HSL transparent theme: under `@theme inline`, a bare
+   triplet like `--background: 0 0% 100%` silently resolves to TRANSPARENT.
+   Every theme color below is therefore a full `hsl(…)` value.
+
+   TRAP 2 — oklch palette drift: v4's default palette drifts 1–3 sRGB units
+   per channel from the v3 hexes the reference app was compiled against.
+   The exact v3-era hexes are pinned below where computed parity matters.
+
+   TRAP 5 — shadow-scale shift: v4 inserted `shadow-xs` at v3's `shadow-sm`
+   geometry and moved `shadow-sm` one notch heavier. The reference's cards
+   render `0 1px 2px 0 rgba(0,0,0,0.05)` (measured live) — pinned below so
+   every byte-identical `shadow-sm` class matches the reference.
+--------------------------------------------------------------------------- */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  /* ---- Base palette (v3-era hexes pinned — TRAP 2) ---------------------- */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(240 10% 3.92%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(240 10% 3.92%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(240 10% 3.92%);
+  --color-primary: hsl(258 90% 66%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(240 4.8% 95.9%);
+  --color-secondary-foreground: hsl(240 5.9% 10%);
+  --color-muted: hsl(240 4.8% 95.9%);
+  --color-muted-foreground: hsl(240 3.8% 46.1%);
+  --color-accent: hsl(240 4.8% 95.9%);
+  --color-accent-foreground: hsl(240 5.9% 10%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(240 5.9% 90%);
+  --color-input: hsl(240 5.9% 90%);
+  --color-ring: hsl(258 90% 66%);
+
+  /* Slate scale — the reference app's gray ramp (measured rgb(30,41,59) =
+     slate-800 for card titles, rgb(241,245,249) = slate-100 for borders). */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  /* Violet scale (default accent) — v3 hexes pinned. */
+  --color-violet-50: #f5f3ff;
+  --color-violet-100: #ede9fe;
+  --color-violet-200: #ddd6fe;
+  --color-violet-300: #c4b5fd;
+  --color-violet-400: #a78bfa;
+  --color-violet-500: #8b5cf6;
+  --color-violet-600: #7c3aed;
+  --color-violet-700: #6d28d9;
+  --color-violet-800: #5b21b6;
+  --color-violet-900: #4c1d95;
+
+  /* TRAP 5 — pin v3's shadow-sm geometry (measured on the reference cards
+     and white navbar: rgba(0,0,0,0.05) 0px 1px 2px 0px). */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+}
+
+:root {
+  /* Accent tokens (RGB triplets — the reference app's own convention:
+     `--primary: 139 92 246`). Overridden at runtime per accent by
+     src/lib/theme.ts; these defaults match the Violet default. */
+  --sf-primary: 139 92 246;
+  --sf-primary-foreground: 255 255 255;
+  --sf-primary-soft: 243 232 255;
+  --sf-primary-soft-dark: 76 29 149;
+  --sf-primary-strong: 124 58 237;
+  --sf-primary-strong-dark: 196 181 253;
+}
+
+.dark {
+  --color-background: hsl(240 10% 3.92%);
+  --color-foreground: hsl(0 0% 98%);
+  --color-card: hsl(240 10% 5.92%);
+  --color-card-foreground: hsl(0 0% 98%);
+  --color-popover: hsl(240 10% 3.92%);
+  --color-popover-foreground: hsl(0 0% 98%);
+  --color-primary: hsl(258 90% 66%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(240 3.7% 15.9%);
+  --color-secondary-foreground: hsl(0 0% 98%);
+  --color-muted: hsl(240 3.7% 15.9%);
+  --color-muted-foreground: hsl(240 5% 64.9%);
+  --color-accent: hsl(240 3.7% 15.9%);
+  --color-accent-foreground: hsl(0 0% 98%);
+  --color-destructive: hsl(0 62.8% 30.6%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+  --color-border: hsl(240 3.7% 15.9%);
+  --color-input: hsl(240 3.7% 15.9%);
+  --color-ring: hsl(258 90% 66%);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+}
+
+@theme inline {
+  --color-sf-primary: rgb(var(--sf-primary));
+  --color-sf-primary-foreground: rgb(var(--sf-primary-foreground));
+  --color-sf-primary-soft: rgb(var(--sf-primary-soft));
+  --color-sf-primary-soft-dark: rgb(var(--sf-primary-soft-dark));
+  --color-sf-primary-strong: rgb(var(--sf-primary-strong));
+  --color-sf-primary-strong-dark: rgb(var(--sf-primary-strong-dark));
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+      "Segoe UI Symbol", "Noto Color Emoji";
+  }
+  /* The reference app's measured canvas gradient:
+     linear-gradient(to right bottom, rgb(248,250,252), rgb(255,255,255),
+     rgba(245,243,255,0.3)). TRAP 3 — v4 interpolates bg-gradient-to-* in
+     oklab; the sRGB-exact arbitrary form keeps computed colors identical. */
+  .sf-canvas {
+    background-color: var(--color-background);
+    background-image: linear-gradient(
+      to right bottom,
+      hsl(210 40% 98%),
+      hsl(0 0% 100%),
+      hsl(252 100% 96.5% / 0.3)
+    );
+  }
+  .dark .sf-canvas {
+    background-image: linear-gradient(
+      to right bottom,
+      hsl(240 10% 5.92%),
+      hsl(240 10% 3.92%),
+      hsla(258, 60%, 20%, 0.3)
+    );
+  }
+
+  /* Card primitive — measured live: white bg, 1px slate-100 border,
+     16px radius, v3 shadow-sm (TRAP 5 pin above), 24px padding. */
+  .sf-card {
+    background-color: var(--color-card);
+    border: 1px solid hsl(210 25% 96.1%);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .dark .sf-card {
+    border-color: hsl(240 3.7% 15.9%);
+  }
+
+  ::selection {
+    background-color: rgb(var(--sf-primary) / 0.2);
+  }
+}
+
+/* Focus ring — consistent, accent-tinted. */
+.sf-focus:focus-visible {
+  outline: 2px solid rgb(var(--sf-primary));
+  outline-offset: 2px;
+}
+
+/* Thin scrollbars for long lists (sidebar, notes list, chat). */
+.sf-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.sf-scroll::-webkit-scrollbar-thumb {
+  background-color: rgb(148 163 184 / 0.4);
+  border-radius: 3px;
+}
+.sf-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+/* Glass panel — the reference sidebar: rgba(255,255,255,0.8) + backdrop blur. */
+.glass {
+  background-color: rgb(255 255 255 / 0.8);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.dark .glass {
+  background-color: rgb(2 6 23 / 0.8);
+}
+
+/* Flashcard 3D flip. */
+.sf-flip {
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sf-flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Skeleton shimmer. */
+.sf-skeleton {
+  animation: sf-shimmer 1.6s infinite linear;
+  background: linear-gradient(
+    90deg,
+    rgb(148 163 184 / 0.12) 25%,
+    rgb(148 163 184 / 0.22) 37%,
+    rgb(148 163 184 / 0.12) 63%
+  );
+  background-size: 400% 100%;
+}
+@keyframes sf-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* Toast slide-in. */
+.sf-toast-in {
+  animation: sf-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes sf-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

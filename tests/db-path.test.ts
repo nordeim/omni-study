@@ -67,6 +67,22 @@ describe("resolveDatabaseUrl", () => {
     expect(resolveDatabaseUrl("file:/var/data/prod.db", [repo])).toBe("file:/var/data/prod.db");
   });
 
+  it("corrects a Next-dev pre-resolved absolute URL that misses the real file", () => {
+    // Regression (observed live): Next.js dev pre-resolves the relative
+    // DATABASE_URL against the PROJECT dir — one level off the schema
+    // anchor — and injects that absolute value before any app code runs.
+    // When the injected target does not exist but the schema-anchored
+    // default DOES, the default wins.
+    writeFileSync(path.join(repo, "db", "custom.db"), "");
+    try {
+      const wrong = path.resolve(repo, "..", "db", "custom.db");
+      const out = resolveDatabaseUrl(`file:${wrong}`, [repo]);
+      expect(toPosix(out)).toBe(`file:${toPosix(path.join(repo, "db", "custom.db"))}`);
+    } finally {
+      rmSync(path.join(repo, "db", "custom.db"), { force: true });
+    }
+  });
+
   it("passes absolute Windows drive-letter file: URLs through untouched", () => {
     expect(resolveDatabaseUrl("file:C:\\data\\prod.db", [repo])).toBe("file:C:\\data\\prod.db");
   });

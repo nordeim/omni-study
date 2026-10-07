@@ -1,0 +1,17 @@
+{
+  "name": "StudyFlow — Your study companion",
+  "short_name": "StudyFlow",
+  "description": "Tasks, timetable, assignments, exams, notes, flashcards, grades, analytics, calculator, math solver, AI assistant and focus timer in one place.",
+  "start_url": "/Dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
