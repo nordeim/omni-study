@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Calendar, CalendarClock, Clock, GraduationCap, MapPin, MoreHorizontal, Plus } from "lucide-react";
+import { Calendar, CalendarClock, Clock, GraduationCap, MoreHorizontal, Plus, Search } from "lucide-react";
 import { useDataStore, mutations, type Exam } from "@/lib/data";
 import { useSubjectMap, ViewHeader, EmptyState, LoadingCards, ErrorText } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -250,17 +250,24 @@ export function ExamsView() {
         <LoadingCards />
       ) : (
         <>
-          {/* Search + filter */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="min-w-[180px] flex-1">
+          {/* Search + filter — S8-P: the reference's search field carries
+              an inline search icon; the filter row is flex-col → md:flex-row. */}
+          <div className="flex flex-col gap-4 md:flex-row">
+            <div className="relative min-w-[180px] flex-1">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search exams..."
                 aria-label="Search exams"
-                className="h-9"
+                className="h-9 pl-9"
               />
             </div>
+            <div className="flex flex-wrap items-center gap-2">
             <Select value={examFilter} onValueChange={(v) => setExamFilter(v as ExamFilter)}>
               <SelectTrigger className="w-[130px]" aria-label="Filter exams">
                 <SelectValue />
@@ -271,6 +278,7 @@ export function ExamsView() {
                 <SelectItem value="all">All</SelectItem>
               </SelectContent>
             </Select>
+            </div>
           </div>
 
           {/* S6-F — card GRID (measured): grid md:grid-cols-2 lg:grid-cols-3
@@ -354,7 +362,10 @@ export function ExamsView() {
                         </DropdownMenu>
                       </div>
 
-                      <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300">
+                      <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                        {/* S8-P (measured): the reference's exam card shows ONLY
+                            the date + time·duration rows — no location row
+                            (location stays an edit-dialog superset field). */}
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-slate-400" aria-hidden="true" />
                           {dateLabel}
@@ -364,23 +375,14 @@ export function ExamsView() {
                           {timeLabel}
                           <span className="text-slate-400">· {exam.duration} min</span>
                         </div>
-                        {exam.location && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-slate-400" aria-hidden="true" />
-                            {exam.location}
-                          </div>
-                        )}
                       </div>
 
                       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                        {/* S8-P (measured): footer carries the type pill only
+                            (topics count stays a dialog-level superset). */}
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-xs capitalize text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                           {exam.type}
                         </span>
-                        {topics.length > 0 && (
-                          <span className="text-xs text-slate-400">
-                            {topics.length} topic{topics.length === 1 ? "" : "s"}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>

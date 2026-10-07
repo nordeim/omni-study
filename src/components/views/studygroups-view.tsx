@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Calendar, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { Calendar, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
 import { useDataStore, mutations, type StudyGroup, type StudyGroupMember, type Subject } from "@/lib/data";
-import { EmptyState, ErrorText, LoadingCards, SubjectChip, ViewHeader, useSubjectMap } from "./shared";
+import { EmptyState, ErrorText, LoadingCards, SubjectChip, useSubjectMap } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -337,92 +337,102 @@ export function StudyGroupsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <ViewHeader
-        title="Study Groups"
-        icon={Users}
-        actions={
-          <Button onClick={openCreate} variant="gradient" className="gap-1.5">
-            <Plus className="h-4 w-4" strokeWidth={1.75} /> Create Group
-          </Button>
-        }
-      />
-
       {loading ? (
         <LoadingCards />
-      ) : studyGroups.length === 0 ? (
-        <div className="sf-card">
-          <EmptyState
-            icon={Users}
-            title="No study groups"
-            hint="Create a group to plan meetings and keep everyone on track."
-            action={
-              <Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">
-                Create Group
-              </Button>
-            }
-          />
-        </div>
       ) : (
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          {/* Left column — searchable group list */}
-          <aside className="w-full shrink-0 lg:w-80" aria-label="Study groups list">
-            <div className="flex flex-col gap-3">
+        // S8-H (measured): two-pane layout — NO page-level header; the h1 +
+        // users icon and the 36px gradient plus button live INSIDE the w-80
+        // left pane (border-r, pr-6); the right pane is bare.
+        <div className="flex h-[calc(100vh-8rem)] gap-6">
+          {/* Left pane — searchable group list */}
+          <aside
+            aria-label="Study groups pane"
+            className="hidden w-80 shrink-0 flex-col border-r border-slate-100 pr-6 lg:flex dark:border-slate-800"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-800 dark:text-slate-100">
+                <Users className="h-6 w-6 text-sf-primary" strokeWidth={2} aria-hidden="true" />
+                Study Groups
+              </h1>
+              <Button variant="gradient" size="icon" onClick={openCreate} aria-label="Create study group" title="Create study group">
+                <Plus className="h-4 w-4" strokeWidth={2} />
+              </Button>
+            </div>
+            <div className="relative mb-4">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search groups..."
                 aria-label="Search study groups"
-                className="h-9"
+                className="h-9 pl-9"
               />
-              <div className="flex max-h-[32rem] flex-col gap-3 overflow-y-auto pr-1 sf-scroll">
-                {visible.length === 0 ? (
-                  <p className="px-1 py-6 text-center text-sm text-slate-400">No groups match "{search.trim()}"</p>
-                ) : (
-                  visible.map((g) => {
-                    const members = groupMembers(g);
-                    return (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => setSelectedId(g.id)}
-                        aria-pressed={selectedId === g.id}
-                        className={cn(
-                          "sf-card w-full p-4 text-left transition-shadow hover:shadow-md",
-                          selectedId === g.id && "ring-2 ring-sf-primary",
-                        )}
-                      >
-                        <span className="flex items-center gap-3">
-                          <span
-                            className="h-3 w-3 shrink-0 rounded-full"
-                            style={{ backgroundColor: g.color }}
-                            aria-hidden="true"
-                          />
-                          <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-slate-800 dark:text-slate-100">
-                            {g.name}
-                          </span>
+            </div>
+            <div className="sf-scroll flex-1 space-y-2 overflow-y-auto pb-4" aria-label="Study groups list">
+              {studyGroups.length === 0 ? (
+                <EmptyState
+                  icon={Users}
+                  title="No study groups"
+                  hint="Create a group to collaborate"
+                  action={
+                    <Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">
+                      Create Group
+                    </Button>
+                  }
+                />
+              ) : visible.length === 0 ? (
+                <p className="px-1 py-6 text-center text-sm text-slate-400">No groups match "{search.trim()}"</p>
+              ) : (
+                visible.map((g) => {
+                  const members = groupMembers(g);
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setSelectedId(g.id)}
+                      aria-pressed={selectedId === g.id}
+                      className={cn(
+                        "w-full rounded-xl p-4 text-left transition-colors",
+                        selectedId === g.id
+                          ? "bg-sf-primary-soft dark:bg-sf-primary-soft-dark"
+                          : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800",
+                      )}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span
+                          className="h-3 w-3 shrink-0 rounded-full"
+                          style={{ backgroundColor: g.color }}
+                          aria-hidden="true"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-slate-800 dark:text-slate-100">
+                          {g.name}
                         </span>
-                        <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                      </span>
+                      <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" strokeWidth={1.75} />
+                          {members.length} {members.length === 1 ? "member" : "members"}
+                        </span>
+                        {g.nextMeeting && (
                           <span className="inline-flex items-center gap-1">
-                            <Users className="h-3.5 w-3.5" strokeWidth={1.75} />
-                            {members.length} {members.length === 1 ? "member" : "members"}
+                            <Calendar className="h-3.5 w-3.5" strokeWidth={1.75} />
+                            {new Date(g.nextMeeting).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </span>
-                          {g.nextMeeting && (
-                            <span className="inline-flex items-center gap-1">
-                              <Calendar className="h-3.5 w-3.5" strokeWidth={1.75} />
-                              {new Date(g.nextMeeting).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                            </span>
-                          )}
-                        </span>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </aside>
 
-          {/* Right column — selected group detail */}
-          <div className="min-w-0 flex-1">
+          {/* Right pane — bare (S8-H): detail card or centered empty state */}
+          <div aria-label="Study group detail pane" className="flex min-w-0 flex-1 flex-col">
             {selected ? (
               <GroupDetailPane
                 key={selected.id}
@@ -432,17 +442,103 @@ export function StudyGroupsView() {
                 onDelete={() => void deleteGroup(selected)}
               />
             ) : (
-              <div className="sf-card">
+              <div className="flex flex-1 flex-col items-center justify-center">
                 <EmptyState
                   icon={Users}
                   title="Select a group"
-                  hint="Choose a study group from the list to see its members and meetings."
+                  hint="Choose a study group from the sidebar to see its members and meetings."
                 />
               </div>
             )}
           </div>
         </div>
       )}
+
+      {/* Mobile fallback — the reference's left pane is desktop-only; below
+          lg the clone stacks the list + detail (h2 heading — the single h1
+          lives in the desktop pane; S8-H keeps main h1 count at 1). */}
+      <div className="flex flex-col gap-3 lg:hidden">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 text-2xl font-bold text-slate-800 dark:text-slate-100">
+            <Users className="h-6 w-6 text-sf-primary" strokeWidth={2} aria-hidden="true" />
+            Study Groups
+          </h2>
+          <Button onClick={openCreate} variant="gradient" className="gap-1.5">
+            <Plus className="h-4 w-4" strokeWidth={1.75} /> Create Group
+          </Button>
+        </div>
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search groups..."
+          aria-label="Search study groups"
+          className="h-9"
+        />
+        {studyGroups.length === 0 ? (
+          <div className="sf-card">
+            <EmptyState
+              icon={Users}
+              title="No study groups"
+              hint="Create a group to plan meetings and keep everyone on track."
+              action={
+                <Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">
+                  Create Group
+                </Button>
+              }
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {visible.map((g) => {
+              const members = groupMembers(g);
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setSelectedId(g.id)}
+                  aria-pressed={selectedId === g.id}
+                  className={cn(
+                    "sf-card w-full p-4 text-left transition-shadow hover:shadow-md",
+                    selectedId === g.id && "ring-2 ring-sf-primary",
+                  )}
+                >
+                  <span className="flex items-center gap-3">
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: g.color }}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-slate-800 dark:text-slate-100">
+                      {g.name}
+                    </span>
+                  </span>
+                  <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="inline-flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      {members.length} {members.length === 1 ? "member" : "members"}
+                    </span>
+                    {g.nextMeeting && (
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        {new Date(g.nextMeeting).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {selected && (
+          <GroupDetailPane
+            key={selected.id}
+            group={selected}
+            subject={selected.subjectId ? subjectMap.get(selected.subjectId) : undefined}
+            onEdit={() => openEdit(selected)}
+            onDelete={() => void deleteGroup(selected)}
+          />
+        )}
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

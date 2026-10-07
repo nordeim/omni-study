@@ -165,103 +165,117 @@ export function CalendarView() {
 
       {mode === "calendar" ? (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
-          {/* Month grid */}
-          <section className="sf-card overflow-hidden">
-            <header className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-              <h2 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">
+          {/* Month grid — S8-C: a SIMPLE p-6 card (border-slate-200, no
+              header split) with the title row + weekday header + cells +
+              legend stacked inside. */}
+          <section
+            aria-label="Calendar month"
+            className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
                 {cursor.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
               </h2>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="iconSm" onClick={() => setCursor(addMonths(cursor, -1))} aria-label="Previous month">
+                {/* S8-C (measured): exactly TWO ghost h-9 w-9 chevron buttons —
+                    the reference has no "Today" reset button. */}
+                <Button variant="ghost" size="icon" className="rounded-lg" onClick={() => setCursor(addMonths(cursor, -1))} aria-label="Previous month">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setCursor(new Date());
-                    setSelected(new Date());
-                  }}
-                >
-                  Today
-                </Button>
-                <Button variant="ghost" size="iconSm" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Next month">
+                <Button variant="ghost" size="icon" className="rounded-lg" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Next month">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-            </header>
-            <div className="p-4">
-              <div className="grid grid-cols-7 gap-1 pb-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
-                {WEEKDAY_SHORT.map((d) => (
-                  <span key={d}>{d}</span>
-                ))}
-              </div>
-              {/* S6-G — measured cells: aspect-square, centered, r12, dots row. */}
-              <div className="grid grid-cols-7 gap-1" aria-label="Calendar days">
-                {cells.map(({ date, inMonth }) => {
-                  const key = dayKey(date);
-                  const dots = dotsByDay.get(key);
-                  const isSelected = isSameDay(date, selected);
-                  const isToday = isSameDay(date, today);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setSelected(date)}
-                      aria-pressed={isSelected}
-                      aria-label={`${formatFullDate(date)}${isToday ? " (Today)" : ""}`}
-                      data-today={isToday || undefined}
-                      className={cn(
-                        "relative flex aspect-square flex-col items-center justify-center rounded-xl p-2 transition-all sf-focus",
-                        inMonth
-                          ? "hover:bg-slate-100 dark:hover:bg-slate-800"
-                          : "text-slate-300 dark:text-slate-600",
-                        isToday && "bg-sf-primary text-white dark:bg-sf-primary",
-                      )}
-                    >
-                      <span className="text-sm font-medium">{date.getDate()}</span>
-                      <div className="mt-1 flex gap-0.5">
-                        {dots
-                          ? [...dots].slice(0, 3).map((kind) => (
-                              <span
-                                key={kind}
-                                className="h-1.5 w-1.5 rounded-full"
-                                style={{ backgroundColor: isToday ? "#ffffff" : KIND_COLORS[kind as keyof typeof KIND_COLORS] }}
-                              />
-                            ))
-                          : null}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {/* S6-G — the reference's legend (measured): dot + label row. */}
-              <div className="mt-4 flex flex-wrap gap-4 border-t border-slate-100 pt-4 dark:border-slate-800" aria-label="Calendar legend">
-                {(
-                  [
-                    ["task", "Tasks"],
-                    ["assignment", "Assignments"],
-                    ["exam", "Exams"],
-                    ["class", "Classes"],
-                  ] as const
-                ).map(([kind, label]) => (
-                  <div key={kind} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: KIND_COLORS[kind] }} />
-                    {label}
-                  </div>
-                ))}
-              </div>
+            </div>
+            {/* S8-C (measured): weekday header — text-center text-sm
+                font-medium text-slate-500 py-2 cells on grid-cols-7 gap-1. */}
+            <div className="grid grid-cols-7 gap-1" aria-label="Calendar weekdays">
+              {WEEKDAY_SHORT.map((d) => (
+                <span key={d} className="py-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+                  {d}
+                </span>
+              ))}
+            </div>
+            {/* S6-G — measured cells: aspect-square, centered, r12, dots row.
+                S8-C: selected = solid accent fill + white text; TODAY (when
+                unselected) = 100-level tint (emptyFrom family) + strong text;
+                both states strip the hover class (measured on the reference). */}
+            <div className="grid grid-cols-7 gap-1" aria-label="Calendar days">
+              {cells.map(({ date, inMonth }) => {
+                const key = dayKey(date);
+                const dots = dotsByDay.get(key);
+                const isSelected = isSameDay(date, selected);
+                const isToday = isSameDay(date, today);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSelected(date)}
+                    aria-pressed={isSelected}
+                    aria-label={`${formatFullDate(date)}${isToday ? " (Today)" : ""}`}
+                    data-today={isToday || undefined}
+                    className={cn(
+                      "relative flex aspect-square flex-col items-center justify-center rounded-xl p-2 transition-all sf-focus",
+                      isSelected
+                        ? "text-white"
+                        : isToday
+                          ? "text-sf-primary-strong dark:text-sf-primary-strong-dark"
+                          : inMonth
+                            ? "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                            : "text-slate-300 dark:text-slate-600",
+                    )}
+                    style={
+                      isSelected
+                        ? { backgroundColor: "rgb(var(--sf-primary))" }
+                        : isToday
+                          ? { backgroundColor: "rgb(var(--sf-primary-empty-from))" }
+                          : undefined
+                    }
+                  >
+                    <span className="text-sm font-medium">{date.getDate()}</span>
+                    <div className="mt-1 flex gap-0.5">
+                      {dots
+                        ? [...dots].slice(0, 3).map((kind) => (
+                            <span
+                              key={kind}
+                              className="h-1.5 w-1.5 rounded-full"
+                              style={{ backgroundColor: isSelected ? "#ffffff" : KIND_COLORS[kind as keyof typeof KIND_COLORS] }}
+                            />
+                          ))
+                        : null}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {/* S6-G — the reference's legend (measured): dot + label row. */}
+            <div className="mt-4 flex flex-wrap gap-4 border-t border-slate-100 pt-4 dark:border-slate-800" aria-label="Calendar legend">
+              {(
+                [
+                  ["task", "Tasks"],
+                  ["assignment", "Assignments"],
+                  ["exam", "Exams"],
+                  ["class", "Classes"],
+                ] as const
+              ).map(([kind, label]) => (
+                <div key={kind} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: KIND_COLORS[kind] }} />
+                  {label}
+                </div>
+              ))}
             </div>
           </section>
 
-          {/* Day detail — S6-G: border-l-4 colored rows per type. */}
-          <aside className="sf-card h-fit overflow-hidden" aria-label="Day detail">
-            <header className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                {formatFullDate(selected)}
-              </h3>
-            </header>
-            <div className="flex flex-col gap-4 p-6">
+          {/* Day detail — S8-C: simple p-6 card (border-slate-200) with a
+              font-bold h3 long date and a space-y-4 body. */}
+          <aside
+            aria-label="Day detail"
+            className="h-fit rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <h3 className="mb-4 font-bold text-slate-800 dark:text-slate-100">
+              {formatFullDate(selected)}
+            </h3>
+            <div className="space-y-4">
               {dayDetail.dayTasks.length > 0 && (
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase text-slate-500">Tasks</p>
@@ -365,16 +379,10 @@ export function CalendarView() {
                 dayDetail.dayEvents.length +
                 dayDetail.dayClasses.length ===
                 0 && (
-                <p className="text-sm text-slate-400">Nothing scheduled for this day.</p>
+                // S8-C (measured): the reference's empty day-detail body is a
+                // bare centered gray paragraph — no CTA button.
+                <p className="py-8 text-center text-slate-400">No events for this day</p>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-1"
-                onClick={() => navigate("events")}
-              >
-                Add an event →
-              </Button>
             </div>
           </aside>
         </div>

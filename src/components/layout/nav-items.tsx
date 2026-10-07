@@ -5,28 +5,26 @@ import Link from "next/link";
 import {
   BarChart3,
   BookOpen,
+  Calculator,
   Calendar,
   CalendarDays,
-  CalendarPlus,
-  Calculator,
   FileQuestion,
-  Folder,
+  FolderOpen,
   GraduationCap,
   LayoutDashboard,
   Layers,
-  Notebook,
   Settings as SettingsIcon,
   Sparkles,
-  SquareRadical,
+  SquareCheckBig,
   Sun,
   Timer,
   TrendingUp,
   Users,
-  ListChecks,
 } from "lucide-react";
 import { NAV, useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { ViewId } from "@/lib/router";
+import { NAV_ACTIVE_GRADIENT_STOPS } from "@/lib/theme";
 
 // Shared nav primitives — the desktop sidebar and the mobile drawer render
 // IDENTICAL nav items (measured on the reference: a 20px icon + label on
@@ -38,23 +36,28 @@ export const NAV_ICONS: Record<
   ViewId,
   React.ComponentType<{ className?: string; strokeWidth?: number; style?: React.CSSProperties }>
 > = {
+  // S8-A (live-measured on the reference): Calendar and Timetable share the
+  // bare `calendar` glyph, Events uses `calendar-days`, Notes reuses
+  // `book-open` (like Assignments), Files is `folder-open`, Math Solver
+  // reuses `calculator`, Tasks is `square-check-big`, Analytics is
+  // `chart-column` (BarChart3's current lucide name — renders identical).
   dashboard: LayoutDashboard,
   myday: Sun,
-  tasks: ListChecks,
-  calendar: CalendarDays,
-  events: CalendarPlus,
+  tasks: SquareCheckBig,
+  calendar: Calendar,
+  events: CalendarDays,
   timetable: Calendar,
   assignments: BookOpen,
   exams: GraduationCap,
-  notes: Notebook,
+  notes: BookOpen,
   flashcards: Layers,
   practicetests: FileQuestion,
   studygroups: Users,
   gradetracker: TrendingUp,
   analytics: BarChart3,
-  files: Folder,
+  files: FolderOpen,
   calculator: Calculator,
-  mathsolver: SquareRadical,
+  mathsolver: Calculator,
   aiassistant: Sparkles,
   focustimer: Timer,
   settings: SettingsIcon,
@@ -86,8 +89,10 @@ export function NavItemLink({ id, collapsed = false }: { id: ViewId; collapsed?:
         style={
           active
             ? {
-                backgroundImage:
-                  "linear-gradient(to right, rgb(var(--sf-primary) / 0.1), rgb(var(--sf-primary-strong) / 0.1))",
+                // S8-A (measured): the reference's active tint runs
+                // primary → indigo-500 (avatarTo) at 10% — pinned by
+                // NAV_ACTIVE_GRADIENT_STOPS + the S8 e2e spec.
+                backgroundImage: `linear-gradient(to right, rgb(var(--sf-primary) / ${NAV_ACTIVE_GRADIENT_STOPS.alpha}), rgb(var(--sf-primary-${NAV_ACTIVE_GRADIENT_STOPS.toCssVar}) / ${NAV_ACTIVE_GRADIENT_STOPS.alpha}))`,
                 color: "rgb(var(--sf-primary-strong))",
               }
             : undefined

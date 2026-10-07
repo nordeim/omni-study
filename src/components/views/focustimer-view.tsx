@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   Brain,
+  Check,
   Coffee,
   Flame,
   Moon,
@@ -10,7 +11,6 @@ import {
   Play,
   RotateCcw,
   Settings2,
-  SkipForward,
   Timer,
   Volume2,
 } from "lucide-react";
@@ -362,10 +362,12 @@ export function FocusTimerView() {
                 <Button
                   variant="outline"
                   onClick={skipSession}
-                  aria-label="Skip to next mode"
+                  aria-label="Complete session"
                   className="h-12 w-12 rounded-full"
                 >
-                  <SkipForward className="h-5 w-5" strokeWidth={2} />
+                  {/* S8-N (measured): the reference's third control is a CHECK
+                      glyph (w-5 h-5) — not skip-forward. */}
+                  <Check className="h-5 w-5" strokeWidth={2} />
                 </Button>
               </div>
 

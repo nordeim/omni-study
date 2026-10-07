@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
-import { BookOpen, Flag, MoreHorizontal, Plus } from "lucide-react";
+import { BookOpen, Flag, MoreHorizontal, Plus, Search } from "lucide-react";
 import { useDataStore, mutations, type Assignment } from "@/lib/data";
 import { useSubjectMap, ViewHeader, EmptyState, LoadingCards, ErrorText } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -256,17 +256,24 @@ export function AssignmentsView() {
         <LoadingCards />
       ) : (
         <>
-          {/* Search + filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="min-w-[180px] flex-1">
+          {/* Search + filters — S8-P: the reference's search field carries
+              an inline search icon (left-3, w-4 h-4, input pl-9). */}
+          <div className="flex flex-col gap-4 md:flex-row">
+            <div className="relative min-w-[180px] flex-1">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search assignments..."
                 aria-label="Search assignments"
-                className="h-9"
+                className="h-9 pl-9"
               />
             </div>
+            <div className="flex flex-wrap items-center gap-2">
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
               <SelectTrigger className="w-[130px]" aria-label="Filter assignments by status">
                 <SelectValue />
@@ -289,6 +296,7 @@ export function AssignmentsView() {
                 ))}
               </SelectContent>
             </Select>
+            </div>
           </div>
 
           {/* List — S6-E card rows (measured). */}

@@ -195,15 +195,16 @@ export function TimetableView() {
         }
       />
 
-      {/* S7-C — measured week-nav bar: rounded-xl card, p-4, 36px round
-          outline buttons, centered month title + week range. */}
+      {/* S7-C — measured week-nav bar: rounded-xl card, p-4, ghost h-9 w-9
+          (rounded-md) chevron buttons (S8-E — the reference's are ghost,
+          not outline/round), centered month title + week range. */}
       <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
+          className="rounded-lg"
           onClick={() => setWeekStart((w) => addDays(w, -7))}
           aria-label="Previous week"
-          className="h-9 w-9 rounded-full"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={2} />
         </Button>
@@ -212,11 +213,11 @@ export function TimetableView() {
           <p className="text-sm text-slate-500 dark:text-slate-400">{rangeTitle}</p>
         </div>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
+          className="rounded-lg"
           onClick={() => setWeekStart((w) => addDays(w, 7))}
           aria-label="Next week"
-          className="h-9 w-9 rounded-full"
         >
           <ChevronRight className="h-4 w-4" strokeWidth={2} />
         </Button>
@@ -246,6 +247,7 @@ export function TimetableView() {
                 onClick={() => setOpenDay(openDay === col ? null : col)}
                 aria-expanded={openDay === col}
                 className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                style={colToIso(col) === todayIso ? { backgroundColor: "rgb(var(--sf-primary-softest))" } : undefined}
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -308,7 +310,12 @@ export function TimetableView() {
                 const date = addDays(weekStart, col);
                 const isToday = colToIso(col) === todayIso;
                 return (
-                  <div key={label} className="border-l border-slate-100 p-3 text-center dark:border-slate-800">
+                  <div
+                    key={label}
+                    data-today-header={isToday || undefined}
+                    className="border-l border-slate-100 p-3 text-center dark:border-slate-800"
+                    style={isToday ? { backgroundColor: "rgb(var(--sf-primary-softest))" } : undefined}
+                  >
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{WEEKDAY_LONG[colToIso(col)]}</p>
                     <p className={cn("text-lg font-bold", isToday ? "text-sf-primary-strong" : "text-slate-700 dark:text-slate-200")}>
                       {date.getDate()}
@@ -326,12 +333,16 @@ export function TimetableView() {
                   </div>
                 ))}
               </div>
-              {/* day columns (Sunday-first) */}
+              {/* day columns (Sunday-first) — S8-E: the reference's columns
+                  are border-slate-100 with a hover:bg-slate-50/50 cursor;
+                  the today tint lives on the HEADER cell (bg-violet-50 =
+                  --sf-primary-softest), NOT the body. The earlier
+                  bg-sf-primary-softest/50 body class was a dead utility
+                  (never defined in @theme) and is removed. */}
               {WEEK_COLUMNS.map((label, col) => {
                 const isoDay = colToIso(col);
-                const isToday = isoDay === todayIso;
                 return (
-                <div key={label} className={cn("relative border-l border-slate-50 dark:border-slate-800/60", isToday && "bg-sf-primary-softest/50")}>
+                <div key={label} className="relative border-l border-slate-100 dark:border-slate-800">
                   {Array.from({ length: ROWS }).map((_, r) => (
                     <button
                       key={r}

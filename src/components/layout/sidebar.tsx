@@ -70,7 +70,10 @@ export function Sidebar() {
           {!collapsed && (
             <div className="min-w-0">
               <h1 className="truncate text-lg font-bold text-slate-800 dark:text-slate-100">StudyFlow</h1>
-              <p className="truncate text-xs text-slate-400">Your study companion</p>
+              {/* S8-A: the reference's tagline never truncates (measured
+                  text-overflow: clip / overflow: visible) — only the brand
+                  h1 keeps the truncate guard. */}
+              <p className="text-xs text-slate-400">Your study companion</p>
             </div>
           )}
         </div>
@@ -79,9 +82,11 @@ export function Sidebar() {
             type="button"
             onClick={toggleSidebar}
             aria-label="Collapse sidebar"
-            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 sf-focus dark:hover:bg-slate-800"
+            className="sf-focus flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           >
-            {/* Reference uses a bare chevron-left glyph (measured live). */}
+            {/* Reference (measured): a bare h-9 w-9 rounded-lg ghost with a
+                chevron-left glyph (icon renders 16px via the shadcn
+                [&_svg]:size-4 override). */}
             <ChevronLeft className="h-4 w-4" />
           </button>
         )}
@@ -92,7 +97,7 @@ export function Sidebar() {
             type="button"
             onClick={toggleSidebar}
             aria-label="Expand sidebar"
-            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 sf-focus dark:hover:bg-slate-800"
+            className="sf-focus flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

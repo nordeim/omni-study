@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Calculator, Eraser, ImageIcon, Loader2, Sigma, Sparkles } from "lucide-react";
+import { Calculator, Camera, Loader2, RefreshCw, Sigma, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ViewHeader } from "./shared";
 import { Textarea } from "@/components/ui/input";
@@ -59,50 +59,60 @@ export function MathSolverView() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    // S8-L (measured): a single max-w-4xl column — the input card first,
+    // the solution panel BELOW it (not side-by-side).
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <ViewHeader
         title="Math Solver"
         subtitle="Type a problem or upload an image to get step-by-step solutions"
         icon={Calculator}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Input */}
-        <div className="sf-card flex flex-col gap-4 p-6">
-          <Textarea
-            value={problem}
-            onChange={(e) => setProblem(e.target.value)}
-            placeholder={"Type your math problem here...\n\nExamples:\n• Solve for x: 2x + 5 = 15\n• Find the derivative of f(x) = x³ + 2x²\n• Calculate the area of a triangle with base 10 and height 8\n• Simplify: (3x² + 2x − 5) + (x² − 4x + 3)"}
-            aria-label="Math problem"
-            className="min-h-[220px] text-[15px] leading-relaxed"
-            maxLength={2000}
-          />
-          <div className="flex flex-wrap gap-2">
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                type="button"
-                onClick={() => setProblem(ex)}
-                className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-              >
-                {ex}
-              </button>
-            ))}
+      {/* Input card — S8-L (measured): bg-white rounded-2xl border
+          border-slate-200 p-6 shadow-sm; a borderless min-h-[120px] text-lg
+          textarea; a border-t footer row (Upload Image + Clear left, Solve
+          right) with camera / refresh-cw / sparkles w-4 icons. */}
+      <div
+        aria-label="Math solver input"
+        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+      >
+        <Textarea
+          value={problem}
+          onChange={(e) => setProblem(e.target.value)}
+          placeholder={"Type your math problem here...\n\nExamples:\n• Solve for x: 2x + 5 = 15\n• Find the derivative of f(x) = x³ + 2x²\n• Calculate the area of a triangle with base 10 and height 8\n• Simplify: (3x² + 2x − 5) + (x² − 4x + 3)"}
+          aria-label="Math problem"
+          className="min-h-[120px] resize-none border-0 p-0 text-lg shadow-none focus-visible:ring-0 dark:bg-transparent"
+          maxLength={2000}
+        />
+        {/* Example chips (clone superset — the reference ships the same
+            examples inside the placeholder only). */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              onClick={() => setProblem(ex)}
+              className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+        {image && (
+          <div className="relative mt-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+            <img src={image} alt="Problem snapshot" className="max-h-40 w-full object-contain" />
+            <button
+              type="button"
+              onClick={() => setImage(null)}
+              aria-label="Remove image"
+              className="absolute right-2 top-2 rounded-md bg-black/60 p-1.5 text-white hover:bg-black/80"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
           </div>
-          {image && (
-            <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-              <img src={image} alt="Problem snapshot" className="max-h-40 w-full object-contain" />
-              <button
-                type="button"
-                onClick={() => setImage(null)}
-                aria-label="Remove image"
-                className="absolute right-2 top-2 rounded-md bg-black/60 p-1.5 text-white hover:bg-black/80"
-              >
-                <Eraser className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
+        )}
+        <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+          <div className="flex gap-2">
             <input
               ref={fileRef}
               type="file"
@@ -113,7 +123,7 @@ export function MathSolverView() {
               tabIndex={-1}
             />
             <Button variant="outline" onClick={() => fileRef.current?.click()}>
-              <ImageIcon className="h-4 w-4" /> Upload Image
+              <Camera className="h-4 w-4" /> Upload Image
             </Button>
             <Button
               variant="outline"
@@ -123,17 +133,18 @@ export function MathSolverView() {
                 setImage(null);
               }}
             >
-              <Eraser className="h-4 w-4" /> Clear
-            </Button>
-            <Button variant="gradient" onClick={solve} disabled={busy || (!problem.trim() && !image)} className="ml-auto">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {busy ? "Solving…" : "Solve"}
+              <RefreshCw className="h-4 w-4" /> Clear
             </Button>
           </div>
+          <Button variant="gradient" onClick={solve} disabled={busy || (!problem.trim() && !image)}>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {busy ? "Solving…" : "Solve"}
+          </Button>
         </div>
+      </div>
 
-        {/* Solution */}
-        <div className="sf-card flex min-h-[320px] flex-col overflow-hidden">
+        {/* Solution — S8-L: sits BELOW the input card in the single column. */}
+        <div aria-label="Math solution" className="sf-card flex min-h-[320px] flex-col overflow-hidden">
           <header className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
             <h3 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">Solution</h3>
           </header>
@@ -169,7 +180,6 @@ export function MathSolverView() {
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 }

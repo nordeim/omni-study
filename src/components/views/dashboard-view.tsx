@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, Check, Flame, GraduationCap, Sparkles, SquareCheckBig, Target } from "lucide-react";
+import { BookOpen, Calendar, Check, Clock, Flag, Flame, GraduationCap, Sparkles, SquareCheckBig, Target } from "lucide-react";
 import { useAppStore, useThemeStore } from "@/lib/store";
 import { useDataStore, mutations, type Task } from "@/lib/data";
 import { STAT_COLORS, SectionCard, SimpleEmptyState, StatCard, ViewAllLink, useSubjectMap } from "./shared";
@@ -21,6 +21,14 @@ import { cn } from "@/lib/utils";
 // transition-colors` row (no border/radius/card) with a 20px ROUND
 // border-2 checkbox and a `p.font-medium.text-slate-700.truncate` title
 // ONLY — no subject, no star. Clicking the title navigates to Tasks.
+
+// S8-B — the reference's exam date line (measured): "Oct 10, 12:00 AM"
+// (short month + day, comma, 12-hour clock).
+function formatExamWhen(iso: string): string {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+}
+
 function TaskRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
   return (
     <li className="flex items-center gap-4 p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
@@ -139,18 +147,22 @@ export function DashboardView() {
         <StatCard label="Focus Time" value={focusHours} hint="this month" icon={Flame} colors={STAT_COLORS.pink} />
       </div>
 
-      {/* Today's Tasks (2/3) + Upcoming Exams (1/3) */}
+      {/* Today's Tasks (2/3) + Upcoming Exams (1/3) — S8-B: the reference's
+          card bodies are FLUSH divide-y lists (rows edge-to-edge, p-4 rows). */}
       <div className="grid gap-6 lg:grid-cols-3">
         <SectionCard
           title="Today's Tasks"
           icon={SquareCheckBig}
           className="lg:col-span-2"
           action={<ViewAllLink onClick={() => navigate("tasks")} />}
+          flush
         >
           {todayTasks.length === 0 ? (
-            <SimpleEmptyState icon={SquareCheckBig} message="No tasks for today. Add some from My Day!" />
+            <div className="p-6">
+              <SimpleEmptyState icon={SquareCheckBig} message="No tasks for today. Add some from My Day!" />
+            </div>
           ) : (
-            <ul className="flex flex-col" aria-label="Today's tasks">
+            <ul className="divide-y divide-slate-50" aria-label="Today's tasks">
               {todayTasks.map((t) => (
                 <TaskRow key={t.id} task={t} onOpen={() => navigate("tasks")} />
               ))}
@@ -162,27 +174,42 @@ export function DashboardView() {
           title="Upcoming Exams"
           icon={GraduationCap}
           action={<ViewAllLink label="All" onClick={() => navigate("exams")} />}
+          flush
         >
           {upcomingExams.length === 0 ? (
-            <SimpleEmptyState icon={GraduationCap} message="No upcoming exams" />
+            <div className="p-6">
+              <SimpleEmptyState icon={GraduationCap} message="No upcoming exams" />
+            </div>
           ) : (
-            <ul className="flex flex-col gap-3">
+            <ul className="divide-y divide-slate-50" aria-label="Upcoming exams">
               {upcomingExams.map((e) => {
                 const days = daysUntil(new Date(e.date), now);
-                const subject = e.subjectId ? subjectMap.get(e.subjectId) : undefined;
                 return (
-                  <li key={e.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-4 py-3 dark:border-slate-800">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{e.title}</p>
-                      <p className="mt-0.5 text-xs text-slate-400">
-                        {subject ? `${subject.name} · ` : ""}
-                        {new Date(e.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        {e.location ? ` · ${e.location}` : ""}
-                      </p>
+                  <li
+                    key={e.id}
+                    className="p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                  >
+                    <div className="mb-2 flex items-start justify-between">
+                      <h3 className="font-medium text-slate-700 dark:text-slate-200">{e.title}</h3>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-medium",
+                          // Measured: the reference's dashboard exam badge is
+                          // red-100/red-600 ("2d") — the dashboard's urgency
+                          // scale is more aggressive than the amber exams-view
+                          // badge (7-day red window).
+                          days <= 7
+                            ? "bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400"
+                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+                        )}
+                      >
+                        {days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days}d`}
+                      </span>
                     </div>
-                    <span className="shrink-0 rounded-md bg-sf-primary-soft px-2 py-1 text-xs font-semibold text-sf-primary-strong dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark">
-                      {days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days`}
-                    </span>
+                    <p className="mt-2 flex items-center gap-1 text-xs text-slate-400">
+                      <Calendar className="h-3 w-3" aria-hidden="true" />
+                      {formatExamWhen(e.date)}
+                    </p>
                   </li>
                 );
               })}
@@ -196,37 +223,40 @@ export function DashboardView() {
         title="Upcoming Assignments"
         icon={BookOpen}
         action={<ViewAllLink onClick={() => navigate("assignments")} />}
+        flush
       >
         {upcomingAssignments.length === 0 ? (
-          <SimpleEmptyState icon={BookOpen} message="No upcoming assignments" />
+          <div className="p-6">
+            <SimpleEmptyState icon={BookOpen} message="No upcoming assignments" />
+          </div>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="divide-y divide-slate-50" aria-label="Upcoming assignments">
             {upcomingAssignments.map((a) => {
-              const days = a.dueDate ? daysUntil(new Date(a.dueDate), now) : null;
+              const due = a.dueDate ? new Date(a.dueDate) : null;
               const subject = a.subjectId ? subjectMap.get(a.subjectId) : undefined;
               return (
-                <li key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-4 py-3 dark:border-slate-800">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{a.title}</p>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      {subject ? `${subject.name} · ` : ""}
-                      {a.dueDate ? `due ${new Date(a.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "no due date"}
+                <li
+                  key={a.id}
+                  className="flex items-center gap-4 p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                >
+                  <span
+                    className="h-12 w-1 shrink-0 rounded-full"
+                    style={{ backgroundColor: subject?.color ?? "rgb(148, 163, 184)" }}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-medium text-slate-700 dark:text-slate-200">{a.title}</h3>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                      <Clock className="h-3 w-3" aria-hidden="true" />
+                      {due ? due.toLocaleDateString("en-US", { weekday: "long" }) : "no due date"}
                     </p>
                   </div>
-                  {days !== null && (
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-md px-2 py-1 text-xs font-semibold",
-                        days <= 1
-                          ? "bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400"
-                          : days <= 3
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-                      )}
-                    >
-                      {days < 0 ? "overdue" : days === 0 ? "today" : `${days}d left`}
+                  <div className="min-w-[120px] text-right">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-500 dark:border-yellow-900 dark:bg-yellow-950/40 dark:text-yellow-400">
+                      <Flag className="h-3 w-3" aria-hidden="true" />
+                      {a.priority ?? "medium"}
                     </span>
-                  )}
+                  </div>
                 </li>
               );
             })}

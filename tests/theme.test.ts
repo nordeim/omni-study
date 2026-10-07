@@ -3,6 +3,7 @@ import {
   ACCENTS,
   ACCENT_TOKENS,
   AVATAR_EMOJIS,
+  NAV_ACTIVE_GRADIENT_STOPS,
   accentCssVars,
   isAccent,
   isThemeMode,
@@ -42,6 +43,22 @@ describe("ACCENT_TOKENS", () => {
     // (class list measured) — the hover pair needs its own token because the
     // 700-level of the ADJACENT hue cannot be derived from the accent.
     expect(ACCENT_TOKENS.violet.gradientToStrong).toBe("67 56 202"); // indigo-700 #4338CA
+  });
+
+  it("pins the active-nav gradient to primary → avatarTo (S8-A, measured)", () => {
+    // Live reference (violet accent): the active nav item's tint renders
+    // linear-gradient(to right, rgba(139,92,246,0.1), rgba(99,102,241,0.1))
+    // — the second stop is indigo-500 (avatarTo), NOT violet-600 (strong).
+    // The clone previously routed stop 2 through --sf-primary-strong.
+    // toCssVar is the kebab-case CSS suffix consumed by nav-items.tsx
+    // (a camelCase-only value silently resolves no var — the S8 e2e lesson).
+    expect(NAV_ACTIVE_GRADIENT_STOPS).toEqual({
+      from: "primary",
+      to: "avatarTo",
+      toCssVar: "avatar-to",
+      alpha: 0.1,
+    });
+    expect(NAV_ACTIVE_GRADIENT_STOPS.toCssVar).not.toContain(/[A-Z]/);
   });
 
   it("migrated green to the EMERALD family (S5-F: the reference swatch is emerald-500)", () => {

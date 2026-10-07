@@ -227,6 +227,7 @@ export function SectionCard({
   children,
   className,
   bodyClassName,
+  flush = false,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
@@ -234,6 +235,10 @@ export function SectionCard({
   children: React.ReactNode;
   className?: string;
   bodyClassName?: string;
+  /** S8-B (measured): the reference's dashboard card bodies are FLUSH —
+   *  `divide-y divide-slate-50` edge-to-edge rows with NO body padding
+   *  (only the header is p-6). Padded (default) keeps the S4 card body. */
+  flush?: boolean;
 }) {
   return (
     <section
@@ -251,7 +256,14 @@ export function SectionCard({
         </h2>
         {action}
       </header>
-      <div className={cn("p-6", bodyClassName)}>{children}</div>
+      <div
+        className={cn(
+          flush ? "divide-y divide-slate-50 dark:divide-slate-800" : "p-6",
+          !flush && bodyClassName,
+        )}
+      >
+        {children}
+      </div>
     </section>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, GraduationCap, Languages, Lightbulb, ListChecks, Loader2, Send, Sparkles, Wand2 } from "lucide-react";
+import { BookOpen, Brain, Calculator, FileText, Languages, Lightbulb, Loader2, Send, Sparkles } from "lucide-react";
 import { useDataStore, mutations } from "@/lib/data";
 import { ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,16 @@ import { cn } from "@/lib/utils";
 // AI Study Assistant — quick-action modes (the reference's six chips) plus a
 // free chat with persisted history.
 
+// S8-M (measured): the reference's quick-action icon set — Study Tips =
+// brain, Summarize = file-text, Solve Problem = calculator, Essay Ideas =
+// lightbulb (Explain Concept book-open + Translate languages unchanged).
 const MODES = [
   { id: "explain", label: "Explain Concept", icon: BookOpen, hint: "Explain photosynthesis like I'm 15" },
-  { id: "tips", label: "Study Tips", icon: Lightbulb, hint: "How do I memorize vocabulary faster?" },
-  { id: "summarize", label: "Summarize", icon: ListChecks, hint: "Summarize the causes of WWI" },
-  { id: "solve", label: "Solve Problem", icon: Wand2, hint: "A train leaves at 3pm travelling 80 km/h…" },
+  { id: "tips", label: "Study Tips", icon: Brain, hint: "How do I memorize vocabulary faster?" },
+  { id: "summarize", label: "Summarize", icon: FileText, hint: "Summarize the causes of WWI" },
+  { id: "solve", label: "Solve Problem", icon: Calculator, hint: "A train leaves at 3pm travelling 80 km/h…" },
   { id: "translate", label: "Translate", icon: Languages, hint: "Translate: better late than never" },
-  { id: "essay", label: "Essay Ideas", icon: GraduationCap, hint: "Essay angles on The Great Gatsby" },
+  { id: "essay", label: "Essay Ideas", icon: Lightbulb, hint: "Essay angles on The Great Gatsby" },
 ] as const;
 
 export function AIAssistantView() {
@@ -73,7 +76,7 @@ export function AIAssistantView() {
           border-slate-200 hover:border-violet-300 hover:shadow-lg, 32px
           accent icon + 16px/600 title (no description line). The hints
           still seed the input on click. */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3" aria-label="Quick actions">
         {MODES.map((m) => (
           <button
             key={m.id}

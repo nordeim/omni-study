@@ -170,7 +170,9 @@ test.describe("S7-B · Study Groups + Practice Tests dialogs", () => {
   test("the group dialog swatches are the measured emerald/amber set", async ({ page }) => {
     await page.goto("/StudyGroups");
     await hydrated(page);
-    await page.getByRole("button", { name: "Create Group" }).click();
+    // S8-H rework: the desktop pane's create affordance is the 36px gradient
+    // plus button (aria-label "Create study group").
+    await page.getByRole("button", { name: "Create study group" }).click();
     const swatches = page.getByRole("dialog").locator('[aria-label="Group color swatches"] > button');
     await expect(swatches).toHaveCount(6);
     const colors = await swatches.evaluateAll((els) =>

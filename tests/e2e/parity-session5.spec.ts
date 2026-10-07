@@ -287,14 +287,16 @@ test.describe("S5-K · Files chrome", () => {
 });
 
 test.describe("S5-L · Notes left pane", () => {
-  test("the left pane carries two selects and an icon-only New Note gradient button", async ({ page }) => {
+  test("the left pane carries two comboboxes and a gradient New dropdown (S8-G re-measured)", async ({ page }) => {
     await page.goto("/Notes");
     await hydrated(page);
     await expect(page.getByRole("combobox", { name: "Filter by notebook" })).toBeVisible();
     await expect(page.getByRole("combobox", { name: "Filter by tag" })).toBeVisible();
-    const newNote = page.getByRole("button", { name: "New note", exact: true });
-    await expect(newNote).toBeVisible();
-    const bg = await newNote.evaluate((el) => getComputedStyle(el).backgroundImage);
+    // S8-G (re-measured): ONE 36px gradient dropdown trigger replaces the
+    // old pair of icon buttons — menu: New Note / New Notebook.
+    const newMenu = page.getByRole("button", { name: "New note menu" });
+    await expect(newMenu).toBeVisible();
+    const bg = await newMenu.evaluate((el) => getComputedStyle(el).backgroundImage);
     expect(bg).toContain("linear-gradient");
     // Pane divider (border-r) — the pane is NOT a card.
     const pane = page.locator(".w-80.border-r").first();

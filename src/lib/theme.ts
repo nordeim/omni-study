@@ -196,6 +196,20 @@ export const AVATAR_EMOJIS = [
   "🎨", "🎵", "🎮", "⚽", "🏀", "🎾", "🏆", "🎪",
 ] as const;
 
+/** The active nav item's tint gradient stops (S8-A, live-measured on the
+ *  reference): `linear-gradient(to right, rgba(139,92,246,0.1),
+ *  rgba(99,102,241,0.1))` — the second stop is indigo-500, which is exactly
+ *  the `avatarTo` token (NOT `strong`/violet-600 — the clone's earlier
+ *  routing rendered a same-hue gradient). `toCssVar` carries the kebab-case
+ *  CSS variable suffix. Pinned by tests/theme.test.ts and the S8-A e2e
+ *  spec. */
+export const NAV_ACTIVE_GRADIENT_STOPS = {
+  from: "primary",
+  to: "avatarTo",
+  toCssVar: "avatar-to",
+  alpha: 0.1,
+} as const;
+
 export function isAccent(value: string): value is Accent {
   return (ACCENTS as readonly string[]).includes(value);
 }

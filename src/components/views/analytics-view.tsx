@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BarChart3, BookOpen, ChartColumn, Clock, GraduationCap, SquareCheckBig, TrendingUp } from "lucide-react";
+import { BarChart3, BookOpen, ChartColumn, Clock, Flame, GraduationCap, SquareCheckBig, Target, TrendingUp } from "lucide-react";
 import { useDataStore } from "@/lib/data";
 import { EmptyState, useSubjectMap, ViewHeader } from "./shared";
 import { formatMinutes, startOfDay } from "@/lib/date";
@@ -64,27 +64,94 @@ function BarChart({
 
 function ChartCard({
   title,
+  icon: Icon = TrendingUp,
   children,
 }: {
   title: string;
+  /** S8-I (measured): each reference chart card carries its OWN icon —
+   *  trending-up (Task Activity), clock (Focus Time), book-open
+   *  (Assignment Status), target (Subject Workload) — all w-5 h-5
+   *  text-violet-500. */
+  icon?: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   children: React.ReactNode;
 }) {
   // Measured: rounded-xl border shadow card with a p-6 header carrying a
-  // trending-up icon + text-lg semibold title.
+  // per-card icon + text-lg semibold title (S8-I icon prop).
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-col space-y-1.5 p-6">
         <div className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-800 dark:text-slate-100">
-          <TrendingUp className="h-5 w-5 text-sf-primary" strokeWidth={2} aria-hidden="true" />
+          <Icon className="h-5 w-5 text-sf-primary" strokeWidth={2} aria-hidden="true" />
           {title}
         </div>
       </div>
-      <div className="px-6 pb-6">{children}</div>
+      <div className="p-6 pt-0">{children}</div>
     </section>
   );
 }
 
-/** S7-D: the measured stat card — 48px tinted icon block + label/value/sub stack. */
+/** S8-I — the reference's "Assignment Status" donut (measured: a recharts
+ *  pie, 250px, Not Started sector #94a3b8 — the only populated state on the
+ *  audit account). The In Progress / Completed sectors are unmeasurable on
+ *  the empty reference; the palette follows the measured slate-400 + the
+ *  app's accent/emerald conventions. Donut-style rings (inner radius) with
+ *  the legend chips below. */
+function StatusDonut({
+  slices,
+}: {
+  slices: { label: string; value: number; color: string }[];
+}) {
+  const total = slices.reduce((s, x) => s + x.value, 0);
+  const size = 200;
+  const stroke = 32;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  let acc = 0;
+  return (
+    <>
+      {/* S8-I (measured): the reference's recharts pie plot area is 250px
+          tall — the donut centers inside it, legend below. */}
+      <div className="flex h-[250px] items-center justify-center" aria-label="Assignment status chart">
+        <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Assignment status donut chart">
+            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={stroke} />
+            {total > 0 &&
+              slices.map((s) => {
+                if (s.value <= 0) return null;
+                const frac = s.value / total;
+                const dash = frac * c;
+                const offset = -acc * c;
+                acc += frac;
+                return (
+                  <circle
+                    key={s.label}
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={r}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth={stroke}
+                    strokeDasharray={`${dash} ${c - dash}`}
+                    strokeDashoffset={offset}
+                    transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                  />
+                );
+              })}
+          </svg>
+          <span className="absolute text-2xl font-bold text-slate-800 dark:text-slate-100">{total}</span>
+        </div>
+      </div>
+      <div className="mt-4 flex flex-wrap justify-center gap-4">
+        {slices.map((s) => (
+          <div key={s.label} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: s.color }} aria-hidden="true" />
+            {s.label} ({s.value})
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
 function AnalyticsStatCard({
   label,
   value,
@@ -230,7 +297,7 @@ export function AnalyticsView() {
   ).length;
 
   // subject distribution (tasks per subject)
-  const distribution = React.useMemo(() => {
+  const subjectWorkload = React.useMemo(() => {
     const counts = new Map<string, number>();
     for (const t of tasks) {
       if (!t.subjectId) continue;
@@ -246,6 +313,38 @@ export function AnalyticsView() {
   const hasAnyData =
     tasks.length + focusSessions.length + grades.length + assignments.length + exams.length > 0;
 
+  // S8-I (measured): the reference's "Assignment Status" donut — the only
+  // populated sector on the audit account was Not Started #94a3b8 (1
+  // assignment); In Progress / Completed colors follow the app conventions
+  // (accent violet-500 / green-500).
+  const assignmentStatus = React.useMemo(
+    () => [
+      { label: "Not Started", value: assignments.filter((a) => a.status === "active" && (a.progress ?? 0) === 0).length, color: "#94a3b8" },
+      { label: "In Progress", value: assignments.filter((a) => a.status === "active" && (a.progress ?? 0) > 0).length, color: "#8b5cf6" },
+      { label: "Completed", value: assignments.filter((a) => a.status === "submitted" || a.status === "graded").length, color: "#22c55e" },
+    ],
+    [assignments],
+  );
+
+  // S8-I: "Active Items by Priority" — active assignments + uncompleted
+  // tasks, grouped by priority. Measured chip colors: medium #f59e0b,
+  // high #ef4444 (amber-500 / red-500); low follows the sky family.
+  const activeByPriority = React.useMemo(() => {
+    const counts = new Map<string, number>();
+    const bump = (p: string) => counts.set(p, (counts.get(p) ?? 0) + 1);
+    for (const a of assignments) if (a.status === "active") bump(a.priority);
+    for (const t of tasks) if (!t.completed && t.priority !== "none") bump(t.priority);
+    const palette: Record<string, { color: string; label: string }> = {
+      low: { color: "#0ea5e9", label: "Low Priority" },
+      medium: { color: "#f59e0b", label: "Medium Priority" },
+      high: { color: "#ef4444", label: "High Priority" },
+      urgent: { color: "#dc2626", label: "Urgent" },
+    };
+    return ["low", "medium", "high", "urgent"]
+      .filter((p) => (counts.get(p) ?? 0) > 0)
+      .map((p) => ({ label: palette[p]!.label, value: counts.get(p)!, color: palette[p]!.color }));
+  }, [assignments, tasks]);
+
   return (
     <div className="flex flex-col gap-6">
       <ViewHeader title="Analytics" subtitle="Track your study progress and productivity" icon={ChartColumn} />
@@ -260,8 +359,9 @@ export function AnalyticsView() {
         </div>
       ) : (
         <>
-          {/* S7-D — measured stat cards: r12 border-0 + 48px tinted icon blocks. */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Analytics stats">
+          {/* S7-D — measured stat cards: r12 border-0 + 48px tinted icon
+              blocks. S8-I: the reference's grid is grid-cols-2 lg:grid-cols-4. */}
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Analytics stats">
             <AnalyticsStatCard
               label="Tasks Completed"
               value={`${doneTasks}/${tasks.length}`}
@@ -292,50 +392,87 @@ export function AnalyticsView() {
             />
           </div>
 
-          {/* Measured chart cards: 7-day windows, trending-up icon headers. */}
+          {/* Measured chart cards: 7-day windows, per-card icon headers
+              (S8-I: trending-up / clock / book-open / target). */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <ChartCard title="Task Activity (Last 7 Days)">
               <BarChart data={completion} color="rgb(139, 92, 246)" title="" />
             </ChartCard>
-            <ChartCard title="Focus Time (Last 7 Days)">
+            <ChartCard title="Focus Time (Last 7 Days)" icon={Clock}>
               <BarChart data={focus} color="rgb(139, 92, 246)" title="" unit="m" />
+            </ChartCard>
+            <ChartCard title="Assignment Status" icon={BookOpen}>
+              <StatusDonut slices={assignmentStatus} />
+            </ChartCard>
+            <ChartCard title="Subject Workload" icon={Target}>
+              {/* S8-I (measured): a 250px plot area; the reference shows the
+                  centered "No subject data yet" empty text when bare. */}
+              <div className="h-[250px]" aria-label="Subject workload chart">
+                {subjectWorkload.length === 0 ? (
+                  <p className="flex h-full items-center justify-center text-slate-400">No subject data yet</p>
+                ) : (
+                  <ul className="flex h-full flex-col justify-center gap-3">
+                    {subjectWorkload.map(({ subject, count }) => (
+                      <li key={subject.id} className="flex items-center gap-3">
+                        <span className="w-28 shrink-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">
+                          {subject.name}
+                        </span>
+                        <div className="h-6 flex-1 overflow-hidden rounded-md bg-slate-100 dark:bg-slate-800">
+                          <div
+                            className="h-full rounded-md"
+                            style={{
+                              width: `${(count / Math.max(...subjectWorkload.map((d) => d.count))) * 100}%`,
+                              backgroundColor: subject.color,
+                            }}
+                          />
+                        </div>
+                        <span className="w-8 shrink-0 text-right text-sm font-semibold text-slate-600 dark:text-slate-300">
+                          {count}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </ChartCard>
           </div>
 
-          {/* Superset charts kept below the measured pair. */}
+          {/* S8-I (measured): "Active Items by Priority" — flame icon header
+              + a flex-wrap row of slate-50 chips (16px color dot + bold
+              count + xs label). */}
+          <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col space-y-1.5 p-6">
+              <div className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-800 dark:text-slate-100">
+                <Flame className="h-5 w-5 text-sf-primary" strokeWidth={2} aria-hidden="true" />
+                Active Items by Priority
+              </div>
+            </div>
+            <div className="p-6 pt-0">
+              {activeByPriority.length === 0 ? (
+                <p className="py-8 text-center text-slate-400">No active items</p>
+              ) : (
+                <div className="flex flex-wrap gap-4" aria-label="Priority chips">
+                  {activeByPriority.map((p) => (
+                    <div
+                      key={p.label}
+                      className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60"
+                    >
+                      <div className="h-4 w-4 rounded-full" style={{ backgroundColor: p.color }} aria-hidden="true" />
+                      <div>
+                        <p className="font-medium text-slate-800 dark:text-slate-100">{p.value}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{p.label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Superset charts kept below the measured set. */}
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <section className="sf-card p-6">
               <LineChart points={gradeTrend} title="Grade trend (%)" />
-            </section>
-            <section className="sf-card p-6">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Tasks by subject
-              </p>
-              {distribution.length === 0 ? (
-                <p className="py-8 text-center text-sm text-slate-400">No subject-tagged tasks yet</p>
-              ) : (
-                <ul className="flex flex-col gap-3">
-                  {distribution.map(({ subject, count }) => (
-                    <li key={subject.id} className="flex items-center gap-3">
-                      <span className="w-28 shrink-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">
-                        {subject.name}
-                      </span>
-                      <div className="h-6 flex-1 overflow-hidden rounded-md bg-slate-100 dark:bg-slate-800">
-                        <div
-                          className="h-full rounded-md"
-                          style={{
-                            width: `${(count / Math.max(...distribution.map((d) => d.count))) * 100}%`,
-                            backgroundColor: subject.color,
-                          }}
-                        />
-                      </div>
-                      <span className="w-8 shrink-0 text-right text-sm font-semibold text-slate-600 dark:text-slate-300">
-                        {count}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </section>
           </div>
         </>

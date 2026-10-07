@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Calculator as CalcIcon, Delete, History, Plus, Trash2, X } from "lucide-react";
+import { Calculator as CalcIcon, Delete, History, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import {
   computeGpa,
   convert,
@@ -59,8 +59,11 @@ function BasicPad({
           type="button"
           onClick={() => onKey("C")}
           aria-label="Clear"
-          className="h-14 rounded-md bg-white text-lg font-semibold text-red-600 shadow-sm transition-transform hover:bg-slate-50 active:scale-95 sf-focus dark:bg-slate-900"
+          className="flex h-14 items-center justify-center rounded-md bg-white text-lg font-semibold text-red-600 shadow-sm transition-transform hover:bg-slate-50 active:scale-95 sf-focus dark:bg-slate-900"
         >
+          {/* S8-K (measured): the reference's Clear key pairs the label with
+              a rotate-ccw w-5 h-5 glyph. */}
+          <RotateCcw className="mr-2 h-5 w-5" strokeWidth={2} aria-hidden="true" />
           Clear
         </button>
         <button

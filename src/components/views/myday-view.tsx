@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Calendar, ChevronRight, Plus, Sun } from "lucide-react";
+import { Calendar, ChevronRight, Circle, Plus, Sparkles, Sun } from "lucide-react";
 import { useDataStore, mutations, type Task } from "@/lib/data";
 import { useSubjectMap, EmptyState, TaskRowCard } from "./shared";
 import { Checkbox } from "@/components/ui/primitives";
@@ -94,28 +94,85 @@ export function MyDayView() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        {/* Reference (measured): bare text-3xl h1 (30px, slate-800, no icon
-            chip) + "Wednesday, October 7" — the MyDay subtitle carries NO
-            year (unlike the dashboard date). */}
-        <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">My Day</h1>
-        <p className="text-base text-slate-500">
-          {now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-        </p>
+    // S8-D (measured): the reference centers My Day in a max-w-3xl block
+    // column — block layout so the header's mb-2 / amber card's mt-6 margin
+    // pair collapses to the reference's 24px gap.
+    <div className="mx-auto w-full max-w-3xl">
+      {/* S8-D (measured): the reference's My Day header is a flex row with a
+          56px amber-gradient sun block (w-14 h-14 rounded-2xl,
+          from-amber-400 to-orange-500, shadow-lg shadow-amber-500/30,
+          sun w-7 h-7 white) + the bare text-3xl h1 and weekday date. */}
+      <div className="mb-2 flex items-center gap-4">
+        <div
+          aria-label="My Day header block"
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
+          style={{
+            backgroundImage: "linear-gradient(to bottom right, #fbbf24, #f97316)",
+            boxShadow: "0 10px 15px -3px rgba(245, 158, 11, 0.3)",
+          }}
+        >
+          <Sun className="h-7 w-7 text-white" strokeWidth={2} aria-hidden="true" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">My Day</h1>
+          <p className="text-base text-slate-500">
+            {now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+          </p>
+        </div>
+      </div>
+
+      {/* S6-C — Today's Progress: the reference's amber gradient card
+          (bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 border
+          border-amber-100, amber-700 label + amber-600 bold fraction + h-2
+          amber progressbar). S8-D: sits directly under the header (mt-6).
+          sRGB-exact inline gradient per trap 5. */}
+      <div
+        aria-label="Today progress"
+        className="mt-6 rounded-2xl border border-amber-100 p-4 dark:border-amber-900/50"
+        style={{ backgroundImage: "linear-gradient(to right, #fffbeb, #fff7ed)" }}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Today&apos;s Progress</span>
+          <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+            {done}/{todayTasks.length}
+          </span>
+        </div>
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+          className="h-2 w-full overflow-hidden rounded-full bg-amber-100 dark:bg-amber-900/40"
+        >
+          <div
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${progress}%`,
+              backgroundImage: "linear-gradient(to right, #fbbf24, #f59e0b)",
+            }}
+          />
+        </div>
       </div>
 
       {/* Quick add — S5-I: measured as a bare flex row (no card wrapper):
-          h-12 rounded-xl input + "More Options" outline text button. */}
+          h-12 rounded-xl input + "More Options" outline text button. S8-D:
+          the input carries an inline plus icon (w-5 h-5, left-4). */}
       <form onSubmit={addTask} className="mb-6 flex gap-3">
-        <Input
-          value={quick}
-          onChange={(e) => setQuick(e.target.value)}
-          placeholder="Add a task for today..."
-          aria-label="Add a task for today"
-          className="h-12 flex-1 rounded-xl"
-          maxLength={200}
-        />
+        <div className="relative flex-1">
+          <Plus
+            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
+          <Input
+            value={quick}
+            onChange={(e) => setQuick(e.target.value)}
+            placeholder="Add a task for today..."
+            aria-label="Add a task for today"
+            className="h-12 rounded-xl pl-12"
+            maxLength={200}
+          />
+        </div>
         <Button
           type="button"
           variant="outline"
@@ -160,38 +217,6 @@ export function MyDayView() {
         </div>
       )}
 
-      {/* S6-C — Today's Progress: the reference's amber gradient card
-          (bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 border
-          border-amber-100, amber-700 label + amber-600 bold fraction + h-2
-          amber progressbar). sRGB-exact inline gradient per trap 5. */}
-      <div
-        aria-label="Today progress"
-        className="rounded-2xl border border-amber-100 p-4 dark:border-amber-900/50"
-        style={{ backgroundImage: "linear-gradient(to right, #fffbeb, #fff7ed)" }}
-      >
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Today&apos;s Progress</span>
-          <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
-            {done}/{todayTasks.length}
-          </span>
-        </div>
-        <div
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progress}
-          className="h-2 w-full overflow-hidden rounded-full bg-amber-100 dark:bg-amber-900/40"
-        >
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${progress}%`,
-              backgroundImage: "linear-gradient(to right, #fbbf24, #f59e0b)",
-            }}
-          />
-        </div>
-      </div>
-
       {/* Edit dialog */}
       {editing && (
         <form onSubmit={saveEdit} className="sf-card flex flex-col gap-3 p-4">
@@ -227,7 +252,8 @@ export function MyDayView() {
       )}
 
       {/* Today's list — S6-A card rows (the reference's MyDay rows are the
-          same task-row component as the Tasks view; measured). */}
+          same task-row component as the Tasks view; measured). S8-D: the
+          reference's list column is space-y-3 with an mb-8 tail. */}
       {todayTasks.length === 0 ? (
         <div className="sf-card">
           <EmptyState
@@ -237,7 +263,7 @@ export function MyDayView() {
           />
         </div>
       ) : (
-        <div className="flex flex-col gap-2 pr-2" aria-label="Today's task rows">
+        <div className="mb-8 flex flex-col gap-3" aria-label="Today's task rows">
           {todayTasks.map((t) => (
             <TaskRowCard
               key={t.id}
@@ -249,35 +275,38 @@ export function MyDayView() {
         </div>
       )}
 
-      {/* S6-C — Suggestions (reference-measured collapsible): tasks not yet
-          in My Day that are overdue or due soon, each with an Add button. */}
+      {/* S8-D — Suggestions (measured): NOT a card — a bare toggle button
+          (sparkles w-4 + text-sm font-medium label + rotating chevron) that
+          expands a space-y-2 list of bg-slate-50 rounded-xl rows with a
+          circle icon, title, due date, and a trailing Add affordance. */}
       {suggestions.length > 0 && (
-        <section className="sf-card overflow-hidden">
-          <header className="border-b border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => setSuggestionsOpen((v) => !v)}
-              aria-expanded={suggestionsOpen}
-              className="flex w-full items-center justify-between px-6 py-4 text-left sf-focus"
-            >
-              <h3 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">Suggestions</h3>
-              <ChevronRight
-                className={cn("h-4 w-4 text-slate-400 transition-transform", suggestionsOpen && "rotate-90")}
-                aria-hidden="true"
-              />
-            </button>
-          </header>
+        <div>
+          <button
+            type="button"
+            onClick={() => setSuggestionsOpen((v) => !v)}
+            aria-expanded={suggestionsOpen}
+            aria-controls="my-day-suggestions"
+            className="sf-focus mb-4 flex items-center gap-2 text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          >
+            <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            <span className="text-sm font-medium">Suggestions</span>
+            <ChevronRight
+              className={cn("h-4 w-4 transition-transform", suggestionsOpen && "rotate-90")}
+              aria-hidden="true"
+            />
+          </button>
           {suggestionsOpen && (
-            <ul className="flex flex-col gap-2 p-4" aria-label="Suggested tasks">
+            <div id="my-day-suggestions" className="space-y-2 overflow-hidden" aria-label="Suggested tasks">
               {suggestions.map((t) => {
                 const due = t.dueDate ? new Date(t.dueDate) : null;
                 return (
-                  <li
+                  <div
                     key={t.id}
-                    className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 dark:border-slate-800"
+                    className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 transition-colors hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800"
                   >
+                    <Circle className="h-5 w-5 shrink-0 text-slate-300 dark:text-slate-600" aria-hidden="true" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">{t.title}</p>
+                      <p className="truncate font-medium text-slate-600 dark:text-slate-300">{t.title}</p>
                       {due && (
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
                           <Calendar className="h-3 w-3" aria-hidden="true" />
@@ -285,15 +314,15 @@ export function MyDayView() {
                         </p>
                       )}
                     </div>
-                    <Button type="button" size="sm" variant="outline" onClick={() => addToMyDay(t)}>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => addToMyDay(t)}>
                       Add
                     </Button>
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           )}
-        </section>
+        </div>
       )}
     </div>
   );

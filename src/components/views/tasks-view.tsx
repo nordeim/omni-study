@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ListChecks, Plus } from "lucide-react";
+import { List as ListIcon, ListChecks, Plus, Search, Star } from "lucide-react";
 import { useDataStore, mutations, type Task, type Subtask } from "@/lib/data";
 import { useSubjectMap, EmptyState, ErrorText, TaskRowCard } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -197,34 +197,44 @@ export function TasksView() {
   if (status === "error") return <ErrorText message={error ?? "Failed to load tasks"} />;
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
-      {/* Left panel — views + lists (S6-A: borderless bordered-r column,
-          r12 px-4 py-3 16px buttons, violet-50/violet-700 active). */}
-      <aside className="w-full shrink-0 md:border-r md:border-slate-100 md:pr-6 lg:w-64" aria-label="Task views">
-        <div className="flex flex-col gap-1">
+    // S8-F (measured): the reference's Tasks view is a full-height two-pane
+    // flex — a hidden-below-md w-64 aside (border-r, pr-6) and the main list.
+    <div className="flex h-[calc(100vh-8rem)]">
+      {/* Left panel — S8-F: filter buttons carry list/star icons + a
+          flex-1 font-medium label; the My Lists block is separated by a
+          border-t + pt-6 (the reference's section split). */}
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-100 pr-6 md:flex dark:border-slate-800" aria-label="Task views">
+        <div className="mb-6 flex flex-col gap-1">
           {(
             [
-              { key: "all" as const, label: "All Tasks", count: activeCount },
-              { key: "important" as const, label: "Important", count: importantCount },
+              { key: "all" as const, label: "All Tasks", count: activeCount, icon: ListIcon },
+              { key: "important" as const, label: "Important", count: importantCount, icon: Star },
             ]
-          ).map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setBucket(item.key)}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-base transition-all sf-focus",
-                bucketKey(bucket) === item.key
-                  ? "bg-violet-50 text-violet-700 dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
-                  : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60",
-              )}
-            >
-              {item.label}
-              <span className="text-sm text-slate-400">{item.count}</span>
-            </button>
-          ))}
+          ).map((item) => {
+            const Icon = item.icon;
+            const active = bucketKey(bucket) === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setBucket(item.key)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all sf-focus",
+                  active
+                    ? "bg-violet-50 text-violet-700 dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
+                    : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60",
+                )}
+              >
+                <Icon className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
+                <span className="flex-1 font-medium">{item.label}</span>
+                <span className="text-sm text-slate-400">{item.count}</span>
+              </button>
+            );
+          })}
+        </div>
 
-          <div className="mt-3 flex items-center justify-between px-4 pb-1">
+        <div className="border-t border-slate-100 pt-6 dark:border-slate-800">
+          <div className="mb-4 flex items-center justify-between">
             {/* Reference (measured): text-sm font-semibold text-slate-500
                 uppercase tracking-wider — the clone was one step small and
                 light (text-xs slate-400; S4-H). */}
@@ -233,55 +243,58 @@ export function TasksView() {
               type="button"
               onClick={() => setListDialogOpen(true)}
               aria-label="New list"
-              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 sf-focus dark:hover:bg-slate-800"
+              className="sf-focus flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
               <Plus className="h-4 w-4" />
             </button>
           </div>
           {taskLists.length === 0 && (
-            <p className="px-4 py-2 text-xs text-slate-400">No lists yet</p>
+            <p className="py-2 text-xs text-slate-400">No lists yet</p>
           )}
-          {taskLists.map((list) => {
-            const count = tasks.filter((t) => t.listId === list.id && !t.completed).length;
-            return (
-              <div key={list.id} className="group relative">
-                <button
-                  type="button"
-                  onClick={() => setBucket({ list: list.id })}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-base transition-all sf-focus",
-                    bucketKey(bucket) === `list:${list.id}`
-                      ? "bg-violet-50 text-violet-700 dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
-                      : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60",
-                  )}
-                >
-                  <span className="flex min-w-0 flex-1 items-center gap-2">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: list.color }} />
-                    <span className="truncate">{list.name}</span>
-                  </span>
-                  <span className="text-sm text-slate-400">{count}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void mutations.deleteTaskList(list.id);
-                    if (bucketKey(bucket) === `list:${list.id}`) setBucket("all");
-                    toast.success("List deleted");
-                  }}
-                  aria-label={`Delete list "${list.name}"`}
-                  className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded p-1 text-slate-400 hover:text-red-500 group-hover:block"
-                >
-                  ✕
-                </button>
-              </div>
-            );
-          })}
+          <div className="flex flex-col gap-1">
+            {taskLists.map((list) => {
+              const count = tasks.filter((t) => t.listId === list.id && !t.completed).length;
+              return (
+                <div key={list.id} className="group relative">
+                  <button
+                    type="button"
+                    onClick={() => setBucket({ list: list.id })}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all sf-focus",
+                      bucketKey(bucket) === `list:${list.id}`
+                        ? "bg-violet-50 text-violet-700 dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
+                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60",
+                    )}
+                  >
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: list.color }} />
+                      <span className="truncate font-medium">{list.name}</span>
+                    </span>
+                    <span className="text-sm text-slate-400">{count}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void mutations.deleteTaskList(list.id);
+                      if (bucketKey(bucket) === `list:${list.id}`) setBucket("all");
+                      toast.success("List deleted");
+                    }}
+                    aria-label={`Delete list "${list.name}"`}
+                    className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded p-1 text-slate-400 hover:text-red-500 group-hover:block"
+                  >
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </aside>
 
-      {/* Main column */}
-      <div className="min-w-0 flex-1">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      {/* Main column — S8-F: ONE header row (h1 + count left; search +
+          filter + Add Task right), then the scrollable row list. */}
+      <main className="flex min-w-0 flex-1 flex-col md:pl-6">
+        <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center" aria-label="Tasks header">
           {/* Reference (measured): h1 text-2xl font-bold text-slate-800
               (tracking normal) + a dynamic "{N} tasks" subtitle (16px). */}
           <div>
@@ -290,31 +303,35 @@ export function TasksView() {
             </h1>
             <p className="text-base text-slate-500">{visible.length} tasks</p>
           </div>
-          <Button onClick={openCreate} variant="gradient" className="gap-1.5">
-            <Plus className="h-4 w-4" /> Add Task
-          </Button>
-        </div>
-
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <div className="relative min-w-[180px] flex-1">
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tasks..."
-              aria-label="Search tasks"
-              className="h-9"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 md:w-64">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tasks..."
+                aria-label="Search tasks"
+                className="h-9 pl-9"
+              />
+            </div>
+            <Select value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+              <SelectTrigger className="h-9 w-[110px]" aria-label="Filter tasks">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={openCreate} variant="gradient" className="shrink-0 gap-1.5">
+              <Plus className="h-4 w-4" /> Add Task
+            </Button>
           </div>
-          <Select value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-            <SelectTrigger className="w-[130px]" aria-label="Filter tasks">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="all">All</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {visible.length === 0 ? (
@@ -328,18 +345,22 @@ export function TasksView() {
         ) : (
           // S6-A: per-row CARDS in a gap-2 column (the reference's
           // space-y-2 list, laid out flex-gap per the v4 trap-4 convention).
-          <div className="flex flex-col gap-2 pr-2" aria-label="Task rows">
-            {visible.map((t) => (
-              <TaskRowCard
-                key={t.id}
-                task={t}
-                subject={t.subjectId ? subjectMap.get(t.subjectId) : undefined}
-                onEdit={openEdit}
-              />
-            ))}
+          // S8-F: the list scrolls inside the full-height pane (the pinned
+          // "Task rows" label stays on the rows' direct parent).
+          <div className="sf-scroll flex-1 overflow-y-auto">
+            <div className="flex flex-col gap-2 pr-2" aria-label="Task rows">
+              {visible.map((t) => (
+                <TaskRowCard
+                  key={t.id}
+                  task={t}
+                  subject={t.subjectId ? subjectMap.get(t.subjectId) : undefined}
+                  onEdit={openEdit}
+                />
+              ))}
+            </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* Task dialog (S6-B — the reference's field set, measured). */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

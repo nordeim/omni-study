@@ -77,11 +77,12 @@ test.describe("theme system", () => {
     await page.goto("/Settings");
     await hydrated(page);
     await page.getByRole("button", { name: "Teal accent" }).click();
-    // The token change is applied to <html> as an RGB triplet var.
-    const primary = await page.evaluate(
-      () => getComputedStyle(document.documentElement).getPropertyValue("--sf-primary").trim(),
+    // The token change is applied to <html> as an RGB triplet var. The var
+    // lands on the NEXT React render after the click — an immediate evaluate
+    // races it (observed as a fast-fail flake); poll for the final value.
+    await page.waitForFunction(
+      () => document.documentElement.style.getPropertyValue("--sf-primary").trim() === "20 184 166",
     );
-    expect(primary).toBe("20 184 166"); // teal-500 triplet
     // It persists (saved to the user record).
     await page.goto("/Dashboard");
     const after = await page.evaluate(
@@ -102,11 +103,10 @@ test.describe("theme system", () => {
       ),
       page.getByRole("button", { name: "Violet accent" }).click(),
     ]);
-    // And the applied token is violet again.
-    const restored = await page.evaluate(
-      () => getComputedStyle(document.documentElement).getPropertyValue("--sf-primary").trim(),
+    // And the applied token is violet again (same render-race hardening).
+    await page.waitForFunction(
+      () => document.documentElement.style.getPropertyValue("--sf-primary").trim() === "139 92 246",
     );
-    expect(restored).toBe("139 92 246");
   });
 
   test("dark mode toggles the html class", async ({ page }) => {

@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, FolderPlus, NotebookPen, Pin, PinOff, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, FolderPlus, Pin, PinOff, Plus, Search, Trash2 } from "lucide-react";
 import { useDataStore, mutations, type Note, type Notebook } from "@/lib/data";
-import { EmptyState, ViewHeader } from "./shared";
+import { EmptyState } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -84,31 +86,33 @@ export function NotesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <ViewHeader title="Notes" icon={BookOpen} />
-
-      {/* S5-L — measured two-pane layout: left pane w-80 with a border-r
-          divider (NOT a card) carrying the pane header (title + icon-only
-          New Note gradient button), search, and the All Notebooks / All
-          Tags SELECTS side-by-side; the right pane holds the editor. */}
+      {/* S8-G — measured two-pane layout (NO page-level header): the h1 +
+          book-open icon live INSIDE the w-80 left pane with a single 36px
+          gradient dropdown (New Note / New Notebook); Radix Select
+          comboboxes for notebook/tag filters; the right pane is BARE (no
+          card) holding the editor or the centered empty state. */}
       <div className="flex h-[calc(100vh-8rem)] min-h-[480px] gap-6">
         {/* Left pane */}
-        <div className="hidden w-80 flex-col border-r border-slate-100 pr-6 dark:border-slate-800 lg:flex">
+        <div
+          aria-label="Notes list pane"
+          className="hidden w-80 flex-col border-r border-slate-100 pr-6 lg:flex dark:border-slate-800"
+        >
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">Notes</h2>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setNotebookDialogOpen(true)}
-                aria-label="New notebook"
-                title="New notebook"
-              >
-                <FolderPlus className="h-4 w-4" strokeWidth={2} />
-              </Button>
-              <Button variant="gradient" size="icon" onClick={createNote} aria-label="New note" title="New note">
-                <Plus className="h-4 w-4" strokeWidth={2} />
-              </Button>
-            </div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-800 dark:text-slate-100">
+              <BookOpen className="h-6 w-6 text-sf-primary" strokeWidth={2} aria-hidden="true" />
+              Notes
+            </h1>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="gradient" size="icon" aria-label="New note menu" title="New note">
+                  <Plus className="h-4 w-4" strokeWidth={2} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => void createNote()}>New Note</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setNotebookDialogOpen(true)}>New Notebook</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="relative mb-4">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
@@ -117,36 +121,42 @@ export function NotesView() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search notes..."
               aria-label="Search notes"
-              className="pl-9"
+              className="h-9 pl-9"
             />
           </div>
           <div className="mb-4 flex gap-2">
-            <select
-              value={notebookFilter}
-              onChange={(e) => setNotebookFilter(e.target.value)}
-              aria-label="Filter by notebook"
-              className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+            <Select
+              value={notebookFilter || "all"}
+              onValueChange={(v) => setNotebookFilter(v === "all" ? "" : v)}
             >
-              <option value="">All Notebooks</option>
-              {notebooks.map((nb) => (
-                <option key={nb.id} value={nb.id}>{nb.name}</option>
-              ))}
-            </select>
-            <select
-              value={tagFilter}
-              onChange={(e) => setTagFilter(e.target.value)}
-              aria-label="Filter by tag"
-              className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+              <SelectTrigger aria-label="Filter by notebook" className="h-9 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Notebooks</SelectItem>
+                {notebooks.map((nb) => (
+                  <SelectItem key={nb.id} value={nb.id}>{nb.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={tagFilter || "all"}
+              onValueChange={(v) => setTagFilter(v === "all" ? "" : v)}
             >
-              <option value="">All Tags</option>
-              {allTags.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+              <SelectTrigger aria-label="Filter by tag" className="h-9 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tags</SelectItem>
+                {allTags.map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="flex-1 space-y-2 overflow-y-auto sf-scroll pb-4">
+          <div className="sf-scroll flex-1 space-y-4 overflow-y-auto pb-4" aria-label="Notes list">
             {visible.length === 0 ? (
-              <EmptyState icon={NotebookPen} title="No notes yet" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
+              <EmptyState icon={BookOpen} title="No notes yet" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
             ) : (
               visible.map((n) => (
                 <NoteListItem
@@ -161,8 +171,13 @@ export function NotesView() {
           </div>
         </div>
 
-        {/* Editor — keyed by note id: switching notes remounts fresh state */}
-        <div className="sf-card flex min-h-[420px] flex-1 flex-col overflow-hidden">
+        {/* Editor — keyed by note id: switching notes remounts fresh state.
+            S8-G: the right pane is BARE (no card wrapper — measured); the
+            empty state centers in the full pane height. */}
+        <div
+          aria-label="Note editor pane"
+          className="flex min-h-[420px] min-w-0 flex-1 flex-col"
+        >
           {selected ? (
             <NoteEditor
               key={selected.id}
@@ -171,7 +186,13 @@ export function NotesView() {
               onDelete={() => setSelectedId(null)}
             />
           ) : (
-            <EmptyState icon={NotebookPen} title="Select a note" hint="Pick a note from the list or create a new one." />
+            <div className="flex flex-1 flex-col items-center justify-center">
+              <EmptyState
+                icon={BookOpen}
+                title="Select a note"
+                hint="Choose a note from the sidebar or create a new one"
+              />
+            </div>
           )}
         </div>
       </div>
@@ -189,7 +210,7 @@ export function NotesView() {
         </div>
         {visible.length === 0 ? (
           <div className="sf-card">
-            <EmptyState icon={NotebookPen} title="No notes yet" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
+            <EmptyState icon={BookOpen} title="No notes yet" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
           </div>
         ) : (
           <ul className="sf-card divide-y divide-slate-100 dark:divide-slate-800">
@@ -321,7 +342,8 @@ function NoteEditor({
   );
 
   return (
-    <>
+    // S8-G: the pane is BARE — the editor keeps its own card chrome.
+    <div className="sf-card flex min-w-0 flex-1 flex-col overflow-hidden">
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
         <Input
           value={draft.title}
@@ -392,6 +414,6 @@ function NoteEditor({
           ))}
         </select>
       </div>
-    </>
+    </div>
   );
 }

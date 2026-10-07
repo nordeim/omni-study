@@ -100,7 +100,10 @@ export function SettingsView() {
       <ViewHeader title="Settings" subtitle="Customize your StudyFlow experience" icon={SettingsIcon} />
 
       <Tabs defaultValue="appearance">
-        <TabsList>
+        {/* S8-O (measured): the reference's tab list is bg-white with a
+            border-slate-200 border, p-1, and flex-wrap (no fixed h-9) —
+            the shadcn stock stays default for other consumers. */}
+        <TabsList className="h-auto flex-wrap border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="subjects">Subjects</TabsTrigger>
