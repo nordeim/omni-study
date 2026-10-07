@@ -133,6 +133,7 @@ export interface Flashcard {
   deckId: string;
   front: string;
   back: string;
+  difficulty: "easy" | "medium" | "hard"; // S7-A: reference card badge
   mastered: boolean;
   order: number;
 }
@@ -141,6 +142,7 @@ export interface FlashcardDeck {
   id: string;
   name: string;
   description: string;
+  color: string; // S7-A: reference deck swatch (hex)
   subjectId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -153,6 +155,7 @@ export interface PracticeTest {
   date: string | null;
   status: "created" | "in_progress" | "completed";
   score: number | null;
+  questions: string; // S7-B: JSON [{question,type}]
   totalQuestions: number;
   correctCount: number;
   durationMinutes: number | null;

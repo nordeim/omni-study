@@ -196,12 +196,19 @@ export const notePatchSchema = noteSchema.partial();
 export const flashcardDeckSchema = z.object({
   name: bounded(120).min(1),
   description: bounded(1000).default(""),
+  // S7-A: the reference's Create Deck dialog has a 6-swatch Color picker
+  // (violet/blue/emerald/amber/red/pink-500) — the deck row's 40px icon
+  // block renders the picked color.
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#8b5cf6"),
   subjectId: z.string().max(40).nullish(),
 });
 
 export const flashcardSchema = z.object({
   front: bounded(2000).min(1),
   back: bounded(2000).min(1),
+  // S7-A: the reference's card grid renders a difficulty badge (measured
+  // "medium", bg-yellow-100 text-yellow-700).
+  difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
   mastered: z.boolean().default(false),
   order: z.number().int().min(0).default(0),
 });
@@ -212,8 +219,38 @@ export const practiceTestSchema = z.object({
   title: bounded(200).min(1),
   subjectId: z.string().max(40).nullish(),
   date: optionalIsoDate,
+  // S7-B: the reference's Create Practice Test dialog builds a question
+  // list (multiple_choice/true_false/short_answer) — persisted as JSON.
+  questions: z
+    .string()
+    .max(20000)
+    .default("[]")
+    .refine(
+      (v) => {
+        try {
+          const parsed: unknown = JSON.parse(v);
+          return (
+            Array.isArray(parsed) &&
+            parsed.every(
+              (q) =>
+                typeof q === "object" &&
+                q !== null &&
+                typeof (q as { question?: unknown }).question === "string" &&
+                (q as { type?: unknown }).type !== undefined &&
+                ["multiple_choice", "true_false", "short_answer"].includes(
+                  (q as { type: unknown }).type as string,
+                )
+            )
+          );
+        } catch {
+          return false;
+        }
+      },
+      { message: "questions must be a JSON array of {question,type}" },
+    ),
   totalQuestions: z.number().int().min(0).max(500).default(0),
-  durationMinutes: z.number().int().min(0).max(600).nullish(),
+  // S7-B: the reference's "Time Limit (minutes)" spinbutton defaults to 60.
+  durationMinutes: z.number().int().min(0).max(600).default(60),
 });
 
 export const practiceTestPatchSchema = practiceTestSchema.partial().extend({
@@ -301,6 +338,19 @@ export const mathSolveSchema = z.object({
     .max(6 * 1024 * 1024)
     .regex(/^data:image\/[a-z+]+;base64,[A-Za-z0-9\/=]+$/)
     .optional(),
+});
+
+// S7-A: AI card generation for a flashcard deck (server-side SDK route).
+export const aiGenerateCardsSchema = z.object({
+  deckId: z.string().min(1).max(40),
+  count: z.number().int().min(1).max(20).default(6),
+});
+
+// S7-B: AI question generation for a practice test (server-side SDK route).
+export const aiGenerateQuestionsSchema = z.object({
+  title: z.string().min(1).max(200),
+  context: z.string().max(500).default(""),
+  count: z.number().int().min(1).max(20).default(10),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

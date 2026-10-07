@@ -29,6 +29,17 @@ if (!session) throw new Error("no sf_session cookie after login");
 console.log("login: ok");
 await loginCtx.close();
 
+// The login page capture + desktop views run against the FIRST browser
+// instance; the mobile phase relaunches a fresh one — long capture runs
+// degrade the shared Chromium (memory pressure) and the drawer tap timed
+// out at the tail of the run (session-7 finding).
+let currentBrowser = browser;
+
+async function relaunchBrowser() {
+  await currentBrowser.close();
+  currentBrowser = await chromium.launch();
+}
+
 const VIEWS = [
   "Dashboard", "MyDay", "Tasks", "Calendar", "Events", "Timetable",
   "Assignments", "Exams", "Notes", "Flashcards", "PracticeTests",
@@ -37,7 +48,7 @@ const VIEWS = [
 ];
 
 async function shot(name, ctxOptions, path, run) {
-  const ctx = await browser.newContext({ deviceScaleFactor: 1, ...ctxOptions });
+  const ctx = await currentBrowser.newContext({ deviceScaleFactor: 1, ...ctxOptions });
   await ctx.addCookies([{ name: "sf_session", value: session.value, url: BASE }]);
   const page = await ctx.newPage();
   await page.goto(BASE + path, { waitUntil: "networkidle" });
@@ -65,10 +76,30 @@ const mobileTouch = { viewport: { width: 390, height: 844 }, hasTouch: true, isM
   await ctx.close();
 }
 
-// 02–21 — every desktop view.
-for (const view of VIEWS) {
-  await shot(`desktop-${view}`, desktop, `/${view}`);
+// 02–21 — every desktop view. The Flashcards capture opens the seeded
+// "Integration rules" deck first so the card grid + study controls show
+// (session-7: the view defaults to its "Select a deck" empty state).
+// The browser relaunches every 7 views — long-lived shared Chromium
+// instances degrade under the container's memory ceiling and late-run
+// locators time out (session-7 finding).
+for (let i = 0; i < VIEWS.length; i++) {
+  if (i > 0 && i % 7 === 0) await relaunchBrowser();
+  const view = VIEWS[i];
+  const run =
+    view === "Flashcards"
+      ? async (page) => {
+          await page
+            .locator('[aria-label="Deck rows"] > button', { hasText: "Integration rules" })
+            .first()
+            .click();
+          await page.waitForTimeout(900);
+        }
+      : undefined;
+  await shot(`desktop-${view}`, desktop, `/${view}`, run);
 }
+
+// Fresh browser for the mobile phase (see relaunchBrowser note above).
+await relaunchBrowser();
 
 // 22–24 — mobile chrome: dashboard (fixed glass bar + content at 80px),
 // the navigation drawer open (288px panel), and the Tasks view.
@@ -79,5 +110,5 @@ await shot("mobile-navigation-drawer", mobileTouch, "/Dashboard", async (page) =
 });
 await shot("mobile-tasks", mobile, "/Tasks");
 
-await browser.close();
+await currentBrowser.close();
 console.log("done — " + (VIEWS.length + 4) + " captures in " + OUT);

@@ -11,7 +11,9 @@ import { toast } from "@/components/ui/toast";
 import { formatFullDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-const GROUP_COLORS = ["#8b5cf6", "#3b82f6", "#22c55e", "#f97316", "#ec4899", "#ef4444", "#14b8a6"] as const;
+// S7-B: the reference's 6-swatch picker (measured live — same family as
+// deck colors): violet/blue/emerald/amber/red/pink-500, red before pink.
+const GROUP_COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"] as const;
 const MAX_DIALOG_MEMBERS = 10;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const nativeSelectClass = "flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm";
@@ -500,7 +502,7 @@ export function StudyGroupsView() {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Color</Label>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2" role="group" aria-label="Group color swatches">
                 {GROUP_COLORS.map((c) => (
                   <button
                     key={c}
@@ -509,8 +511,8 @@ export function StudyGroupsView() {
                     aria-label={`Choose color ${c}`}
                     aria-pressed={color === c}
                     className={cn(
-                      "h-7 w-7 rounded-full transition-shadow sf-focus",
-                      color === c && "ring-2 ring-slate-400 ring-offset-2 dark:ring-offset-slate-900",
+                      "h-8 w-8 rounded-full transition-transform sf-focus",
+                      color === c && "scale-110 ring-2 ring-slate-400 ring-offset-2 dark:ring-offset-slate-900",
                     )}
                     style={{ backgroundColor: c }}
                   />

@@ -257,8 +257,12 @@ test.describe("S5-J · Timetable chrome", () => {
     await expect(page.getByRole("option", { name: "Week A" })).toBeVisible();
     await expect(page.getByRole("option", { name: "Week B" })).toBeVisible();
     await page.keyboard.press("Escape");
-    // Day headers carry date numbers (Sunday-first, measured).
-    await expect(page.getByText(/Sun \d+/).first()).toBeVisible();
+    // Day headers carry full day names + big date numbers (Sunday-first,
+    // measured; S7-C upgraded the compact "Sun 4" chips to the reference's
+    // grid-cols-8 "Sunday / 4" heads).
+    await expect(
+      page.locator('[aria-label="Week header"]').getByText("Sunday", { exact: true }),
+    ).toBeVisible();
     // My Classes renders the alternating-week badges (seeded).
     await expect(page.getByText(/Week A/).first()).toBeVisible();
   });

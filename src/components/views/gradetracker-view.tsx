@@ -3,11 +3,13 @@
 import * as React from "react";
 import {
   Award,
+  ChartColumn,
   ClipboardList,
   GraduationCap,
   LineChart,
   PieChart,
   Plus,
+  Target,
   Trash2,
   TrendingUp,
 } from "lucide-react";
@@ -241,25 +243,23 @@ export function GradeTrackerView() {
         </div>
       ) : (
         <>
-          {/* Stat cards — S5-M: measured as THREE cards, the first a full
-              violet→indigo gradient card with white text ("Overall Average");
-              white cards carry colored 24px icons + text-4xl/700 values. The
-              clone's Best-Subject / Passing stats fold into the subjects
-              table below (kept data, matched chrome). */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Stat cards — S7-E: measured icons (award on the gradient card
+              at w-8 h-8 mb-3 opacity-80; target / chart-column on the white
+              cards) with strokeWidth 2 and mb-3 spacing. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Grade summary">
             <div className="sf-gradient rounded-2xl p-6 text-white shadow-lg">
-              <TrendingUp className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />
-              <p className="mt-2 text-sm opacity-90">Overall Average</p>
+              <Award className="mb-3 h-8 w-8 opacity-80" strokeWidth={2} aria-hidden="true" />
+              <p className="text-sm opacity-90">Overall Average</p>
               <p className="mt-2 text-4xl font-bold">{Math.round(overallPct)}%</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-              <ClipboardList className="h-6 w-6 text-emerald-500" strokeWidth={1.75} aria-hidden="true" />
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Total Grades</p>
+              <Target className="mb-3 h-8 w-8 text-emerald-500" strokeWidth={2} aria-hidden="true" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Total Grades</p>
               <p className="mt-2 text-4xl font-bold text-slate-800 dark:text-slate-100">{grades.length}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-              <Award className="h-6 w-6 text-blue-500" strokeWidth={1.75} aria-hidden="true" />
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Subjects Tracked</p>
+              <ChartColumn className="mb-3 h-8 w-8 text-blue-500" strokeWidth={2} aria-hidden="true" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Subjects Tracked</p>
               <p className="mt-2 text-4xl font-bold text-slate-800 dark:text-slate-100">{subjectStats.length}</p>
             </div>
           </div>

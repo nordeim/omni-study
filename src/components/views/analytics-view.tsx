@@ -1,14 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { BarChart3, ChartColumn, TrendingUp } from "lucide-react";
+import { BarChart3, BookOpen, ChartColumn, Clock, GraduationCap, SquareCheckBig, TrendingUp } from "lucide-react";
 import { useDataStore } from "@/lib/data";
-import { EmptyState, StatCard, STAT_COLORS, useSubjectMap, ViewHeader } from "./shared";
-import { formatMinutes } from "@/lib/date";
+import { EmptyState, useSubjectMap, ViewHeader } from "./shared";
+import { formatMinutes, startOfDay } from "@/lib/date";
 
-// Analytics — custom inline-SVG charts (no chart library). Superset of the
-// reference's (empty) Analytics page: task completion, focus time, grade
-// trend, and subject distribution all render from real data.
+// Analytics — S7-D aligns the stat cards + chart cards with the measured
+// reference: four r12 border-0 cards with 48px tinted icon blocks
+// ("Tasks Completed X/Y", "Assignments X/Y", "Focus Time", "Upcoming Exams")
+// and "Task Activity (Last 7 Days)" / "Focus Time (Last 7 Days)" chart cards.
+// The clone's grade-trend and subject-distribution charts remain as
+// supersets below. Charts are custom inline SVG (no chart library).
 
 interface DayPoint {
   label: string;
@@ -59,6 +62,60 @@ function BarChart({
   );
 }
 
+function ChartCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  // Measured: rounded-xl border shadow card with a p-6 header carrying a
+  // trending-up icon + text-lg semibold title.
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-col space-y-1.5 p-6">
+        <div className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-800 dark:text-slate-100">
+          <TrendingUp className="h-5 w-5 text-sf-primary" strokeWidth={2} aria-hidden="true" />
+          {title}
+        </div>
+      </div>
+      <div className="px-6 pb-6">{children}</div>
+    </section>
+  );
+}
+
+/** S7-D: the measured stat card — 48px tinted icon block + label/value/sub stack. */
+function AnalyticsStatCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  tintClass,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  tintClass: string;
+}) {
+  return (
+    <div className="rounded-xl bg-white shadow-sm dark:bg-slate-900">
+      <div className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={"flex h-12 w-12 shrink-0 items-center justify-center rounded-xl " + tintClass}>
+            <Icon className="h-6 w-6" strokeWidth={2} />
+          </div>
+          <div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
+            <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{value}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{sub}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LineChart({ points, title }: { points: { x: string; y: number }[]; title: string }) {
   if (points.length < 2) {
     return (
@@ -100,18 +157,19 @@ export function AnalyticsView() {
   const focusSessions = useDataStore((s) => s.data.focusSessions);
   const grades = useDataStore((s) => s.data.grades);
   const assignments = useDataStore((s) => s.data.assignments);
+  const exams = useDataStore((s) => s.data.exams);
   const subjects = useDataStore((s) => s.data.subjects);
   const loadAll = useDataStore((s) => s.loadAll);
   const subjectMap = useSubjectMap();
 
   React.useEffect(() => {
-    void loadAll(["tasks", "focusSessions", "grades", "assignments", "subjects"]);
+    void loadAll(["tasks", "focusSessions", "grades", "assignments", "exams", "subjects"]);
   }, [loadAll]);
 
-  // last 14 days task-completion series
+  // S7-D: measured 7-day windows with day-name ("Thu"…"Wed") axes.
   const completion = React.useMemo<DayPoint[]>(() => {
     const days: DayPoint[] = [];
-    for (let i = 13; i >= 0; i--) {
+    for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const done = tasks.filter(
@@ -120,21 +178,21 @@ export function AnalyticsView() {
           t.dueDate &&
           new Date(t.dueDate).toDateString() === d.toDateString(),
       ).length;
-      days.push({ label: d.getDate().toString(), value: done });
+      days.push({ label: d.toLocaleDateString("en-US", { weekday: "short" }), value: done });
     }
     return days;
   }, [tasks]);
 
-  // last 14 days focus minutes
+  // S7-D: 7-day focus minutes series.
   const focus = React.useMemo<DayPoint[]>(() => {
     const days: DayPoint[] = [];
-    for (let i = 13; i >= 0; i--) {
+    for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const mins = focusSessions
         .filter((f) => f.mode === "focus" && new Date(f.date).toDateString() === d.toDateString())
         .reduce((s, f) => s + f.durationMinutes, 0);
-      days.push({ label: d.getDate().toString(), value: mins });
+      days.push({ label: d.toLocaleDateString("en-US", { weekday: "short" }), value: mins });
     }
     return days;
   }, [focusSessions]);
@@ -150,8 +208,15 @@ export function AnalyticsView() {
     [grades],
   );
 
-  const completionRate =
-    tasks.length === 0 ? 0 : Math.round((tasks.filter((t) => t.completed).length / tasks.length) * 100);
+  // S7-D: measured stat values — Tasks Completed X/Y + completion rate,
+  // Assignments done/total + avg progress, Focus Time, Upcoming Exams.
+  const doneTasks = tasks.filter((t) => t.completed).length;
+  const completionRate = tasks.length === 0 ? 0 : Math.round((doneTasks / tasks.length) * 100);
+  const doneAssignments = assignments.filter((a) => a.status === "graded" || a.status === "submitted").length;
+  const avgProgress =
+    assignments.length === 0
+      ? 0
+      : Math.round(assignments.reduce((s, a) => s + (a.progress ?? 0), 0) / assignments.length);
 
   const thisMonthFocus = focusSessions
     .filter((f) => {
@@ -160,11 +225,9 @@ export function AnalyticsView() {
     })
     .reduce((s, f) => s + f.durationMinutes, 0);
 
-  const activeAssignments = assignments.filter((a) => a.status === "active").length;
-  const avgGrade =
-    grades.length === 0
-      ? 0
-      : Math.round(grades.reduce((s, g) => s + (g.score / g.maxScore) * 100, 0) / grades.length);
+  const upcomingExams = exams.filter(
+    (e) => new Date(e.date).getTime() >= startOfDay(new Date()).getTime(),
+  ).length;
 
   // subject distribution (tasks per subject)
   const distribution = React.useMemo(() => {
@@ -180,7 +243,8 @@ export function AnalyticsView() {
       .slice(0, 6);
   }, [tasks, subjectMap]);
 
-  const hasAnyData = tasks.length + focusSessions.length + grades.length + assignments.length > 0;
+  const hasAnyData =
+    tasks.length + focusSessions.length + grades.length + assignments.length + exams.length > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -196,20 +260,50 @@ export function AnalyticsView() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Completion Rate" value={`${completionRate}%`} hint="of all tasks" icon={TrendingUp} colors={STAT_COLORS.violet} />
-            <StatCard label="Focus This Month" value={formatMinutes(thisMonthFocus)} hint="total focus time" icon={BarChart3} colors={STAT_COLORS.pink} />
-            <StatCard label="Average Grade" value={grades.length ? `${avgGrade}%` : "—"} hint="across assessments" icon={TrendingUp} colors={STAT_COLORS.blue} />
-            <StatCard label="Active Work" value={String(activeAssignments)} hint="assignments in flight" icon={BarChart3} colors={STAT_COLORS.orange} />
+          {/* S7-D — measured stat cards: r12 border-0 + 48px tinted icon blocks. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Analytics stats">
+            <AnalyticsStatCard
+              label="Tasks Completed"
+              value={`${doneTasks}/${tasks.length}`}
+              sub={`${completionRate}% completion rate`}
+              icon={SquareCheckBig}
+              tintClass="bg-violet-100 text-violet-600 dark:bg-violet-950/60 dark:text-violet-300"
+            />
+            <AnalyticsStatCard
+              label="Assignments"
+              value={`${doneAssignments}/${assignments.length}`}
+              sub={`${avgProgress}% avg progress`}
+              icon={BookOpen}
+              tintClass="bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300"
+            />
+            <AnalyticsStatCard
+              label="Focus Time"
+              value={formatMinutes(thisMonthFocus)}
+              sub="total study hours"
+              icon={Clock}
+              tintClass="bg-green-100 text-green-600 dark:bg-green-950/60 dark:text-green-300"
+            />
+            <AnalyticsStatCard
+              label="Upcoming Exams"
+              value={String(upcomingExams)}
+              sub={`${upcomingExams === 1 ? "exam" : "exams"} scheduled`}
+              icon={GraduationCap}
+              tintClass="bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-300"
+            />
           </div>
 
+          {/* Measured chart cards: 7-day windows, trending-up icon headers. */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <ChartCard title="Task Activity (Last 7 Days)">
+              <BarChart data={completion} color="rgb(139, 92, 246)" title="" />
+            </ChartCard>
+            <ChartCard title="Focus Time (Last 7 Days)">
+              <BarChart data={focus} color="rgb(139, 92, 246)" title="" unit="m" />
+            </ChartCard>
+          </div>
+
+          {/* Superset charts kept below the measured pair. */}
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <section className="sf-card p-6">
-              <BarChart data={completion} color="rgb(139, 92, 246)" title="Tasks completed — last 14 days" />
-            </section>
-            <section className="sf-card p-6">
-              <BarChart data={focus} color="rgb(236, 72, 153)" title="Focus minutes — last 14 days" unit="m" />
-            </section>
             <section className="sf-card p-6">
               <LineChart points={gradeTrend} title="Grade trend (%)" />
             </section>

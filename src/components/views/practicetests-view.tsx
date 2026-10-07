@@ -1,14 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, ClipboardList, FileQuestion, MoreHorizontal, Play, Plus } from "lucide-react";
+import { CheckCircle2, ClipboardList, FileQuestion, MoreHorizontal, Play, Plus, Sparkles, X } from "lucide-react";
 import { useDataStore, mutations, type PracticeTest, type Subject } from "@/lib/data";
 import { EmptyState, ErrorText, LoadingCards, SubjectChip, ViewHeader, useSubjectMap } from "./shared";
+import { apiSend } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Label, Textarea } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { formatMinutes } from "@/lib/date";
 
@@ -19,6 +20,33 @@ const STATUS_META: Record<PracticeTest["status"], { label: string; variant: "sec
 };
 
 const nativeSelectClass = "flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm";
+
+// S7-B: the reference's question types (measured on its AI-generated list).
+const QUESTION_TYPES = ["multiple_choice", "true_false", "short_answer"] as const;
+type QuestionType = (typeof QUESTION_TYPES)[number];
+
+interface DialogQuestion {
+  question: string;
+  type: QuestionType;
+}
+
+function parseQuestions(json: string): DialogQuestion[] {
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (q): q is { question: string; type: QuestionType } =>
+          typeof q === "object" &&
+          q !== null &&
+          typeof (q as { question?: unknown }).question === "string" &&
+          QUESTION_TYPES.includes((q as { type?: unknown }).type as QuestionType),
+      )
+      .slice(0, 100);
+  } catch {
+    return [];
+  }
+}
 
 function PracticeTestCard({
   test,
@@ -173,9 +201,14 @@ export function PracticeTestsView() {
   const [title, setTitle] = React.useState("");
   const [subjectId, setSubjectId] = React.useState("");
   const [date, setDate] = React.useState("");
-  const [totalQuestions, setTotalQuestions] = React.useState("20");
-  const [durationMinutes, setDurationMinutes] = React.useState("");
+  // S7-B: the reference's measured dialog fields — Time Limit (minutes,
+  // default 60) and a scrollable question list (AI-generated or manual).
+  const [durationMinutes, setDurationMinutes] = React.useState("60");
+  const [questions, setQuestions] = React.useState<DialogQuestion[]>([]);
+  const [newQuestion, setNewQuestion] = React.useState("");
+  const [newQuestionType, setNewQuestionType] = React.useState<QuestionType>("short_answer");
   const [busy, setBusy] = React.useState(false);
+  const [generating, setGenerating] = React.useState(false);
 
   const loading = status === "idle" || status === "loading";
 
@@ -184,8 +217,10 @@ export function PracticeTestsView() {
     setTitle("");
     setSubjectId("");
     setDate("");
-    setTotalQuestions("20");
-    setDurationMinutes("");
+    setDurationMinutes("60");
+    setQuestions([]);
+    setNewQuestion("");
+    setNewQuestionType("short_answer");
     setDialogOpen(true);
   }
 
@@ -194,26 +229,56 @@ export function PracticeTestsView() {
     setTitle(test.title);
     setSubjectId(test.subjectId ?? "");
     setDate(test.date ? new Date(test.date).toISOString().slice(0, 10) : "");
-    setTotalQuestions(String(test.totalQuestions));
-    setDurationMinutes(test.durationMinutes != null ? String(test.durationMinutes) : "");
+    setDurationMinutes(test.durationMinutes != null ? String(test.durationMinutes) : "60");
+    setQuestions(parseQuestions(test.questions));
+    setNewQuestion("");
+    setNewQuestionType("short_answer");
     setDialogOpen(true);
+  }
+
+  function addManualQuestion() {
+    const q = newQuestion.trim();
+    if (!q) return;
+    setQuestions((list) => [...list, { question: q.slice(0, 1000), type: newQuestionType }]);
+    setNewQuestion("");
+  }
+
+  // S7-B: the reference's AI Generate Questions button, wired to our
+  // server-side generator — a working superset (questions persist here).
+  async function aiGenerateQuestions() {
+    const trimmed = title.trim();
+    if (!trimmed || generating) return;
+    setGenerating(true);
+    try {
+      const subject = subjectId ? subjectMap.get(subjectId)?.name : undefined;
+      const res = await apiSend<{ questions: DialogQuestion[] }>("POST", "/api/ai/generate-questions", {
+        title: trimmed,
+        context: subject ? `Subject: ${subject}` : "",
+        count: 10,
+      });
+      setQuestions((list) => [...list, ...res.questions]);
+      toast.success(`Generated ${res.questions.length} questions`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "AI generation failed");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   async function submitTest(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = title.trim();
     if (!trimmed || busy) return;
-    const total = Math.min(500, Math.max(0, Number.parseInt(totalQuestions, 10) || 0));
-    const durationRaw = durationMinutes.trim();
-    const duration =
-      durationRaw === "" ? null : Math.min(600, Math.max(0, Number.parseInt(durationRaw, 10) || 0));
+    const duration = Math.min(600, Math.max(0, Number.parseInt(durationMinutes, 10) || 0));
     setBusy(true);
     const payload = {
       title: trimmed,
       subjectId: subjectId || null,
       date: date || null,
-      totalQuestions: total,
       durationMinutes: duration,
+      questions: JSON.stringify(questions),
+      // totalQuestions falls back to the manual count for legacy tests.
+      totalQuestions: questions.length > 0 ? questions.length : undefined,
     };
     try {
       if (editing) {
@@ -279,20 +344,126 @@ export function PracticeTestsView() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit Practice Test" : "New Practice Test"}</DialogTitle>
+            <DialogTitle>{editing ? "Edit Practice Test" : "Create Practice Test"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={submitTest} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="pt-title">Title</Label>
-              <Input
-                id="pt-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Cell biology — chapter 4"
-                maxLength={200}
-                required
-              />
+            {/* Measured pair: Test Title * + Time Limit (minutes), 2-col grid. */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="pt-title">Test Title *</Label>
+                <Input
+                  id="pt-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Biology Chapter 5 Review"
+                  maxLength={200}
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="pt-duration">Time Limit (minutes)</Label>
+                <Input
+                  id="pt-duration"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={600}
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(e.target.value)}
+                />
+              </div>
             </div>
+
+            {/* Measured row: counter + AI Generate Questions. */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {questions.length} {questions.length === 1 ? "question" : "questions"} added
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={aiGenerateQuestions}
+                disabled={!title.trim() || generating}
+                className="gap-1.5"
+              >
+                <Sparkles className={generating ? "h-4 w-4 animate-pulse" : "h-4 w-4"} strokeWidth={2} />
+                {generating ? "Generating…" : "AI Generate Questions"}
+              </Button>
+            </div>
+
+            {/* Measured question list: scrollable bg-slate-50 rounded-lg rows. */}
+            {questions.length > 0 && (
+              <div className="sf-scroll max-h-60 space-y-2 overflow-y-auto" aria-label="Question list">
+                {questions.map((q, i) => (
+                  <div
+                    key={`${i}-${q.question.slice(0, 12)}`}
+                    className="flex items-start justify-between gap-2 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800/60"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-slate-800 dark:text-slate-100">
+                        {i + 1}. {q.question}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        Type: {q.type}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Remove question ${i + 1}`}
+                      onClick={() => setQuestions((list) => list.filter((_, j) => j !== i))}
+                      className="shrink-0 rounded p-1 text-slate-400 hover:text-red-500"
+                    >
+                      <X className="h-3.5 w-3.5" strokeWidth={2} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Superset: manual question adder. */}
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 flex-1">
+                <Label htmlFor="pt-new-question" className="sr-only">
+                  Add a question
+                </Label>
+                <Textarea
+                  id="pt-new-question"
+                  value={newQuestion}
+                  onChange={(e) => setNewQuestion(e.target.value)}
+                  placeholder="Add a question…"
+                  rows={2}
+                  maxLength={1000}
+                />
+              </div>
+              <div className="w-40 shrink-0">
+                <Label htmlFor="pt-new-type" className="sr-only">
+                  Question type
+                </Label>
+                <select
+                  id="pt-new-type"
+                  value={newQuestionType}
+                  onChange={(e) => setNewQuestionType(e.target.value as QuestionType)}
+                  className={nativeSelectClass}
+                >
+                  {QUESTION_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t.replace("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addManualQuestion}
+                disabled={!newQuestion.trim()}
+                className="shrink-0"
+              >
+                Add
+              </Button>
+            </div>
+
+            {/* Superset fields kept below the measured pair. */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="pt-subject">Subject</Label>
@@ -321,38 +492,15 @@ export function PracticeTestsView() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="pt-total">Total questions</Label>
-                <Input
-                  id="pt-total"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  max={500}
-                  value={totalQuestions}
-                  onChange={(e) => setTotalQuestions(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="pt-duration">Duration in minutes (optional)</Label>
-                <Input
-                  id="pt-duration"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  max={600}
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(e.target.value)}
-                  placeholder="—"
-                />
-              </div>
-            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="gradient" disabled={busy || !title.trim()}>
+              <Button
+                type="submit"
+                variant="gradient"
+                disabled={busy || !title.trim() || questions.length === 0}
+              >
                 {busy ? "Saving…" : editing ? "Save changes" : "Create Test"}
               </Button>
             </DialogFooter>

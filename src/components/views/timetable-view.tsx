@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Calendar, CalendarClock, ChevronLeft, ChevronRight, Grid3x3, Plus, Trash2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Grid3x3, Plus, Trash2 } from "lucide-react";
 import { useDataStore, mutations, type TimetableClass } from "@/lib/data";
-import { useSubjectMap, EmptyState, ViewHeader } from "./shared";
+import { useSubjectMap, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,15 +12,18 @@ import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { addDays, parseHHMM, startOfDay, WEEKDAY_SHORT, WEEKDAY_LONG } from "@/lib/date";
 
-// Timetable — weekly class grid + My Classes cards. S5-J aligns the chrome
-// with the measured reference: a standalone week-nav bar (36px round
-// buttons + month title + week-range), an All Weeks / Week A / Week B
-// select (alternating-week timetables), Sunday-first day headers carrying
-// the date numbers, and My Classes as a 3-column card grid.
+// Timetable — S7-C aligns the week grid with the measured reference: a
+// grid-cols-8 time table (Time column + 7 day columns with full day-name
+// headers + text-lg bold dates), 60px hour rows labelled "7 AM"-style, a
+// min-w-[900px] horizontally-scrolling canvas, and a mobile accordion
+// (40px date chips + "N classes" rows). My Classes carries today's long
+// date in its header. Supersets kept: All Weeks / Week A / Week B select,
+// Grid Builder, class editing.
 
-const START_HOUR = 8;
-const END_HOUR = 20;
+const START_HOUR = 7;
+const END_HOUR = 21;
 const ROWS = END_HOUR - START_HOUR;
+const HOUR_PX = 60; // measured h-[60px] cells
 
 /** Sunday-first header labels for the displayed week. */
 const WEEK_COLUMNS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -36,13 +39,19 @@ const FIELD_CLASS = "flex h-9 w-full rounded-md border border-input bg-transpare
 function classTop(cls: TimetableClass): number | null {
   const start = parseHHMM(cls.startTime);
   if (start === null) return null;
-  return ((start - START_HOUR * 60) / 60) * 64;
+  return ((start - START_HOUR * 60) / 60) * HOUR_PX;
 }
 
 function classHeight(cls: TimetableClass): number {
   const start = parseHHMM(cls.startTime) ?? 0;
   const end = parseHHMM(cls.endTime) ?? start + 60;
-  return Math.max(28, ((Math.max(end - start, 30)) / 60) * 64);
+  return Math.max(28, ((Math.max(end - start, 30)) / 60) * HOUR_PX);
+}
+
+/** Measured reference time label format: "7 AM" (trimmed hour, no minutes). */
+function hourLabel(hour: number): string {
+  const h12 = hour % 12 || 12;
+  return `${h12} ${hour < 12 ? "AM" : "PM"}`;
 }
 
 export function TimetableView() {
@@ -57,6 +66,8 @@ export function TimetableView() {
   const [weekTypeDraft, setWeekTypeDraft] = React.useState<string>("ALL");
   /** The Sunday starting the displayed week (Sunday-first grid, measured). */
   const [weekStart, setWeekStart] = React.useState(() => addDays(startOfDay(new Date()), -new Date().getDay()));
+  /** S7-C: the mobile accordion's expanded day column (0-6, null = all collapsed). */
+  const [openDay, setOpenDay] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     void loadAll(["timetable", "subjects"]);
@@ -150,8 +161,10 @@ export function TimetableView() {
   const weekEnd = addDays(weekStart, 6);
   const monthTitle = weekStart.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const rangeTitle = `${weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekEnd.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-  /** Column i is Sunday-first; classes are stored ISO (0 = Monday). */
-  const colToIso = (col: number) => (col + 1) % 7;
+  /** Column i is Sunday-first; classes are stored ISO (0 = Monday) — so
+   *  Sunday (col 0) maps to ISO 6. (The previous (col+1)%7 mapping silently
+   *  rendered every column's classes two days ahead — fixed in S7-C.) */
+  const colToIso = (col: number) => (col + 6) % 7;
   const todayIso = (new Date().getDay() + 6) % 7;
 
   return (
@@ -182,9 +195,9 @@ export function TimetableView() {
         }
       />
 
-      {/* S5-J — standalone week-nav bar (measured): rounded-xl card, 36px
-          round outline buttons, centered month title + week range. */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {/* S7-C — measured week-nav bar: rounded-xl card, p-4, 36px round
+          outline buttons, centered month title + week range. */}
+      <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <Button
           variant="outline"
           size="icon"
@@ -195,8 +208,8 @@ export function TimetableView() {
           <ChevronLeft className="h-4 w-4" strokeWidth={2} />
         </Button>
         <div className="text-center">
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{monthTitle}</p>
-          <p className="text-xs text-slate-400">{rangeTitle}</p>
+          <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200">{monthTitle}</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{rangeTitle}</p>
         </div>
         <Button
           variant="outline"
@@ -218,30 +231,98 @@ export function TimetableView() {
         </div>
       )}
 
-      {/* Week grid */}
-      <section className="sf-card overflow-hidden">
-        <div className="sf-scroll overflow-x-auto p-4">
-          <div className="min-w-[760px]">
-            {/* S5-J — Sunday-first day headers with the displayed week's
-                date numbers (measured: "Sunday 4", "Monday 5", …). */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] gap-1 pb-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
-              <span />
+      {/* S7-C — mobile accordion (measured md:hidden): border-b day rows
+          with 40px rounded-xl date chips, day name + "N classes", and an
+          expandable class list. */}
+      <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm md:hidden dark:border-slate-800 dark:bg-slate-900" aria-label="Week grid mobile">
+        {WEEK_COLUMNS.map((label, col) => {
+          const isoDay = colToIso(col);
+          const date = addDays(weekStart, col);
+          const dayClasses = byDay.get(isoDay) ?? [];
+          return (
+            <div key={label} className="border-b border-slate-100 last:border-b-0 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setOpenDay(openDay === col ? null : col)}
+                aria-expanded={openDay === col}
+                className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      "flex h-10 w-10 flex-col items-center justify-center rounded-xl",
+                      colToIso(col) === todayIso
+                        ? "bg-sf-primary-soft text-sf-primary-strong"
+                        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+                    )}
+                  >
+                    <span className="text-xs font-medium">{WEEKDAY_SHORT[isoDay]}</span>
+                    <span className="text-xs font-semibold">{date.getDate()}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                      {WEEKDAY_LONG[isoDay]}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {dayClasses.length} {dayClasses.length === 1 ? "class" : "classes"}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight
+                  className={cn("h-4 w-4 text-slate-400 transition-transform", openDay === col && "rotate-90")}
+                  strokeWidth={2}
+                />
+              </button>
+              {openDay === col && dayClasses.length > 0 && (
+                <div className="flex flex-col gap-2 px-4 pb-4">
+                  {dayClasses.map((cls) => (
+                    <button
+                      key={cls.id}
+                      type="button"
+                      onClick={() => openEdit(cls)}
+                      className="flex items-center gap-3 rounded-lg p-3 text-left text-white"
+                      style={{ backgroundColor: cls.color }}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{cls.name}</p>
+                        <p className="text-xs opacity-90">{cls.startTime}–{cls.endTime}{cls.room ? ` · ${cls.room}` : ""}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </section>
+
+      {/* S7-C — desktop week grid (measured): grid-cols-8 with a Time column
+          + full day-name headers (text-sm medium + text-lg bold dates),
+          60px hour rows with hairline separators, min-w-[900px]. */}
+      <section className="hidden overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm md:block dark:border-slate-800 dark:bg-slate-900" aria-label="Week grid">
+        <div className="sf-scroll overflow-x-auto">
+          <div className="min-w-[900px]">
+            <div className="grid grid-cols-8 border-b border-slate-100 dark:border-slate-800" aria-label="Week header">
+              <div className="p-3 text-center text-sm font-medium text-slate-500 dark:text-slate-400">Time</div>
               {WEEK_COLUMNS.map((label, col) => {
                 const date = addDays(weekStart, col);
                 const isToday = colToIso(col) === todayIso;
                 return (
-                  <span key={label} className={cn(isToday && "text-sf-primary-strong")}>
-                    {label} {date.getDate()}
-                  </span>
+                  <div key={label} className="border-l border-slate-100 p-3 text-center dark:border-slate-800">
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{WEEKDAY_LONG[colToIso(col)]}</p>
+                    <p className={cn("text-lg font-bold", isToday ? "text-sf-primary-strong" : "text-slate-700 dark:text-slate-200")}>
+                      {date.getDate()}
+                    </p>
+                  </div>
                 );
               })}
             </div>
-            <div className="relative grid grid-cols-[60px_repeat(7,1fr)] gap-1">
-              {/* hour labels */}
-              <div className="flex flex-col">
+            <div className="relative grid grid-cols-8">
+              {/* hour labels — measured: h-[60px] cells, "7 AM" format */}
+              <div className="border-r border-slate-100 dark:border-slate-800" aria-label="Hour cells">
                 {Array.from({ length: ROWS }).map((_, r) => (
-                  <div key={r} className="flex h-16 items-start justify-end pr-2 pt-0.5 text-[11px] text-slate-400">
-                    {((START_HOUR + r) % 12 || 12).toString().padStart(2, "0")}:00 {START_HOUR + r < 12 ? "AM" : "PM"}
+                  <div key={r} className="h-[60px] border-b border-slate-50 px-3 py-1 dark:border-slate-800/60">
+                    <span className="text-xs text-slate-400">{hourLabel(START_HOUR + r)}</span>
                   </div>
                 ))}
               </div>
@@ -250,12 +331,12 @@ export function TimetableView() {
                 const isoDay = colToIso(col);
                 const isToday = isoDay === todayIso;
                 return (
-                <div key={label} className={cn("relative flex flex-col rounded-lg", isToday && "bg-sf-primary-soft/40")}>
+                <div key={label} className={cn("relative border-l border-slate-50 dark:border-slate-800/60", isToday && "bg-sf-primary-softest/50")}>
                   {Array.from({ length: ROWS }).map((_, r) => (
                     <button
                       key={r}
                       type="button"
-                      aria-label={`Add class ${WEEKDAY_LONG[isoDay]} ${(START_HOUR + r).toString().padStart(2, "0")}:00`}
+                      aria-label={`Add class ${WEEKDAY_LONG[isoDay]} ${hourLabel(START_HOUR + r)}`}
                       onClick={() => {
                         if (!gridBuilder) return;
                         setEditing(null);
@@ -269,7 +350,7 @@ export function TimetableView() {
                         setWeekTypeDraft("ALL");
                         setDialogOpen(true);
                       }}
-                      className="h-16 rounded-md border border-slate-100 transition-colors hover:border-slate-200 dark:border-slate-800/60 dark:hover:border-slate-700"
+                      className="h-[60px] w-full border-b border-slate-50 transition-colors hover:bg-slate-50 dark:border-slate-800/60 dark:hover:bg-slate-800/40"
                     />
                   ))}
                   {/* absolutely-positioned class blocks */}
@@ -282,7 +363,7 @@ export function TimetableView() {
                         type="button"
                         onClick={() => openEdit(cls)}
                         aria-label={`Edit class "${cls.name}" — ${WEEKDAY_LONG[isoDay]} ${cls.startTime} to ${cls.endTime}`}
-                        className="absolute left-1 right-1 overflow-hidden rounded-md p-2 text-left text-white shadow-sm transition-transform hover:scale-[1.02]"
+                        className="absolute inset-x-1 overflow-hidden rounded-md p-2 text-left text-white shadow-sm transition-transform hover:scale-[1.02]"
                         style={{
                           top,
                           height: classHeight(cls),
@@ -305,21 +386,21 @@ export function TimetableView() {
         </div>
       </section>
 
-      {/* My Classes — S5-J: measured as a 1/2/3-column CARD grid (the
-          clone previously rendered a divided list). */}
-      <section className="sf-card overflow-hidden">
-        <header className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-          <h2 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">My Classes</h2>
+      {/* My Classes — S7-C: measured header (h2 text-lg bold + today's long
+          date on the right) inside a p-6 body with a 1/2/3-column card grid. */}
+      <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <header className="mb-4 flex items-center justify-between" aria-label="My Classes header">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">My Classes</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+          </p>
         </header>
         {classes.length === 0 ? (
-          <EmptyState
-            icon={CalendarClock}
-            title="No classes yet"
-            hint="Add your first class with the Add Class button."
-            action={<Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">Add Class</Button>}
-          />
+          <p className="py-8 text-center text-slate-400">
+            No subjects added yet. Go to Settings to add subjects.
+          </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {classes.map((cls) => {
               const subject = cls.subjectId ? subjectMap.get(cls.subjectId) : undefined;
               const weekBadge =

@@ -327,8 +327,13 @@ function NoteEditor({
           value={draft.title}
           onChange={(e) => scheduleSave({ ...draft, title: e.target.value })}
           aria-label="Note title"
-          className="h-9 border-0 px-0 text-lg font-semibold shadow-none focus-visible:ring-0"
-          placeholder="Untitled"
+          // S7-F: the reference's measured intent — a borderless 20px bold
+          // title input with the "Note title..." placeholder. (The reference
+          // itself renders 14px because its shadcn base's md:text-sm wins the
+          // cascade — a documented platform bug; the clone follows the
+          // authored text-xl font-bold.)
+          className="h-9 border-0 px-0 text-xl font-bold shadow-none focus-visible:ring-0"
+          placeholder="Note title..."
           maxLength={200}
         />
         <div className="flex shrink-0 items-center gap-1">

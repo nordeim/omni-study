@@ -207,14 +207,36 @@ async function main() {
   });
 
   const deck = await prisma.flashcardDeck.create({
-    data: { userId: user.id, name: "Integration rules", description: "Core techniques", subjectId: math.id },
+    data: {
+      userId: user.id,
+      name: "Integration rules",
+      description: "Core techniques",
+      color: "#8b5cf6", // S7-A: reference deck swatch color
+      subjectId: math.id,
+    },
   });
   await prisma.flashcard.createMany({
     data: [
-      { deckId: deck.id, front: "d/dx of sin(x)", back: "cos(x)", order: 0 },
-      { deckId: deck.id, front: "∫ 1/x dx", back: "ln|x| + C", order: 1 },
-      { deckId: deck.id, front: "Chain rule", back: "(f∘g)'(x) = f'(g(x))·g'(x)", order: 2 },
-      { deckId: deck.id, front: "d/dx of tan(x)", back: "sec²(x)", order: 3 },
+      { deckId: deck.id, front: "d/dx of sin(x)", back: "cos(x)", difficulty: "easy", order: 0 },
+      { deckId: deck.id, front: "∫ 1/x dx", back: "ln|x| + C", difficulty: "medium", order: 1 },
+      { deckId: deck.id, front: "Chain rule", back: "(f∘g)'(x) = f'(g(x))·g'(x)", difficulty: "medium", order: 2 },
+      { deckId: deck.id, front: "d/dx of tan(x)", back: "sec²(x)", difficulty: "hard", order: 3 },
+    ],
+  });
+  // S7-A: a second colored deck exercising the blue swatch + card badges.
+  const orgDeck = await prisma.flashcardDeck.create({
+    data: {
+      userId: user.id,
+      name: "Mechanics recall",
+      description: "Forces, energy, and motion",
+      color: "#3b82f6",
+      subjectId: physics.id,
+    },
+  });
+  await prisma.flashcard.createMany({
+    data: [
+      { deckId: orgDeck.id, front: "Newton's second law?", back: "F = m·a", difficulty: "easy", order: 0 },
+      { deckId: orgDeck.id, front: "Unit of work?", back: "Joule (J)", difficulty: "medium", order: 1 },
     ],
   });
 
@@ -226,12 +248,29 @@ async function main() {
         subjectId: math.id,
         date: day(-2, 15),
         status: "completed",
+        questions: JSON.stringify([
+          { question: "Compute the dot product of (1,2) and (3,4).", type: "short_answer" },
+          { question: "The cross product is commutative.", type: "true_false" },
+          { question: "Which operation yields a scalar from two vectors?", type: "multiple_choice" },
+        ]),
         totalQuestions: 20,
         correctCount: 17,
         score: 85,
         durationMinutes: 40,
       },
-      { userId: user.id, title: "Mechanics mock paper", subjectId: physics.id, date: day(1, 15), status: "created", totalQuestions: 30, durationMinutes: 90 },
+      {
+        userId: user.id,
+        title: "Mechanics mock paper",
+        subjectId: physics.id,
+        date: day(1, 15),
+        status: "created",
+        questions: JSON.stringify([
+          { question: "State Newton's second law.", type: "short_answer" },
+          { question: "Kinetic energy is a vector quantity.", type: "true_false" },
+        ]),
+        totalQuestions: 30,
+        durationMinutes: 90,
+      },
     ],
   });
 

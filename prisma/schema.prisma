@@ -241,6 +241,7 @@ model FlashcardDeck {
   userId      String
   name        String
   description String   @default("")
+  color       String   @default("#8b5cf6") // S7-A: reference deck swatch (violet/blue/emerald/amber/red/pink)
   subjectId   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
@@ -251,12 +252,13 @@ model FlashcardDeck {
 }
 
 model Flashcard {
-  id        String   @id @default(cuid())
-  deckId    String
-  front     String
-  back      String
-  mastered  Boolean  @default(false)
-  order     Int      @default(0)
+  id         String  @id @default(cuid())
+  deckId     String
+  front      String
+  back       String
+  difficulty String  @default("medium") // S7-A: reference card badge (easy/medium/hard)
+  mastered   Boolean @default(false)
+  order      Int     @default(0)
   createdAt DateTime @default(now())
 
   deck FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
@@ -270,6 +272,7 @@ model PracticeTest {
   date            DateTime?
   status          String    @default("created") // created | in_progress | completed
   score           Float?
+  questions       String    @default("[]") // S7-B: JSON [{question,type}] (multiple_choice/true_false/short_answer)
   totalQuestions  Int       @default(0)
   correctCount    Int       @default(0)
   durationMinutes Int?

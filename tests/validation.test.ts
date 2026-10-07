@@ -4,8 +4,11 @@ import {
   aiChatSchema,
   eventSchema,
   examSchema,
+  flashcardDeckSchema,
+  flashcardSchema,
   loginSchema,
   mathSolveSchema,
+  practiceTestSchema,
   preferencesSchema,
   studyGroupSchema,
   subjectSchema,
@@ -229,6 +232,60 @@ describe("preferencesSchema", () => {
     expect(preferencesSchema.safeParse({ accentColor: "purple" }).success).toBe(false);
     expect(preferencesSchema.safeParse({ avatarEmoji: "🎓" }).success).toBe(true);
     expect(preferencesSchema.safeParse({ avatarEmoji: "🎓".repeat(9) }).success).toBe(false); // 9 code points > 8 (zod v4 counts code points)
+  });
+});
+
+describe("flashcardDeckSchema", () => {
+  it("carries the S7-A reference dialog fields: color swatch picker", () => {
+    // The reference's Create Deck dialog (measured live) offers a 6-swatch
+    // Color picker (violet/blue/emerald/amber/red/pink-500); the deck row's
+    // 40px icon block renders the picked color inline.
+    const parsed = flashcardDeckSchema.parse({ name: "Biology Chapter 5" });
+    expect(parsed.color).toBe("#8b5cf6");
+    expect(parsed.description).toBe("");
+
+    const blue = flashcardDeckSchema.parse({ name: "B", color: "#3b82f6" });
+    expect(blue.color).toBe("#3b82f6");
+
+    expect(flashcardDeckSchema.safeParse({ name: "B", color: "blue" }).success).toBe(false);
+    expect(flashcardDeckSchema.safeParse({ name: "B", color: "#8b5cf" }).success).toBe(false);
+    expect(flashcardDeckSchema.safeParse({ name: "" }).success).toBe(false);
+  });
+});
+
+describe("flashcardSchema", () => {
+  it("carries the S7-A reference card field: difficulty", () => {
+    // The reference's populated card grid renders a difficulty badge
+    // (measured "medium" on a live card, bg-yellow-100 text-yellow-700).
+    const parsed = flashcardSchema.parse({ front: "Q", back: "A" });
+    expect(parsed.difficulty).toBe("medium");
+    expect(parsed.mastered).toBe(false);
+
+    const hard = flashcardSchema.parse({ front: "Q", back: "A", difficulty: "hard" });
+    expect(hard.difficulty).toBe("hard");
+
+    expect(flashcardSchema.safeParse({ front: "Q", back: "A", difficulty: "impossible" }).success).toBe(false);
+  });
+});
+
+describe("practiceTestSchema", () => {
+  it("carries the S7-B reference dialog field: questions array", () => {
+    // The reference's Create Practice Test dialog (measured) builds a
+    // scrollable question list (multiple_choice / true_false / short_answer)
+    // via AI Generate; questions persist as a JSON array of {question,type}.
+    const parsed = practiceTestSchema.parse({ title: "Bio Review" });
+    expect(parsed.questions).toBe("[]");
+    expect(parsed.durationMinutes).toBe(60);
+
+    const full = practiceTestSchema.parse({
+      title: "Bio Review",
+      durationMinutes: 45,
+      questions: '[{"question":"What is DNA?","type":"short_answer"}]',
+    });
+    expect(full.questions).toBe('[{"question":"What is DNA?","type":"short_answer"}]');
+
+    expect(practiceTestSchema.safeParse({ title: "T", questions: "not-json" }).success).toBe(false);
+    expect(practiceTestSchema.safeParse({ title: "T", questions: '[{"question":"Q","type":"essay"}]' }).success).toBe(false);
   });
 });
 
