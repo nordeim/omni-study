@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, Plus } from "lucide-react";
+import * as SliderPrimitive from "@radix-ui/react-slider";
+import { BookOpen, Flag, MoreHorizontal, Plus } from "lucide-react";
 import { useDataStore, mutations, type Assignment } from "@/lib/data";
-import { useSubjectMap, ViewHeader, EmptyState, LoadingCards, ErrorText, SubjectChip } from "./shared";
+import { useSubjectMap, ViewHeader, EmptyState, LoadingCards, ErrorText } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -16,18 +16,32 @@ import { cn } from "@/lib/utils";
 
 type StatusFilter = "active" | "submitted" | "graded" | "all";
 
-const FIELD_CLASS = "flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm";
+const FIELD_CLASS = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm";
 
-const PRIORITY_BADGE: Record<Assignment["priority"], { label: string; variant: "destructive" | "warning" | "secondary" }> = {
-  high: { label: "High", variant: "destructive" },
-  medium: { label: "Medium", variant: "warning" },
-  low: { label: "Low", variant: "secondary" },
-};
+// S6-E — the reference's combobox option sets (measured live): Type =
+// Homework/Essay/Project/Reading/Worksheet/Presentation/Study/Other;
+// Priority = Low/Medium/High/Urgent.
+const TYPE_OPTIONS = [
+  "homework",
+  "essay",
+  "project",
+  "reading",
+  "worksheet",
+  "presentation",
+  "study",
+  "other",
+] as const;
 
-const STATUS_BADGE: Record<Assignment["status"], { label: string; variant: "default" | "info" | "success" }> = {
-  active: { label: "Active", variant: "default" },
-  submitted: { label: "Submitted", variant: "info" },
-  graded: { label: "Graded", variant: "success" },
+const PRIORITY_OPTIONS = ["low", "medium", "high", "urgent"] as const;
+
+// S6-E — the reference's priority pill (measured): a BORDERED pill with a
+// flag icon; yellow-50 bg / yellow-200 border / yellow-500 text at Medium.
+const PRIORITY_PILL: Record<Assignment["priority"], string> = {
+  low: "border-sky-200 bg-sky-50 text-sky-500 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300",
+  medium:
+    "border-yellow-200 bg-yellow-50 text-yellow-500 dark:border-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300",
+  high: "border-red-200 bg-red-50 text-red-500 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300",
+  urgent: "border-red-300 bg-red-100 text-red-600 dark:border-red-700 dark:bg-red-950/60 dark:text-red-400",
 };
 
 /** ISO string → "YYYY-MM-DD" in the user's local timezone (date-input safe). */
@@ -40,23 +54,74 @@ function toDateInputValue(iso: string | null): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
-function DueBadge({ dueDate, now }: { dueDate: string; now: Date }) {
+// S6-E — the reference's due-in pill (measured on a real assignment):
+// `text-xs font-medium px-2 py-0.5 rounded-full text-blue-600 bg-blue-50`
+// ("2 days"); red when overdue/today (urgency ladder).
+function DueInPill({ dueDate, now }: { dueDate: string; now: Date }) {
   const days = daysUntil(new Date(dueDate), now);
-  const label =
-    days < 0 ? "Overdue" : days === 0 ? "Due today" : days === 1 ? "1 day left" : `${days} days left`;
+  const label = days < 0 ? "Overdue" : days === 0 ? "Today" : days === 1 ? "1 day" : `${days} days`;
   return (
     <span
       className={cn(
-        "shrink-0 rounded-md px-2 py-1 text-xs font-semibold",
+        "rounded-full px-2 py-0.5 text-xs font-medium",
         days <= 0
-          ? "bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400"
-          : days <= 3
-            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"
-            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+          ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400"
+          : "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
       )}
     >
       {label}
     </span>
+  );
+}
+
+// S6-E — the reference's progress slider (measured): Radix slider with an
+// h-2 slate-200 track, a violet→indigo GRADIENT fill (sRGB-exact inline
+// per trap 5), a 20px white thumb with a 2px violet-500 border, and a
+// violet-600 semibold % label. Dragging PATCHes progress (superset: the
+// value persists server-side).
+function ProgressSlider({ assignment }: { assignment: Assignment }) {
+  const [value, setValue] = React.useState(assignment.progress);
+  const [lastId, setLastId] = React.useState(assignment.id);
+  // React-documented "adjust state during render" sync (lint forbids the
+  // setState-in-effect form): remounts/row reordering reset the slider.
+  if (lastId !== assignment.id) {
+    setLastId(assignment.id);
+    setValue(assignment.progress);
+  }
+
+  function commit(next: number[]) {
+    setValue(next[0] ?? 0);
+    void mutations.updateAssignment(assignment.id, { progress: next[0] ?? 0 });
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex-1">
+        <SliderPrimitive.Root
+          className="relative flex w-full touch-none select-none items-center"
+          value={[value]}
+          min={0}
+          max={100}
+          step={1}
+          onValueChange={(v) => setValue(v[0] ?? 0)}
+          onValueCommit={commit}
+          aria-label={`Progress for ${assignment.title}`}
+        >
+          <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+            <SliderPrimitive.Range
+              data-slot="slider-fill"
+              className="sf-slider-fill absolute h-full rounded-full"
+              style={{ backgroundImage: "linear-gradient(to right, rgb(139, 92, 246), rgb(79, 70, 229))" }}
+            />
+          </SliderPrimitive.Track>
+          <SliderPrimitive.Thumb
+            className="block h-5 w-5 rounded-full border-2 border-violet-500 bg-white shadow-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:border-violet-400 dark:bg-slate-100"
+            aria-label="Assignment progress percent"
+          />
+        </SliderPrimitive.Root>
+      </div>
+      <span className="min-w-[45px] text-sm font-semibold text-violet-600 dark:text-violet-400">{value}%</span>
+    </div>
   );
 }
 
@@ -84,6 +149,7 @@ export function AssignmentsView() {
   const [subjectId, setSubjectId] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [priority, setPriority] = React.useState<Assignment["priority"]>("medium");
+  const [type, setType] = React.useState<Assignment["type"]>("homework");
   const [status, setStatus] = React.useState<Assignment["status"]>("active");
   const [busy, setBusy] = React.useState(false);
 
@@ -94,6 +160,7 @@ export function AssignmentsView() {
     setSubjectId("");
     setDueDate("");
     setPriority("medium");
+    setType("homework");
     setStatus("active");
     setDialogOpen(true);
   }
@@ -105,6 +172,7 @@ export function AssignmentsView() {
     setSubjectId(a.subjectId ?? "");
     setDueDate(toDateInputValue(a.dueDate));
     setPriority(a.priority);
+    setType(a.type);
     setStatus(a.status);
     setDialogOpen(true);
   }
@@ -119,6 +187,7 @@ export function AssignmentsView() {
       subjectId: subjectId || null,
       dueDate: dueDate || null,
       priority,
+      type,
       status,
     };
     try {
@@ -222,7 +291,7 @@ export function AssignmentsView() {
             </Select>
           </div>
 
-          {/* List */}
+          {/* List — S6-E card rows (measured). */}
           {sorted.length === 0 ? (
             <div className="sf-card">
               <EmptyState
@@ -237,27 +306,76 @@ export function AssignmentsView() {
               />
             </div>
           ) : (
-            <ul className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4" aria-label="Assignment rows">
               {sorted.map((a) => {
                 const subject = a.subjectId ? subjectMap.get(a.subjectId) : undefined;
                 return (
-                  <li key={a.id} className="sf-card flex flex-col gap-3 p-5">
-                    <div className="flex items-start justify-between gap-3">
+                  <div
+                    key={a.id}
+                    className="group cursor-pointer rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <div className="flex items-start gap-4">
                       <button
                         type="button"
-                        onClick={() => openEdit(a)}
-                        className="min-w-0 text-left"
-                        aria-label={`Edit assignment "${a.title}"`}
+                        role="checkbox"
+                        aria-checked={a.status !== "active"}
+                        aria-label={`Mark "${a.title}" ${a.status !== "active" ? "active" : "submitted"}`}
+                        onClick={() =>
+                          void mutations.updateAssignment(a.id, {
+                            status: a.status === "active" ? "submitted" : "active",
+                          })
+                        }
+                        className={cn(
+                          "mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:scale-110 hover:border-violet-400 sf-focus",
+                          a.status !== "active"
+                            ? "border-transparent bg-violet-500 text-white"
+                            : "border-slate-300 dark:border-slate-600",
+                        )}
                       >
-                        <p className="truncate text-[15px] font-semibold text-slate-800 dark:text-slate-100">
-                          {a.title}
-                        </p>
+                        {a.status !== "active" && (
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                        )}
                       </button>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold text-slate-800 dark:text-slate-100">{a.title}</h3>
+                          {a.dueDate && <DueInPill dueDate={a.dueDate} now={now} />}
+                        </div>
+                        <div className="mb-3 flex flex-wrap items-center gap-3">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium capitalize",
+                              PRIORITY_PILL[a.priority],
+                            )}
+                          >
+                            <Flag className="h-3 w-3" aria-hidden="true" />
+                            {a.priority}
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs capitalize text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                            {a.type}
+                          </span>
+                          {subject && (
+                            <span className="text-xs text-slate-400 dark:text-slate-500">{subject.name}</span>
+                          )}
+                        </div>
+                        {a.description && (
+                          <p className="mb-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{a.description}</p>
+                        )}
+                        <ProgressSlider assignment={a} />
+                      </div>
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="iconSm" aria-label={`Assignment menu for "${a.title}"`}>
-                            ⋯
-                          </Button>
+                          <button
+                            type="button"
+                            aria-label={`Assignment menu for "${a.title}"`}
+                            className="sf-focus inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                          >
+                            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                          </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => openEdit(a)}>Edit</DropdownMenuItem>
@@ -270,35 +388,10 @@ export function AssignmentsView() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <SubjectChip subject={subject} />
-                      {a.dueDate && (
-                        <span className="text-xs text-slate-400">
-                          Due{" "}
-                          {new Date(a.dueDate).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                      )}
-                      {a.dueDate && <DueBadge dueDate={a.dueDate} now={now} />}
-                      <Badge variant={PRIORITY_BADGE[a.priority].variant}>
-                        {PRIORITY_BADGE[a.priority].label}
-                      </Badge>
-                      <Badge variant={STATUS_BADGE[a.status].variant}>
-                        {STATUS_BADGE[a.status].label}
-                      </Badge>
-                    </div>
-
-                    {a.description && (
-                      <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{a.description}</p>
-                    )}
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           )}
         </>
       )}
@@ -316,7 +409,7 @@ export function AssignmentsView() {
                 id="assignment-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Lab report 3"
+                placeholder="Assignment title..."
                 maxLength={200}
                 required
               />
@@ -329,6 +422,7 @@ export function AssignmentsView() {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 maxLength={2000}
+                placeholder="Add details..."
               />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -340,7 +434,7 @@ export function AssignmentsView() {
                   onChange={(e) => setSubjectId(e.target.value)}
                   className={FIELD_CLASS}
                 >
-                  <option value="">None</option>
+                  <option value="">Select</option>
                   {subjects.map((s) => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
@@ -359,38 +453,51 @@ export function AssignmentsView() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="assignment-priority">Priority</Label>
-                <select
-                  id="assignment-priority"
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value as Assignment["priority"])}
-                  className={FIELD_CLASS}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
+                <Label htmlFor="assignment-type">Type</Label>
+                <Select value={type} onValueChange={(v) => setType(v as Assignment["type"])}>
+                  <SelectTrigger id="assignment-type" aria-label="Type" className={FIELD_CLASS}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TYPE_OPTIONS.map((t) => (
+                      <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="assignment-status">Status</Label>
-                <select
-                  id="assignment-status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as Assignment["status"])}
-                  className={FIELD_CLASS}
-                >
-                  <option value="active">Active</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="graded">Graded</option>
-                </select>
+                <Label htmlFor="assignment-priority">Priority</Label>
+                <Select value={priority} onValueChange={(v) => setPriority(v as Assignment["priority"])}>
+                  <SelectTrigger id="assignment-priority" aria-label="Priority" className={FIELD_CLASS}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="assignment-status">Status</Label>
+              <select
+                id="assignment-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as Assignment["status"])}
+                className={FIELD_CLASS}
+              >
+                <option value="active">Active</option>
+                <option value="submitted">Submitted</option>
+                <option value="graded">Graded</option>
+              </select>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit" variant="gradient" disabled={busy || !title.trim()}>
-                {busy ? "Saving…" : editing ? "Save changes" : "Create Assignment"}
+                {busy ? "Saving…" : editing ? "Save changes" : "Add Assignment"}
               </Button>
             </DialogFooter>
           </form>

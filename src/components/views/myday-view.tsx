@@ -1,66 +1,55 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Settings2, Sun } from "lucide-react";
+import { Calendar, ChevronRight, Plus, Sun } from "lucide-react";
 import { useDataStore, mutations, type Task } from "@/lib/data";
-import { useSubjectMap, EmptyState } from "./shared";
+import { useSubjectMap, EmptyState, TaskRowCard } from "./shared";
 import { Checkbox } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { isSameDay } from "@/lib/date";
-import { greetingForHour } from "@/lib/router";
 import { cn } from "@/lib/utils";
-
-function TaskRow({ task, onEdit }: { task: Task; onEdit?: () => void }) {
-  const subjectMap = useSubjectMap();
-  const subject = task.subjectId ? subjectMap.get(task.subjectId) : undefined;
-  return (
-    <li className="group flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
-      <Checkbox
-        checked={task.completed}
-        onCheckedChange={(v) => mutations.updateTask(task.id, { completed: v === true })}
-        aria-label={`Mark "${task.title}" ${task.completed ? "incomplete" : "complete"}`}
-      />
-      <button
-        type="button"
-        onClick={onEdit}
-        className="min-w-0 flex-1 text-left"
-        aria-label={`Edit task "${task.title}"`}
-      >
-        <p
-          className={cn(
-            "truncate text-[15px] font-medium",
-            task.completed ? "text-slate-400 line-through" : "text-slate-800 dark:text-slate-100",
-          )}
-        >
-          {task.title}
-        </p>
-        {subject && <p className="mt-0.5 text-xs" style={{ color: subject.color }}>{subject.name}</p>}
-      </button>
-      {task.important && <span className="text-sm text-amber-500" title="Important">★</span>}
-    </li>
-  );
-}
 
 export function MyDayView() {
   const tasks = useDataStore((s) => s.data.tasks);
   const subjects = useDataStore((s) => s.data.subjects);
   const loadAll = useDataStore((s) => s.loadAll);
+  const subjectMap = useSubjectMap();
   const [quick, setQuick] = React.useState("");
   const [moreOpen, setMoreOpen] = React.useState(false);
   const [important, setImportant] = React.useState(false);
   const [subjectId, setSubjectId] = React.useState("");
   const [dueDate, setDueDate] = React.useState(() => new Date().toISOString().slice(0, 10));
   const [editing, setEditing] = React.useState<Task | null>(null);
+  const [suggestionsOpen, setSuggestionsOpen] = React.useState(false);
 
   React.useEffect(() => {
     void loadAll(["tasks", "subjects"]);
   }, [loadAll]);
 
   const now = new Date();
-  const todayTasks = tasks.filter((t) => t.dueDate && isSameDay(new Date(t.dueDate), now));
+  // S6-C — My Day is the explicit task set (myDay flag, reference-measured
+  // toggle) — falling back to due-today so legacy rows still surface.
+  const todayTasks = tasks.filter(
+    (t) => t.myDay || (t.dueDate && isSameDay(new Date(t.dueDate), now)),
+  );
   const done = todayTasks.filter((t) => t.completed).length;
+  const progress = todayTasks.length === 0 ? 0 : Math.round((done / todayTasks.length) * 100);
+
+  // Suggestions (reference-measured section): tasks not yet in My Day that
+  // are overdue or due within the next few days (the reference's exact
+  // window is unmeasurable on the empty account — 3 days covers the
+  // "upcoming" intent robustly at any hour of day).
+  const suggestions = tasks
+    .filter((t) => !t.myDay && !t.completed && t.dueDate)
+    .filter((t) => {
+      const due = new Date(t.dueDate as string);
+      const horizon = new Date(now);
+      horizon.setDate(horizon.getDate() + 3);
+      return due <= horizon;
+    })
+    .sort((a, b) => new Date(a.dueDate as string).getTime() - new Date(b.dueDate as string).getTime());
 
   async function addTask(e: React.FormEvent) {
     e.preventDefault();
@@ -70,6 +59,7 @@ export function MyDayView() {
       await mutations.createTask({
         title,
         important,
+        myDay: true,
         subjectId: subjectId || null,
         dueDate: dueDate || null,
       });
@@ -96,6 +86,11 @@ export function MyDayView() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not update the task");
     }
+  }
+
+  function addToMyDay(task: Task) {
+    void mutations.updateTask(task.id, { myDay: true });
+    toast.success("Added to your day");
   }
 
   return (
@@ -134,54 +129,66 @@ export function MyDayView() {
           <Plus className="h-4 w-4" strokeWidth={2} />
         </Button>
       </form>
-        {moreOpen && (
-          <div className="flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800/50">
-            <label className="flex items-center gap-2">
-              <Checkbox checked={important} onCheckedChange={(v) => setImportant(v === true)} />
-              Important
-            </label>
-            <label className="flex items-center gap-2">
-              <span className="text-slate-500">Subject</span>
-              <select
-                value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
-                className="h-8 rounded-md border border-input bg-card px-2 text-sm shadow-sm"
-              >
-                <option value="">None</option>
-                {subjects.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </label>
-            <label className="flex items-center gap-2">
-              <span className="text-slate-500">Date</span>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="h-8 rounded-md border border-input bg-card px-2 text-sm shadow-sm"
-              />
-            </label>
-          </div>
-        )}
-
-      {/* Progress */}
-      <div className="sf-card flex items-center justify-between gap-4 p-5">
-        <div>
-          <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">
-            {greetingForHour(now.getHours())}!
-          </h3>
-          <p className="mt-0.5 text-sm text-slate-500">
-            {todayTasks.length === 0
-              ? "Nothing planned yet — add your first task above."
-              : `${done} of ${todayTasks.length} done · ${todayTasks.length - done} to go`}
-          </p>
+      {moreOpen && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800/50">
+          <label className="flex items-center gap-2">
+            <Checkbox checked={important} onCheckedChange={(v) => setImportant(v === true)} />
+            Important
+          </label>
+          <label className="flex items-center gap-2">
+            <span className="text-slate-500">Subject</span>
+            <select
+              value={subjectId}
+              onChange={(e) => setSubjectId(e.target.value)}
+              className="h-8 rounded-md border border-input bg-card px-2 text-sm shadow-sm"
+            >
+              <option value="">None</option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2">
+            <span className="text-slate-500">Date</span>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="h-8 rounded-md border border-input bg-card px-2 text-sm shadow-sm"
+            />
+          </label>
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-            {todayTasks.length === 0 ? "0%" : `${Math.round((done / todayTasks.length) * 100)}%`}
-          </p>
-          <p className="text-xs text-slate-400">day complete</p>
+      )}
+
+      {/* S6-C — Today's Progress: the reference's amber gradient card
+          (bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 border
+          border-amber-100, amber-700 label + amber-600 bold fraction + h-2
+          amber progressbar). sRGB-exact inline gradient per trap 5. */}
+      <div
+        aria-label="Today progress"
+        className="rounded-2xl border border-amber-100 p-4 dark:border-amber-900/50"
+        style={{ backgroundImage: "linear-gradient(to right, #fffbeb, #fff7ed)" }}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Today&apos;s Progress</span>
+          <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+            {done}/{todayTasks.length}
+          </span>
+        </div>
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+          className="h-2 w-full overflow-hidden rounded-full bg-amber-100 dark:bg-amber-900/40"
+        >
+          <div
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${progress}%`,
+              backgroundImage: "linear-gradient(to right, #fbbf24, #f59e0b)",
+            }}
+          />
         </div>
       </div>
 
@@ -219,25 +226,75 @@ export function MyDayView() {
         </form>
       )}
 
-      {/* Today's list */}
-      <section className="sf-card overflow-hidden">
-        <header className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-          <h3 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">Today</h3>
-        </header>
-        {todayTasks.length === 0 ? (
+      {/* Today's list — S6-A card rows (the reference's MyDay rows are the
+          same task-row component as the Tasks view; measured). */}
+      {todayTasks.length === 0 ? (
+        <div className="sf-card">
           <EmptyState
             icon={Sun}
             title="No tasks yet"
             hint="Add your first task for today using the box above."
           />
-        ) : (
-          <ul className="flex flex-col gap-1 p-3">
-            {todayTasks.map((t) => (
-              <TaskRow key={t.id} task={t} onEdit={() => setEditing(t)} />
-            ))}
-          </ul>
-        )}
-      </section>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 pr-2" aria-label="Today's task rows">
+          {todayTasks.map((t) => (
+            <TaskRowCard
+              key={t.id}
+              task={t}
+              subject={t.subjectId ? subjectMap.get(t.subjectId) : undefined}
+              onEdit={setEditing}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* S6-C — Suggestions (reference-measured collapsible): tasks not yet
+          in My Day that are overdue or due soon, each with an Add button. */}
+      {suggestions.length > 0 && (
+        <section className="sf-card overflow-hidden">
+          <header className="border-b border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setSuggestionsOpen((v) => !v)}
+              aria-expanded={suggestionsOpen}
+              className="flex w-full items-center justify-between px-6 py-4 text-left sf-focus"
+            >
+              <h3 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">Suggestions</h3>
+              <ChevronRight
+                className={cn("h-4 w-4 text-slate-400 transition-transform", suggestionsOpen && "rotate-90")}
+                aria-hidden="true"
+              />
+            </button>
+          </header>
+          {suggestionsOpen && (
+            <ul className="flex flex-col gap-2 p-4" aria-label="Suggested tasks">
+              {suggestions.map((t) => {
+                const due = t.dueDate ? new Date(t.dueDate) : null;
+                return (
+                  <li
+                    key={t.id}
+                    className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 dark:border-slate-800"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">{t.title}</p>
+                      {due && (
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
+                          <Calendar className="h-3 w-3" aria-hidden="true" />
+                          {due.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </p>
+                      )}
+                    </div>
+                    <Button type="button" size="sm" variant="outline" onClick={() => addToMyDay(t)}>
+                      Add
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   );
 }

@@ -68,6 +68,28 @@
   --color-cyan-400: #22d3ee;
   --color-red-600: #dc2626;
 
+  /* S6 — priority/urgency palette pins (trap 2/10 family): the task
+     checkbox border ladder (sky/amber/red-400), the assignment due pill +
+     priority pill (blue + yellow families), the exam badge + MyDay amber
+     progress card (amber-100/600/700), and the calendar legend + day-detail
+     dots/borders (blue/amber/red/emerald-500). Every color an e2e parity
+     pin asserts on must be pinned to its v3 hex. */
+  --color-sky-400: #38bdf8;
+  --color-amber-100: #fef3c7;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-blue-50: #eff6ff;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-emerald-500: #10b981;
+  --color-yellow-50: #fefce8;
+  --color-yellow-200: #fef08a;
+  --color-yellow-500: #eab308;
+
   /* Slate scale — the reference app's gray ramp (measured rgb(30,41,59) =
      slate-800 for card titles, rgb(241,245,249) = slate-100 for borders). */
   --color-slate-50: #f8fafc;

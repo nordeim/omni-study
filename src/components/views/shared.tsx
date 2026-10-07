@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Calendar, Check, MoreHorizontal, Star, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { useDataStore, type Subject } from "@/lib/data";
+import { mutations, useDataStore, type Subject, type Task } from "@/lib/data";
 
 // Shared view primitives: page headers, empty states, subject helpers.
 
@@ -259,5 +261,180 @@ export function ErrorText({ message }: { message: string }) {
     <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400" role="alert">
       {message}
     </p>
+  );
+}
+
+// ---- S6-A · the reference's populated task row (measured live) ---------------
+//
+// The reference renders every task row as a STANDALONE bordered card
+// (`group bg-white rounded-xl border transition-all duration-200
+// border-slate-200 hover:border-violet-200 hover:shadow-md
+// hover:shadow-violet-100/50`) wrapping `flex items-center gap-3 p-4`, with:
+//   • a 24px ROUND checkbox whose 2px border IS the priority color
+//     (slate-300 none / sky-400 low / amber-400 medium / red-400 high —
+//     slate-300 + red-400 measured; the middle steps follow the same
+//     reference palette ladder),
+//   • a slate-700 font-medium title (clickable → edit dialog),
+//   • a `mt-1` meta row of PILLS: due date (slate-100/slate-500 future,
+//     red-100/red-600 due-today-or-overdue — both measured), repeat
+//     (violet-100/violet-600 — measured "weekly"), + the clone's subject
+//     and subtask-count as slate-100 superset pills,
+//   • h-8 w-8 ghost actions revealed on group-hover: sun (My Day toggle),
+//     star (violet-500 + fill when important — measured), ellipsis menu
+//     (Edit / red-600 Delete — measured).
+// Tasks + MyDay consume this row; the Dashboard renders its own lighter
+// bare-row variant (S6-D).
+
+const PRIORITY_BORDER: Record<string, string> = {
+  none: "border-slate-300 dark:border-slate-600",
+  low: "border-sky-400",
+  medium: "border-amber-400",
+  high: "border-red-400",
+};
+
+export function dueUrgency(dueDate: string | null): "past" | "today" | "future" | "none" {
+  if (!dueDate) return "none";
+  const due = new Date(dueDate);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+  if (due < startOfToday) return "past";
+  if (due < startOfTomorrow) return "today";
+  return "future";
+}
+
+export function TaskRowCard({
+  task,
+  subject,
+  onEdit,
+}: {
+  task: Task;
+  subject?: Subject | null;
+  onEdit: (task: Task) => void;
+}) {
+  const subtasks = React.useMemo(() => {
+    try {
+      const parsed: unknown = JSON.parse(task.subtasks || "[]");
+      return Array.isArray(parsed) ? (parsed as { id: string; title: string; done: boolean }[]) : [];
+    } catch {
+      return [];
+    }
+  }, [task.subtasks]);
+  const doneSubtasks = subtasks.filter((s) => s.done).length;
+  const urgency = dueUrgency(task.dueDate);
+  const dueDated = task.dueDate ? new Date(task.dueDate) : null;
+
+  return (
+    <div className="group rounded-xl border border-slate-200 bg-white transition-all duration-200 hover:border-violet-200 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-violet-500/60">
+      <div className="flex items-center gap-3 p-4">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={task.completed}
+          aria-label={`Mark "${task.title}" ${task.completed ? "incomplete" : "complete"}`}
+          onClick={() => void mutations.updateTask(task.id, { completed: !task.completed })}
+          className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:scale-110 sf-focus",
+            task.completed
+              ? "border-transparent bg-sf-primary text-white"
+              : PRIORITY_BORDER[task.priority] ?? PRIORITY_BORDER.none,
+          )}
+        >
+          {task.completed && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />}
+        </button>
+
+        <button type="button" onClick={() => onEdit(task)} className="sf-focus min-w-0 flex-1 rounded text-left">
+          <p
+            className={cn(
+              "truncate font-medium transition-colors",
+              task.completed ? "text-slate-400 line-through" : "text-slate-700 dark:text-slate-200",
+            )}
+          >
+            {task.title}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            {dueDated && (
+              <span
+                className={cn(
+                  "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs",
+                  urgency === "future"
+                    ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                    : "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400",
+                )}
+              >
+                <Calendar className="h-3 w-3" aria-hidden="true" />
+                {dueDated.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            )}
+            {task.repeat !== "none" && (
+              <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                {task.repeat}
+              </span>
+            )}
+            {subject && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                {subject.name}
+              </span>
+            )}
+            {subtasks.length > 0 && (
+              <span className="text-xs text-slate-400">
+                {doneSubtasks}/{subtasks.length} subtasks
+              </span>
+            )}
+          </div>
+        </button>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => void mutations.updateTask(task.id, { myDay: !task.myDay })}
+            aria-label={task.myDay ? "Remove from My Day" : "Add to My Day"}
+            aria-pressed={task.myDay}
+            className={cn(
+              "sf-focus inline-flex h-8 w-8 items-center justify-center rounded-md transition-opacity hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300",
+              task.myDay ? "opacity-100 text-amber-500" : "text-slate-500 opacity-0 group-hover:opacity-100",
+            )}
+          >
+            <Sun className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => void mutations.updateTask(task.id, { important: !task.important })}
+            aria-label={task.important ? "Unmark important" : "Mark important"}
+            aria-pressed={task.important}
+            className={cn(
+              "sf-focus inline-flex h-8 w-8 items-center justify-center rounded-md transition-opacity hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300",
+              task.important ? "opacity-100 text-violet-500" : "text-slate-500 opacity-0 group-hover:opacity-100",
+            )}
+          >
+            <Star className="h-4 w-4" fill={task.important ? "currentColor" : "none"} aria-hidden="true" />
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Task menu for "${task.title}"`}
+                className="sf-focus inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+              >
+                <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEdit(task)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  void mutations.deleteTask(task.id);
+                  toast.success("Task deleted");
+                }}
+                className="text-red-600 focus:text-red-600"
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
   );
 }

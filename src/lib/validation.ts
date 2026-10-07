@@ -36,6 +36,38 @@ export const taskSchema = z.object({
   dueDate: optionalIsoDate,
   listId: z.string().max(40).nullish(),
   subjectId: z.string().max(40).nullish(),
+  // S6-B — the reference's Add/Edit Task dialog fields (measured live):
+  // Priority combobox (None/Low/Medium/High), Repeat combobox (No repeat/
+  // Daily/Weekly/Monthly), My Day toggle, subtask adder.
+  priority: z.enum(["none", "low", "medium", "high"]).default("none"),
+  repeat: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
+  myDay: z.boolean().default(false),
+  // JSON array of {id,title,done} subtask objects.
+  subtasks: z
+    .string()
+    .max(4000)
+    .default("[]")
+    .refine(
+      (v) => {
+        try {
+          const parsed: unknown = JSON.parse(v);
+          return (
+            Array.isArray(parsed) &&
+            parsed.every(
+              (s) =>
+                typeof s === "object" &&
+                s !== null &&
+                typeof (s as { id?: unknown }).id === "string" &&
+                typeof (s as { title?: unknown }).title === "string" &&
+                typeof (s as { done?: unknown }).done === "boolean",
+            )
+          );
+        } catch {
+          return false;
+        }
+      },
+      { message: "subtasks must be a JSON array of {id,title,done}" },
+    ),
 });
 
 export const taskPatchSchema = taskSchema.partial();
@@ -51,9 +83,15 @@ export const assignmentSchema = z.object({
   subjectId: z.string().max(40).nullish(),
   dueDate: optionalIsoDate,
   status: z.enum(["active", "submitted", "graded"]).default("active"),
-  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  // S6-E — the reference's combobox option sets (measured): Priority adds
+  // "Urgent" beyond the clone's low/medium/high; Type is new.
+  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
   score: z.number().min(0).max(100000).nullish(),
   maxScore: z.number().min(0).max(100000).nullish(),
+  type: z
+    .enum(["homework", "essay", "project", "reading", "worksheet", "presentation", "study", "other"])
+    .default("homework"),
+  progress: z.number().int().min(0).max(100).default(0),
 });
 
 export const assignmentPatchSchema = assignmentSchema.partial();
@@ -66,6 +104,26 @@ export const examSchema = z.object({
   location: bounded(120).default(""),
   notes: bounded(2000).default(""),
   status: z.enum(["upcoming", "done"]).default("upcoming"),
+  // S6-F — the reference's exam dialog/card fields (measured): Type
+  // combobox (Test/Quiz/Midterm/Final/Oral/Practical), duration spinbutton
+  // (default 60 minutes), topics adder (JSON string array).
+  type: z.enum(["test", "quiz", "midterm", "final", "oral", "practical"]).default("test"),
+  duration: z.number().int().min(5).max(600).default(60),
+  topics: z
+    .string()
+    .max(2000)
+    .default("[]")
+    .refine(
+      (v) => {
+        try {
+          const parsed: unknown = JSON.parse(v);
+          return Array.isArray(parsed) && parsed.every((t) => typeof t === "string");
+        } catch {
+          return false;
+        }
+      },
+      { message: "topics must be a JSON array of strings" },
+    ),
 });
 
 export const examPatchSchema = examSchema.partial();

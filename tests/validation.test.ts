@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  assignmentSchema,
   aiChatSchema,
   eventSchema,
   examSchema,
@@ -35,6 +36,56 @@ describe("taskSchema", () => {
     const parsed = taskSchema.parse({ title: "t", dueDate: "" });
     expect(parsed.dueDate).toBeNull();
   });
+
+  it("carries the S6-B reference dialog fields: priority, repeat, myDay, subtasks", () => {
+    // The reference's Add/Edit Task dialog (measured live) has a Priority
+    // combobox (None/Low/Medium/High), a Repeat combobox (No repeat/Daily/
+    // Weekly/Monthly), a My Day toggle, and a subtask adder. Subtasks
+    // persist as a JSON array of {id,title,done} objects.
+    const parsed = taskSchema.parse({ title: "t" });
+    expect(parsed.priority).toBe("none");
+    expect(parsed.repeat).toBe("none");
+    expect(parsed.myDay).toBe(false);
+    expect(parsed.subtasks).toBe("[]");
+
+    const full = taskSchema.parse({
+      title: "t",
+      priority: "high",
+      repeat: "weekly",
+      myDay: true,
+      subtasks: '[{"id":"s1","title":"First","done":false}]',
+    });
+    expect(full.priority).toBe("high");
+    expect(full.repeat).toBe("weekly");
+    expect(full.myDay).toBe(true);
+    expect(full.subtasks).toBe('[{"id":"s1","title":"First","done":false}]');
+
+    expect(taskSchema.safeParse({ title: "t", priority: "urgent" }).success).toBe(false);
+    expect(taskSchema.safeParse({ title: "t", repeat: "sometimes" }).success).toBe(false);
+    expect(taskSchema.safeParse({ title: "t", subtasks: "not-json" }).success).toBe(false);
+    expect(taskSchema.safeParse({ title: "t", subtasks: "[{\"id\":1" }).success).toBe(false);
+  });
+});
+
+describe("assignmentSchema", () => {
+  it("carries the S6-E reference row fields: type, progress, urgent priority", () => {
+    // The reference's assignment row (measured) shows a type pill
+    // (homework/essay/project/...) and an interactive progress slider
+    // (0-100), and its dialog Priority combobox offers Low/Medium/High/Urgent.
+    const parsed = assignmentSchema.parse({ title: "Problem set" });
+    expect(parsed.type).toBe("homework");
+    expect(parsed.progress).toBe(0);
+    expect(parsed.priority).toBe("medium");
+
+    const full = assignmentSchema.parse({ title: "P", type: "essay", progress: 65, priority: "urgent" });
+    expect(full.type).toBe("essay");
+    expect(full.progress).toBe(65);
+    expect(full.priority).toBe("urgent");
+
+    expect(assignmentSchema.safeParse({ title: "P", type: "unknown-kind" }).success).toBe(false);
+    expect(assignmentSchema.safeParse({ title: "P", progress: 101 }).success).toBe(false);
+    expect(assignmentSchema.safeParse({ title: "P", progress: -1 }).success).toBe(false);
+  });
 });
 
 describe("subjectSchema", () => {
@@ -51,6 +102,33 @@ describe("examSchema", () => {
     const ok = examSchema.safeParse({ title: "Midterm", date: "2026-10-13T09:00:00" });
     expect(ok.success).toBe(true);
     expect(examSchema.safeParse({ title: "Midterm" }).success).toBe(false);
+  });
+
+  it("carries the S6-F reference card fields: type, duration, topics", () => {
+    // The reference's exam cards (measured) show a type footer pill
+    // (test/quiz/midterm/final/oral/practical) and a "12:00 AM · 60 min"
+    // clock line; its dialog has a duration spinbutton (default 60) and a
+    // topics adder. Topics persist as a JSON string array.
+    const parsed = examSchema.parse({ title: "Midterm", date: "2026-10-13T09:00:00" });
+    expect(parsed.type).toBe("test");
+    expect(parsed.duration).toBe(60);
+    expect(parsed.topics).toBe("[]");
+
+    const full = examSchema.parse({
+      title: "Midterm",
+      date: "2026-10-13T09:00:00",
+      type: "oral",
+      duration: 120,
+      topics: '["Integrals","Series"]',
+    });
+    expect(full.type).toBe("oral");
+    expect(full.duration).toBe(120);
+    expect(full.topics).toBe('["Integrals","Series"]');
+
+    expect(examSchema.safeParse({ title: "M", date: "2026-10-13T09:00:00", type: "final-exam" }).success).toBe(false);
+    expect(examSchema.safeParse({ title: "M", date: "2026-10-13T09:00:00", duration: 4 }).success).toBe(false);
+    expect(examSchema.safeParse({ title: "M", date: "2026-10-13T09:00:00", duration: 6000 }).success).toBe(false);
+    expect(examSchema.safeParse({ title: "M", date: "2026-10-13T09:00:00", topics: "not-json" }).success).toBe(false);
   });
 });
 

@@ -1,7 +1,7 @@
 {
   "name": "omni-study",
   "version": "1.0.0",
-  "description": "StudyFlow \u2014 your study companion. A production-ready clone (functional superset) of omni-study1.base44.app built on Next.js 16 + React 19 + Prisma/SQLite.",
+  "description": "StudyFlow — your study companion. A production-ready clone (functional superset) of omni-study1.base44.app built on Next.js 16 + React 19 + Prisma/SQLite.",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
@@ -32,6 +32,7 @@
     "@radix-ui/react-scroll-area": "^1.3.0",
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-separator": "^1.1.16",
+    "@radix-ui/react-slider": "^1.5.0",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-switch": "^1.3.8",
     "@radix-ui/react-tabs": "^1.1.22",

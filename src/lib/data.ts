@@ -24,6 +24,12 @@ export interface TaskList {
   color: string;
 }
 
+export interface Subtask {
+  id: string;
+  title: string;
+  done: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -33,6 +39,10 @@ export interface Task {
   dueDate: string | null;
   listId: string | null;
   subjectId: string | null;
+  priority: "none" | "low" | "medium" | "high";
+  repeat: "none" | "daily" | "weekly" | "monthly";
+  myDay: boolean;
+  subtasks: string; // JSON [{id,title,done}]
   createdAt: string;
 }
 
@@ -43,9 +53,19 @@ export interface Assignment {
   subjectId: string | null;
   dueDate: string | null;
   status: "active" | "submitted" | "graded";
-  priority: "low" | "medium" | "high";
+  priority: "low" | "medium" | "high" | "urgent";
   score: number | null;
   maxScore: number | null;
+  type:
+    | "homework"
+    | "essay"
+    | "project"
+    | "reading"
+    | "worksheet"
+    | "presentation"
+    | "study"
+    | "other";
+  progress: number;
   createdAt: string;
 }
 
@@ -58,6 +78,9 @@ export interface Exam {
   location: string;
   notes: string;
   status: "upcoming" | "done";
+  type: "test" | "quiz" | "midterm" | "final" | "oral" | "practical";
+  duration: number;
+  topics: string; // JSON string[]
 }
 
 export interface AppEvent {

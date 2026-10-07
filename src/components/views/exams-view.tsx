@@ -1,21 +1,36 @@
 "use client";
 
 import * as React from "react";
-import { CalendarClock, GraduationCap, MapPin, Plus } from "lucide-react";
+import { Calendar, CalendarClock, Clock, GraduationCap, MapPin, MoreHorizontal, Plus } from "lucide-react";
 import { useDataStore, mutations, type Exam } from "@/lib/data";
-import { useSubjectMap, ViewHeader, EmptyState, LoadingCards, ErrorText, SubjectChip } from "./shared";
+import { useSubjectMap, ViewHeader, EmptyState, LoadingCards, ErrorText } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
 import { daysUntil } from "@/lib/date";
+import { cn } from "@/lib/utils";
 
 type ExamFilter = "upcoming" | "past" | "all";
 
-const FIELD_CLASS = "flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm";
+const FIELD_CLASS = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm";
+
+// S6-F — the reference's Type combobox (measured): Test/Quiz/Midterm/Final/
+// Oral/Practical.
+const EXAM_TYPES = ["test", "quiz", "midterm", "final", "oral", "practical"] as const;
+
+const DEFAULT_SUBJECT_COLOR = "#94a3b8"; // slate-400 — the reference's no-subject strip color (measured).
+
+function parseTopics(json: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(json || "[]");
+    return Array.isArray(parsed) ? (parsed as string[]) : [];
+  } catch {
+    return [];
+  }
+}
 
 /** ISO datetime → "YYYY-MM-DD" in the user's local timezone (date-input safe). */
 function toDateInputValue(iso: string): string {
@@ -35,21 +50,29 @@ function toTimeInputValue(iso: string): string {
   return `${h}:${m}`;
 }
 
+// S6-F — the reference's urgency badge (measured): text-xs font-semibold
+// px-2.5 py-1 rounded-full bg-amber-100 text-amber-600 ("2 days"); red when
+// the exam is today/past.
 function ExamWhenBadge({ exam, now }: { exam: Exam; now: Date }) {
   if (exam.status === "done") {
-    return <Badge variant="success">Completed</Badge>;
-  }
-  const days = daysUntil(new Date(exam.date), now);
-  if (days < 0) {
     return (
-      <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-        Past
+      <span className="inline-block rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        Completed
       </span>
     );
   }
+  const days = daysUntil(new Date(exam.date), now);
+  const label = days < 0 ? "Past" : days === 0 ? "Today" : days === 1 ? "1 day" : `${days} days`;
   return (
-    <span className="shrink-0 rounded-md bg-sf-primary-soft px-2 py-1 text-xs font-semibold text-sf-primary-strong dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark">
-      {days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days`}
+    <span
+      className={cn(
+        "inline-block rounded-full px-2.5 py-1 text-xs font-semibold",
+        days <= 0
+          ? "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400"
+          : "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+      )}
+    >
+      {label}
     </span>
   );
 }
@@ -71,12 +94,16 @@ export function ExamsView() {
     void loadAll(["exams", "subjects"]);
   }, [loadAll]);
 
-  // ---- Form state ----
+  // ---- Form state (S6-F — the reference's dialog field set, measured) ----
   const [title, setTitle] = React.useState("");
   const [subjectId, setSubjectId] = React.useState("");
+  const [type, setType] = React.useState<Exam["type"]>("test");
   const [date, setDate] = React.useState("");
   const [time, setTime] = React.useState("09:00");
+  const [duration, setDuration] = React.useState(60);
   const [location, setLocation] = React.useState("");
+  const [topics, setTopics] = React.useState<string[]>([]);
+  const [topicDraft, setTopicDraft] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
@@ -84,9 +111,13 @@ export function ExamsView() {
     setEditing(null);
     setTitle("");
     setSubjectId("");
+    setType("test");
     setDate("");
     setTime("09:00");
+    setDuration(60);
     setLocation("");
+    setTopics([]);
+    setTopicDraft("");
     setNotes("");
     setDialogOpen(true);
   }
@@ -95,11 +126,26 @@ export function ExamsView() {
     setEditing(exam);
     setTitle(exam.title);
     setSubjectId(exam.subjectId ?? "");
+    setType(exam.type);
     setDate(toDateInputValue(exam.date));
     setTime(toTimeInputValue(exam.date));
+    setDuration(exam.duration);
     setLocation(exam.location ?? "");
+    setTopics(parseTopics(exam.topics));
+    setTopicDraft("");
     setNotes(exam.notes ?? "");
     setDialogOpen(true);
+  }
+
+  function addTopic() {
+    const text = topicDraft.trim();
+    if (!text) return;
+    setTopics((prev) => [...prev, text]);
+    setTopicDraft("");
+  }
+
+  function removeTopic(topic: string) {
+    setTopics((prev) => prev.filter((t) => t !== topic));
   }
 
   async function submitExam(e: React.FormEvent) {
@@ -110,8 +156,11 @@ export function ExamsView() {
     const payload = {
       title: title.trim(),
       subjectId: subjectId || null,
+      type,
       date: when.toISOString(),
+      duration,
       location: location.trim(),
+      topics: JSON.stringify(topics),
       notes: notes.trim(),
     };
     try {
@@ -224,7 +273,10 @@ export function ExamsView() {
             </Select>
           </div>
 
-          {/* List */}
+          {/* S6-F — card GRID (measured): grid md:grid-cols-2 lg:grid-cols-3
+              gap-4 of rounded-2xl overflow-hidden cards with an h-2 subject
+              color strip, amber urgency badge, h3 text-lg title, icon detail
+              rows, and a border-t type footer. */}
           {sorted.length === 0 ? (
             <div className="sf-card">
               <EmptyState
@@ -239,50 +291,53 @@ export function ExamsView() {
               />
             </div>
           ) : (
-            <ul className="flex flex-col gap-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" aria-label="Exam cards">
               {sorted.map((exam) => {
                 const subject = exam.subjectId ? subjectMap.get(exam.subjectId) : undefined;
                 const when = new Date(exam.date);
                 const dateLabel = when.toLocaleDateString("en-US", {
-                  weekday: "short",
+                  weekday: "long",
                   month: "short",
                   day: "numeric",
+                  year: "numeric",
                 });
                 const timeLabel = when.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+                const topics = parseTopics(exam.topics);
                 return (
-                  <li key={exam.id} className="sf-card flex flex-col gap-3 p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(exam)}
-                          className="text-left"
-                          aria-label={`Edit exam "${exam.title}"`}
-                        >
-                          <p className="truncate text-[15px] font-semibold text-slate-800 dark:text-slate-100">
-                            {exam.title}
-                          </p>
-                        </button>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <SubjectChip subject={subject} />
-                          <span className="text-xs text-slate-400">
-                            {dateLabel} · {timeLabel}
-                          </span>
+                  <div
+                    key={exam.id}
+                    className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    {/* Subject color strip (h-2, inline subject color — measured). */}
+                    <div
+                      aria-label="Subject color strip"
+                      className="h-2"
+                      style={{ backgroundColor: subject?.color ?? DEFAULT_SUBJECT_COLOR }}
+                    />
+                    <div className="p-5">
+                      <div className="mb-3 flex items-start justify-between">
+                        <div>
+                          <ExamWhenBadge exam={exam} now={now} />
+                          <h3 className="mb-2 mt-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => openEdit(exam)}
+                              className="text-left sf-focus"
+                              aria-label={`Edit exam "${exam.title}"`}
+                            >
+                              {exam.title}
+                            </button>
+                          </h3>
                         </div>
-                        {exam.location && (
-                          <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-400">
-                            <MapPin className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />
-                            {exam.location}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-2">
-                        <ExamWhenBadge exam={exam} now={now} />
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="iconSm" aria-label={`Exam menu for "${exam.title}"`}>
-                              ⋯
-                            </Button>
+                            <button
+                              type="button"
+                              aria-label={`Exam menu for "${exam.title}"`}
+                              className="sf-focus inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                            >
+                              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                            </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => openEdit(exam)}>Edit</DropdownMenuItem>
@@ -298,20 +353,45 @@ export function ExamsView() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    </div>
 
-                    {exam.notes && (
-                      <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{exam.notes}</p>
-                    )}
-                  </li>
+                      <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                          {dateLabel}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                          {timeLabel}
+                          <span className="text-slate-400">· {exam.duration} min</span>
+                        </div>
+                        {exam.location && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                            {exam.location}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-xs capitalize text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                          {exam.type}
+                        </span>
+                        {topics.length > 0 && (
+                          <span className="text-xs text-slate-400">
+                            {topics.length} topic{topics.length === 1 ? "" : "s"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           )}
         </>
       )}
 
-      {/* Exam dialog */}
+      {/* Exam dialog (S6-F — the reference's field set, measured). */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -324,7 +404,7 @@ export function ExamsView() {
                 id="exam-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Calculus Midterm"
+                placeholder="e.g., Math Final Exam"
                 maxLength={200}
                 required
               />
@@ -338,12 +418,27 @@ export function ExamsView() {
                   onChange={(e) => setSubjectId(e.target.value)}
                   className={FIELD_CLASS}
                 >
-                  <option value="">None</option>
+                  <option value="">Select</option>
                   {subjects.map((s) => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
               </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="exam-type">Type</Label>
+                <Select value={type} onValueChange={(v) => setType(v as Exam["type"])}>
+                  <SelectTrigger id="exam-type" aria-label="Type" className={FIELD_CLASS}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXAM_TYPES.map((t) => (
+                      <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="exam-date">Date</Label>
                 <input
@@ -355,8 +450,6 @@ export function ExamsView() {
                   className={FIELD_CLASS}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="exam-time">Start time</Label>
                 <input
@@ -367,16 +460,72 @@ export function ExamsView() {
                   className={FIELD_CLASS}
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="exam-duration">Duration (minutes)</Label>
+                <input
+                  id="exam-duration"
+                  type="number"
+                  min={5}
+                  max={600}
+                  step={5}
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value) || 60)}
+                  className={FIELD_CLASS}
+                />
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="exam-location">Location</Label>
                 <Input
                   id="exam-location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Hall B"
+                  placeholder="e.g., Room 101, Hall A"
                   maxLength={200}
                 />
               </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="exam-topic">Topics</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="exam-topic"
+                  value={topicDraft}
+                  onChange={(e) => setTopicDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addTopic();
+                    }
+                  }}
+                  placeholder="Add a topic..."
+                  maxLength={120}
+                />
+                <Button type="button" variant="outline" onClick={addTopic} aria-label="Add topic" className="px-3">
+                  +
+                </Button>
+              </div>
+              {topics.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {topics.map((t) => (
+                    <span
+                      key={t}
+                      className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                    >
+                      {t}
+                      <button
+                        type="button"
+                        onClick={() => removeTopic(t)}
+                        aria-label={`Remove topic ${t}`}
+                        className="text-slate-400 transition-colors hover:text-red-500 sf-focus"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="exam-notes">Notes</Label>
@@ -386,6 +535,7 @@ export function ExamsView() {
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 maxLength={2000}
+                placeholder="Notes, resources, tips..."
               />
             </div>
             <DialogFooter>
@@ -393,7 +543,7 @@ export function ExamsView() {
                 Cancel
               </Button>
               <Button type="submit" variant="gradient" disabled={busy || !title.trim() || !date}>
-                {busy ? "Saving…" : editing ? "Save changes" : "Create Exam"}
+                {busy ? "Saving…" : editing ? "Save changes" : "Add Exam"}
               </Button>
             </DialogFooter>
           </form>

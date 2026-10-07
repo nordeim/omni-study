@@ -26,7 +26,8 @@ test.describe("tasks golden path", () => {
     await page.getByRole("button", { name: "Add Task" }).first().click();
     await page.getByLabel("Title").fill(`E2E — complete me ${stamp}`);
     await page.getByRole("button", { name: "Create Task" }).click();
-    const row = page.locator("li", { hasText: `E2E — complete me ${stamp}` });
+    // S6-A: task rows are standalone card DIVs inside the rows container.
+    const row = page.locator('[aria-label="Task rows"] > div', { hasText: `E2E — complete me ${stamp}` });
     await row.getByRole("checkbox").click();
     // Completed tasks leave the default "Active" filter view.
     await expect(page.getByText(`E2E — complete me ${stamp}`)).toHaveCount(0);
@@ -34,7 +35,7 @@ test.describe("tasks golden path", () => {
     await page.getByRole("option", { name: "Completed" }).click();
     await expect(page.getByText(`E2E — complete me ${stamp}`)).toBeVisible();
     const style = await page
-      .locator("li", { hasText: `E2E — complete me ${stamp}` })
+      .locator('[aria-label="Task rows"] > div', { hasText: `E2E — complete me ${stamp}` })
       .locator("p")
       .first()
       .evaluate((el) => getComputedStyle(el).textDecorationLine);
@@ -59,7 +60,7 @@ test.describe("tasks golden path", () => {
     await page.getByRole("button", { name: "Add Task" }).first().click();
     await page.getByLabel("Title").fill(`E2E — delete me ${stamp}`);
     await page.getByRole("button", { name: "Create Task" }).click();
-    const row = page.locator("li", { hasText: `E2E — delete me ${stamp}` });
+    const row = page.locator('[aria-label="Task rows"] > div', { hasText: `E2E — delete me ${stamp}` });
     await row.getByRole("button", { name: /^Task menu for/ }).click();
     await page.getByRole("menuitem", { name: "Delete" }).click();
     await expect(page.getByText(`E2E — delete me ${stamp}`)).toHaveCount(0);

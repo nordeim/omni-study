@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, Flame, GraduationCap, Sparkles, SquareCheckBig, Target } from "lucide-react";
+import { BookOpen, Check, Flame, GraduationCap, Sparkles, SquareCheckBig, Target } from "lucide-react";
 import { useAppStore, useThemeStore } from "@/lib/store";
 import { useDataStore, mutations, type Task } from "@/lib/data";
 import { STAT_COLORS, SectionCard, SimpleEmptyState, StatCard, ViewAllLink, useSubjectMap } from "./shared";
@@ -16,28 +16,39 @@ import { cn } from "@/lib/utils";
 //   grid lg:grid-cols-3 gap-6: Today's Tasks (col-span-2) + Upcoming Exams
 //   Upcoming Assignments (full width)
 
-function TaskRow({ task }: { task: Task }) {
-  const subjectMap = useSubjectMap();
-  const subject = task.subjectId ? subjectMap.get(task.subjectId) : undefined;
+// S6-D — the reference's dashboard task row (measured with a real
+// due-today task): a BARE `flex items-center gap-4 p-4 hover:bg-slate-50
+// transition-colors` row (no border/radius/card) with a 20px ROUND
+// border-2 checkbox and a `p.font-medium.text-slate-700.truncate` title
+// ONLY — no subject, no star. Clicking the title navigates to Tasks.
+function TaskRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
   return (
-    <li className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
-      <Checkbox
-        checked={task.completed}
-        onCheckedChange={(v) => mutations.updateTask(task.id, { completed: v === true })}
+    <li className="flex items-center gap-4 p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={task.completed}
         aria-label={`Mark "${task.title}" ${task.completed ? "incomplete" : "complete"}`}
-      />
-      <div className="min-w-0 flex-1">
+        onClick={() => void mutations.updateTask(task.id, { completed: !task.completed })}
+        className={cn(
+          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:scale-110 sf-focus",
+          task.completed
+            ? "border-transparent bg-sf-primary text-white"
+            : "border-slate-300 dark:border-slate-600",
+        )}
+      >
+        {task.completed && <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />}
+      </button>
+      <button type="button" onClick={onOpen} className="sf-focus min-w-0 flex-1 rounded text-left">
         <p
           className={cn(
-            "truncate text-sm font-medium",
-            task.completed ? "text-slate-400 line-through" : "text-slate-800 dark:text-slate-100",
+            "truncate font-medium",
+            task.completed ? "text-slate-400 line-through" : "text-slate-700 dark:text-slate-200",
           )}
         >
           {task.title}
         </p>
-        {subject && <p className="mt-0.5 text-xs" style={{ color: subject.color }}>{subject.name}</p>}
-      </div>
-      {task.important && <span className="text-xs text-amber-500">★</span>}
+      </button>
     </li>
   );
 }
@@ -62,7 +73,9 @@ export function DashboardView() {
     return () => clearInterval(id);
   }, []);
 
-  const todayTasks = tasks.filter((t) => t.dueDate && isSameDay(new Date(t.dueDate), now));
+  const todayTasks = tasks.filter(
+    (t) => t.myDay || (t.dueDate && isSameDay(new Date(t.dueDate), now)),
+  );
   const doneToday = todayTasks.filter((t) => t.completed).length;
   const pending = tasks.filter((t) => !t.completed).length;
   const dueSoon = assignments.filter(
@@ -137,9 +150,9 @@ export function DashboardView() {
           {todayTasks.length === 0 ? (
             <SimpleEmptyState icon={SquareCheckBig} message="No tasks for today. Add some from My Day!" />
           ) : (
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col" aria-label="Today's tasks">
               {todayTasks.map((t) => (
-                <TaskRow key={t.id} task={t} />
+                <TaskRow key={t.id} task={t} onOpen={() => navigate("tasks")} />
               ))}
             </ul>
           )}

@@ -1,15 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { ListChecks, Plus, Star, Trash2 } from "lucide-react";
-import { useDataStore, mutations, type Task } from "@/lib/data";
-import { useSubjectMap, EmptyState, ErrorText } from "./shared";
-import { Checkbox } from "@/components/ui/primitives";
+import { ListChecks, Plus } from "lucide-react";
+import { useDataStore, mutations, type Task, type Subtask } from "@/lib/data";
+import { useSubjectMap, EmptyState, ErrorText, TaskRowCard } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
 import { isSameDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -23,6 +21,29 @@ function bucketKey(b: Bucket): string {
 
 function bucketLabel(b: Bucket, listName?: string): string {
   return b === "all" ? "All Tasks" : b === "important" ? "Important" : b === "today" ? "Today" : (listName ?? "List");
+}
+
+const PRIORITY_OPTIONS = [
+  { value: "none", label: "None" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+] as const;
+
+const REPEAT_OPTIONS = [
+  { value: "none", label: "No repeat" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+] as const;
+
+function parseSubtasks(json: string): Subtask[] {
+  try {
+    const parsed: unknown = JSON.parse(json || "[]");
+    return Array.isArray(parsed) ? (parsed as Subtask[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 export function TasksView() {
@@ -45,11 +66,17 @@ export function TasksView() {
     void loadAll(["tasks", "taskLists", "subjects"]);
   }, [loadAll]);
 
-  // ---- Task form state ----
+  // ---- Task form state (S6-B — the reference's dialog field set) ----
   const [title, setTitle] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [important, setImportant] = React.useState(false);
+  const [myDay, setMyDay] = React.useState(false);
+  const [priority, setPriority] = React.useState<string>("none");
+  const [repeat, setRepeat] = React.useState<string>("none");
   const [dueDate, setDueDate] = React.useState("");
+  const [dueExpanded, setDueExpanded] = React.useState(false);
+  const [subtasks, setSubtasks] = React.useState<Subtask[]>([]);
+  const [subtaskDraft, setSubtaskDraft] = React.useState("");
   const [subjectId, setSubjectId] = React.useState("");
   const [listId, setListId] = React.useState("");
   const [busy, setBusy] = React.useState(false);
@@ -59,7 +86,13 @@ export function TasksView() {
     setTitle("");
     setNotes("");
     setImportant(false);
+    setMyDay(false);
+    setPriority("none");
+    setRepeat("none");
     setDueDate("");
+    setDueExpanded(false);
+    setSubtasks([]);
+    setSubtaskDraft("");
     setSubjectId("");
     setListId(typeof bucket === "object" ? bucket.list : "");
     setDialogOpen(true);
@@ -70,10 +103,31 @@ export function TasksView() {
     setTitle(task.title);
     setNotes(task.notes ?? "");
     setImportant(task.important);
+    setMyDay(task.myDay);
+    setPriority(task.priority);
+    setRepeat(task.repeat);
     setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : "");
+    setDueExpanded(!!task.dueDate);
+    setSubtasks(parseSubtasks(task.subtasks));
+    setSubtaskDraft("");
     setSubjectId(task.subjectId ?? "");
     setListId(task.listId ?? "");
     setDialogOpen(true);
+  }
+
+  function addSubtask() {
+    const text = subtaskDraft.trim();
+    if (!text) return;
+    setSubtasks((prev) => [...prev, { id: `st${Date.now().toString(36)}`, title: text, done: false }]);
+    setSubtaskDraft("");
+  }
+
+  function toggleSubtask(id: string) {
+    setSubtasks((prev) => prev.map((s) => (s.id === id ? { ...s, done: !s.done } : s)));
+  }
+
+  function removeSubtask(id: string) {
+    setSubtasks((prev) => prev.filter((s) => s.id !== id));
   }
 
   async function submitTask(e: React.FormEvent) {
@@ -84,6 +138,10 @@ export function TasksView() {
       title: title.trim(),
       notes: notes.trim(),
       important,
+      myDay,
+      priority,
+      repeat,
+      subtasks: JSON.stringify(subtasks),
       dueDate: dueDate || null,
       subjectId: subjectId || null,
       listId: listId || null,
@@ -140,9 +198,10 @@ export function TasksView() {
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
-      {/* Left panel — views + lists */}
-      <aside className="w-full shrink-0 lg:w-60" aria-label="Task views">
-        <div className="sf-card flex flex-col gap-1 p-3">
+      {/* Left panel — views + lists (S6-A: borderless bordered-r column,
+          r12 px-4 py-3 16px buttons, violet-50/violet-700 active). */}
+      <aside className="w-full shrink-0 md:border-r md:border-slate-100 md:pr-6 lg:w-64" aria-label="Task views">
+        <div className="flex flex-col gap-1">
           {(
             [
               { key: "all" as const, label: "All Tasks", count: activeCount },
@@ -154,18 +213,18 @@ export function TasksView() {
               type="button"
               onClick={() => setBucket(item.key)}
               className={cn(
-                "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-base transition-all sf-focus",
                 bucketKey(bucket) === item.key
-                  ? "bg-sf-primary-soft text-sf-primary-strong dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
-                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/60",
+                  ? "bg-violet-50 text-violet-700 dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
+                  : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60",
               )}
             >
               {item.label}
-              <span className="text-xs text-slate-400">{item.count}</span>
+              <span className="text-sm text-slate-400">{item.count}</span>
             </button>
           ))}
 
-          <div className="mt-3 flex items-center justify-between px-3 pb-1">
+          <div className="mt-3 flex items-center justify-between px-4 pb-1">
             {/* Reference (measured): text-sm font-semibold text-slate-500
                 uppercase tracking-wider — the clone was one step small and
                 light (text-xs slate-400; S4-H). */}
@@ -180,7 +239,7 @@ export function TasksView() {
             </button>
           </div>
           {taskLists.length === 0 && (
-            <p className="px-3 py-2 text-xs text-slate-400">No lists yet</p>
+            <p className="px-4 py-2 text-xs text-slate-400">No lists yet</p>
           )}
           {taskLists.map((list) => {
             const count = tasks.filter((t) => t.listId === list.id && !t.completed).length;
@@ -190,17 +249,17 @@ export function TasksView() {
                   type="button"
                   onClick={() => setBucket({ list: list.id })}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-base transition-all sf-focus",
                     bucketKey(bucket) === `list:${list.id}`
-                      ? "bg-sf-primary-soft text-sf-primary-strong dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
-                      : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/60",
+                      ? "bg-violet-50 text-violet-700 dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
+                      : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60",
                   )}
                 >
-                  <span className="flex min-w-0 items-center gap-2">
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: list.color }} />
                     <span className="truncate">{list.name}</span>
                   </span>
-                  <span className="text-xs text-slate-400">{count}</span>
+                  <span className="text-sm text-slate-400">{count}</span>
                 </button>
                 <button
                   type="button"
@@ -212,7 +271,7 @@ export function TasksView() {
                   aria-label={`Delete list "${list.name}"`}
                   className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded p-1 text-slate-400 hover:text-red-500 group-hover:block"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  ✕
                 </button>
               </div>
             );
@@ -267,59 +326,22 @@ export function TasksView() {
             />
           </div>
         ) : (
-          <ul className="sf-card flex flex-col gap-1 p-3">
-            {visible.map((t) => {
-              const subject = t.subjectId ? subjectMap.get(t.subjectId) : undefined;
-              return (
-                <li key={t.id} className="group flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                  <Checkbox
-                    checked={t.completed}
-                    onCheckedChange={(v) => mutations.updateTask(t.id, { completed: v === true })}
-                    aria-label={`Mark "${t.title}" ${t.completed ? "incomplete" : "complete"}`}
-                  />
-                  <button type="button" onClick={() => openEdit(t)} className="min-w-0 flex-1 text-left">
-                    <p className={cn("truncate text-[15px] font-medium", t.completed ? "text-slate-400 line-through" : "text-slate-800 dark:text-slate-100")}>
-                      {t.title}
-                    </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                      {subject && <span style={{ color: subject.color }}>{subject.name}</span>}
-                      {t.dueDate && <span>{new Date(t.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
-                      {t.notes && <span className="truncate">· {t.notes.slice(0, 40)}</span>}
-                    </p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => mutations.updateTask(t.id, { important: !t.important })}
-                    aria-label={t.important ? "Unmark important" : "Mark important"}
-                    className={cn("rounded-md p-1.5", t.important ? "text-amber-500" : "text-slate-300 hover:text-amber-400")}
-                  >
-                    <Star className="h-4 w-4" fill={t.important ? "currentColor" : "none"} />
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="iconSm" aria-label={`Task menu for "${t.title}"`}>⋯</Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEdit(t)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          void mutations.deleteTask(t.id);
-                          toast.success("Task deleted");
-                        }}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </li>
-              );
-            })}
-          </ul>
+          // S6-A: per-row CARDS in a gap-2 column (the reference's
+          // space-y-2 list, laid out flex-gap per the v4 trap-4 convention).
+          <div className="flex flex-col gap-2 pr-2" aria-label="Task rows">
+            {visible.map((t) => (
+              <TaskRowCard
+                key={t.id}
+                task={t}
+                subject={t.subjectId ? subjectMap.get(t.subjectId) : undefined}
+                onEdit={openEdit}
+              />
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Task dialog */}
+      {/* Task dialog (S6-B — the reference's field set, measured). */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -332,33 +354,161 @@ export function TasksView() {
                 id="task-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="What needs to be done?"
+                placeholder="Task name..."
                 maxLength={200}
                 required
               />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="task-notes">Notes</Label>
-              <Textarea id="task-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} maxLength={2000} />
+
+            {/* My Day / Important pill toggles (reference-measured row). */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setMyDay((v) => !v)}
+                aria-pressed={myDay}
+                className={cn(
+                  "inline-flex h-9 items-center gap-2 rounded-lg border px-4 text-sm font-medium transition-colors sf-focus",
+                  myDay
+                    ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800",
+                )}
+              >
+                ☀ My Day
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportant((v) => !v)}
+                aria-pressed={important}
+                className={cn(
+                  "inline-flex h-9 items-center gap-2 rounded-lg border px-4 text-sm font-medium transition-colors sf-focus",
+                  important
+                    ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/40 dark:text-violet-300"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800",
+                )}
+              >
+                ★ Important
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="task-date">Due date</Label>
+
+            {/* Add due date collapsible (reference layout; native date input
+                inside = honest superset of the reference's custom calendar). */}
+            <div className="flex flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => setDueExpanded((v) => !v)}
+                aria-expanded={dueExpanded}
+                className="flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 sf-focus dark:text-slate-300 dark:hover:text-white"
+              >
+                <span className={cn("transition-transform", dueExpanded && "rotate-90")}>›</span>
+                {dueDate ? "Due date" : "Add due date"}
+              </button>
+              {dueExpanded && (
                 <input
                   id="task-date"
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                 />
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="task-priority">Priority</Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger id="task-priority" aria-label="Priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="task-repeat">Repeat</Label>
+                <Select value={repeat} onValueChange={setRepeat}>
+                  <SelectTrigger id="task-repeat" aria-label="Repeat">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REPEAT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Subtask adder (reference-measured). */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="task-subtask">Subtasks</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="task-subtask"
+                  value={subtaskDraft}
+                  onChange={(e) => setSubtaskDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addSubtask();
+                    }
+                  }}
+                  placeholder="Add a subtask..."
+                  maxLength={200}
+                />
+                <Button type="button" variant="outline" onClick={addSubtask} aria-label="Add subtask" className="px-3">
+                  +
+                </Button>
+              </div>
+              {subtasks.length > 0 && (
+                <ul className="flex flex-col gap-1.5 pt-1">
+                  {subtasks.map((s) => (
+                    <li key={s.id} className="flex items-center gap-2 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => toggleSubtask(s.id)}
+                        aria-label={`Toggle subtask "${s.title}"`}
+                        className={cn(
+                          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-all sf-focus",
+                          s.done ? "border-transparent bg-sf-primary text-white" : "border-slate-300 dark:border-slate-600",
+                        )}
+                      >
+                        {s.done && <span className="text-[9px] leading-none">✓</span>}
+                      </button>
+                      <span className={cn("min-w-0 flex-1 truncate", s.done ? "text-slate-400 line-through" : "text-slate-600 dark:text-slate-300")}>
+                        {s.title}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeSubtask(s.id)}
+                        aria-label={`Remove subtask "${s.title}"`}
+                        className="text-slate-300 transition-colors hover:text-red-500 sf-focus"
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="task-notes">Notes</Label>
+              <Textarea id="task-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} maxLength={2000} placeholder="Add notes..." />
+            </div>
+
+            {/* Superset fields (not on the reference): Subject + List. */}
+            <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="task-subject">Subject</Label>
                 <select
                   id="task-subject"
                   value={subjectId}
                   onChange={(e) => setSubjectId(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                 >
                   <option value="">None</option>
                   {subjects.map((s) => (
@@ -366,15 +516,13 @@ export function TasksView() {
                   ))}
                 </select>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="task-list">List</Label>
                 <select
                   id="task-list"
                   value={listId}
                   onChange={(e) => setListId(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                 >
                   <option value="">None</option>
                   {taskLists.map((l) => (
@@ -382,15 +530,11 @@ export function TasksView() {
                   ))}
                 </select>
               </div>
-              <div className="flex items-end gap-2 pb-2">
-                <Checkbox id="task-important" checked={important} onCheckedChange={(v) => setImportant(v === true)} />
-                <Label htmlFor="task-important">Important</Label>
-              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               <Button type="submit" variant="gradient" disabled={busy || !title.trim()}>
-                {busy ? "Saving…" : editing ? "Save changes" : "Create Task"}
+                {busy ? "Saving…" : editing ? "Update Task" : "Create Task"}
               </Button>
             </DialogFooter>
           </form>

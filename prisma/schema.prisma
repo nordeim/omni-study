@@ -98,6 +98,13 @@ model Task {
   dueDate    DateTime?
   listId     String?
   subjectId  String?
+  // S6-B — reference dialog fields (measured): priority colors the round
+  // checkbox border (slate-300 none / red-400 high); repeat expands into
+  // occurrences in the Tasks/MyDay windows; myDay drives the MyDay view.
+  priority   String    @default("none") // none | low | medium | high
+  repeat     String    @default("none") // none | daily | weekly | monthly
+  myDay      Boolean   @default(false)
+  subtasks   String    @default("[]") // JSON [{id,title,done}]
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now()) @updatedAt
 
@@ -117,9 +124,13 @@ model Assignment {
   subjectId   String?
   dueDate     DateTime?
   status      String    @default("active") // active | submitted | graded
-  priority    String    @default("medium") // low | medium | high
+  priority    String    @default("medium") // low | medium | high | urgent (S6-E)
   score       Float?
   maxScore    Float?
+  // S6-E — the reference's assignment rows (measured): type pill +
+  // interactive progress slider (0-100, gradient fill).
+  type        String    @default("homework") // homework | essay | project | reading | worksheet | presentation | study | other
+  progress    Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
 
@@ -140,6 +151,11 @@ model Exam {
   location  String    @default("")
   notes     String    @default("")
   status    String    @default("upcoming") // upcoming | done
+  // S6-F — the reference's exam cards/dialog (measured): type footer pill,
+  // "12:00 AM · 60 min" duration line, topics adder (JSON string array).
+  type      String    @default("test") // test | quiz | midterm | final | oral | practical
+  duration  Int       @default(60)
+  topics    String    @default("[]")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
 

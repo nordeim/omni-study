@@ -67,9 +67,42 @@ async function main() {
 
   await prisma.task.createMany({
     data: [
-      { userId: user.id, title: "Read chapter 4 — vectors", subjectId: math.id, dueDate: day(0, 20), important: true },
-      { userId: user.id, title: "Lab report: pendulum experiment", subjectId: physics.id, dueDate: day(1, 23, 59) },
-      { userId: user.id, title: "Annotate Keats ode", subjectId: literature.id, dueDate: day(2, 18) },
+      // S6 seed — exercises the reference-measured dialog/row fields:
+      // priority (checkbox border color), repeat (violet pill), myDay,
+      // subtasks (JSON adder data).
+      {
+        userId: user.id,
+        title: "Read chapter 4 — vectors",
+        subjectId: math.id,
+        dueDate: day(0, 20),
+        important: true,
+        priority: "high",
+        myDay: true,
+        subtasks: '[{"id":"st1","title":"Sections 4.1–4.3","done":true},{"id":"st2","title":"Exercises 4a–4c","done":false}]',
+      },
+      {
+        userId: user.id,
+        title: "Lab report: pendulum experiment",
+        subjectId: physics.id,
+        dueDate: day(1, 23, 59),
+        priority: "medium",
+        myDay: true,
+      },
+      {
+        userId: user.id,
+        title: "Weekly vocabulary review",
+        subjectId: literature.id,
+        dueDate: day(2, 18),
+        repeat: "weekly",
+      },
+      {
+        userId: user.id,
+        title: "Annotate Keats ode",
+        subjectId: literature.id,
+        dueDate: day(2, 18),
+        priority: "low",
+        myDay: true,
+      },
       { userId: user.id, title: "Flashcards: integration rules", subjectId: math.id, completed: true, dueDate: day(-1, 20) },
     ],
   });
@@ -83,6 +116,8 @@ async function main() {
         dueDate: day(2, 23, 59),
         priority: "high",
         description: "Exercises 1–20, skip 13.",
+        type: "worksheet",
+        progress: 45,
       },
       {
         userId: user.id,
@@ -90,6 +125,8 @@ async function main() {
         subjectId: literature.id,
         dueDate: day(5, 23, 59),
         priority: "medium",
+        type: "essay",
+        progress: 20,
       },
     ],
   });
@@ -103,6 +140,9 @@ async function main() {
         date: day(7, 9),
         endTime: day(7, 11),
         location: "Exam Hall B",
+        type: "midterm",
+        duration: 120,
+        topics: '["Lagrangians","Oscillations"]',
       },
       {
         userId: user.id,
@@ -111,6 +151,9 @@ async function main() {
         date: day(3, 10),
         endTime: day(3, 10, 45),
         location: "B-201",
+        type: "quiz",
+        duration: 45,
+        topics: '["Substitution","By parts"]',
       },
     ],
   });

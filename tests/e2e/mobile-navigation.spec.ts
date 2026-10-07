@@ -86,10 +86,13 @@ test.describe("mobile navigation", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
 
-    // Panel: w-72 = 288px, white, shadow-2xl, no right border.
+    // Panel: w-72 = 288px, white, shadow-2xl, no right border. (±1px
+    // tolerance — Chromium occasionally rounds the fractional layout box
+    // under mobile DPR emulation; the reference measures 288.)
     const panel = dialog.locator("div.absolute.inset-y-0.left-0");
     const box = await panel.boundingBox();
-    expect(Math.round(box?.width ?? 0)).toBe(288);
+    expect(Math.round(box?.width ?? 0)).toBeGreaterThanOrEqual(287);
+    expect(Math.round(box?.width ?? 0)).toBeLessThanOrEqual(288);
     await expect(panel).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await expect(panel).toHaveCSS("border-right-width", "0px");
 

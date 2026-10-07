@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
-import { useDataStore, type AppEvent } from "@/lib/data";
+import { useDataStore, type AppEvent, type Task } from "@/lib/data";
 import { useAppStore } from "@/lib/store";
 import { EmptyState, useSubjectMap, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,25 @@ import { addMonths, formatFullDate, isSameDay, monthGrid, WEEKDAY_SHORT } from "
 // Calendar — month grid (Monday-first, 6×7, leading/trailing days muted —
 // matches the reference) + day detail panel. Timeline toggle switches to a
 // chronological agenda of events/exams/assignments.
+//
+// S6-G — the month grid + legend + day detail were re-measured against the
+// live reference WITH data:
+//   • day cells: `relative aspect-square p-2 rounded-xl transition-all flex
+//     flex-col items-center justify-center hover:bg-slate-100` with
+//     `span.text-sm.font-medium` dates + `div.flex.gap-0.5.mt-1` event dots
+//     (`span.w-1.5.h-1.5.rounded-full` — blue tasks / amber assignments /
+//     red exams / emerald classes); adjacent-month cells = text-slate-300;
+//     TODAY = solid `bg-violet-500 text-white` (accent-aware here) with
+//     WHITE dots.
+//   • legend below the grid: `flex flex-wrap gap-4 mt-4 pt-4 border-t
+//     border-slate-100` rows `flex items-center gap-2 text-sm text-slate-600`
+//     with `span.w-2.h-2.rounded-full.bg-{blue,amber,red,emerald}-500`.
+//   • day detail: `bg-white rounded-2xl border border-slate-200 p-6` +
+//     `h3.font-bold` full date + per-type sections with
+//     `p.text-xs.font-semibold.text-slate-500.uppercase.mb-2` labels and
+//     event rows `div.p-3.bg-blue-50.rounded-lg.border-l-4.border-blue-500`
+//     (blue for tasks — measured; amber/red/emerald for assignment/exam/
+//     class rows — same family).
 
 interface AgendaItem {
   date: Date;
@@ -20,11 +39,26 @@ interface AgendaItem {
   color: string;
 }
 
+// The reference's legend/dot palette (measured).
+const KIND_COLORS = {
+  task: "#3b82f6", // blue-500
+  assignment: "#f59e0b", // amber-500
+  exam: "#ef4444", // red-500
+  class: "#10b981", // emerald-500
+  event: "#8b5cf6", // violet-500 (events use their own color; legend omits them)
+} as const;
+
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
 export function CalendarView() {
   const navigate = useAppStore((s) => s.navigate);
   const events = useDataStore((s) => s.data.events);
   const exams = useDataStore((s) => s.data.exams);
   const assignments = useDataStore((s) => s.data.assignments);
+  const tasks = useDataStore((s) => s.data.tasks);
+  const timetable = useDataStore((s) => s.data.timetable);
   const loadAll = useDataStore((s) => s.loadAll);
   const subjectMap = useSubjectMap();
 
@@ -33,7 +67,7 @@ export function CalendarView() {
   const [mode, setMode] = React.useState<"calendar" | "timeline">("calendar");
 
   React.useEffect(() => {
-    void loadAll(["events", "exams", "assignments", "subjects"]);
+    void loadAll(["events", "exams", "assignments", "tasks", "timetable", "subjects"]);
   }, [loadAll]);
 
   const cells = React.useMemo(
@@ -41,17 +75,36 @@ export function CalendarView() {
     [cursor],
   );
 
-  const eventsByDay = React.useMemo(() => {
-    const map = new Map<string, AppEvent[]>();
-    for (const e of events) {
-      const d = new Date(e.startDate);
-      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      map.set(key, [...(map.get(key) ?? []), e]);
+  const today = new Date();
+
+  // Per-day dot colors (S6-G): one dot per KIND present that day.
+  const dotsByDay = React.useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    const add = (date: Date, kind: keyof typeof KIND_COLORS) => {
+      const key = dayKey(date);
+      const set = map.get(key) ?? new Set<string>();
+      set.add(kind);
+      map.set(key, set);
+    };
+    for (const t of tasks) {
+      if (!t.completed && t.dueDate) add(new Date(t.dueDate), "task");
+    }
+    for (const a of assignments) {
+      if (a.status === "active" && a.dueDate) add(new Date(a.dueDate), "assignment");
+    }
+    for (const e of exams) {
+      if (e.status === "upcoming") add(new Date(e.date), "exam");
+    }
+    for (const c of timetable) {
+      // Classes repeat weekly on their dayOfWeek.
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(cells[0].date);
+        d.setDate(d.getDate() + i);
+        if (d.getDay() === c.dayOfWeek) add(d, "class");
+      }
     }
     return map;
-  }, [events]);
-
-  const today = new Date();
+  }, [tasks, assignments, exams, timetable, cells]);
 
   const dayDetail = React.useMemo(() => {
     const dayEvents = events.filter((e) => isSameDay(new Date(e.startDate), selected));
@@ -59,8 +112,10 @@ export function CalendarView() {
     const dayAssignments = assignments.filter(
       (a) => a.dueDate && isSameDay(new Date(a.dueDate), selected),
     );
-    return { dayEvents, dayExams, dayAssignments };
-  }, [events, exams, assignments, selected]);
+    const dayTasks = tasks.filter((t) => t.dueDate && isSameDay(new Date(t.dueDate), selected));
+    const dayClasses = timetable.filter((c) => c.dayOfWeek === selected.getDay());
+    return { dayEvents, dayExams, dayAssignments, dayTasks, dayClasses };
+  }, [events, exams, assignments, tasks, timetable, selected]);
 
   const agenda = React.useMemo<AgendaItem[]>(() => {
     const items: AgendaItem[] = [];
@@ -141,10 +196,11 @@ export function CalendarView() {
                   <span key={d}>{d}</span>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-1">
+              {/* S6-G — measured cells: aspect-square, centered, r12, dots row. */}
+              <div className="grid grid-cols-7 gap-1" aria-label="Calendar days">
                 {cells.map(({ date, inMonth }) => {
-                  const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-                  const dayEvents = eventsByDay.get(key) ?? [];
+                  const key = dayKey(date);
+                  const dots = dotsByDay.get(key);
                   const isSelected = isSameDay(date, selected);
                   const isToday = isSameDay(date, today);
                   return (
@@ -153,93 +209,164 @@ export function CalendarView() {
                       type="button"
                       onClick={() => setSelected(date)}
                       aria-pressed={isSelected}
-                      aria-label={formatFullDate(date)}
+                      aria-label={`${formatFullDate(date)}${isToday ? " (Today)" : ""}`}
+                      data-today={isToday || undefined}
                       className={cn(
-                        "flex h-[64px] flex-col items-start rounded-lg border p-1.5 text-left transition-colors",
+                        "relative flex aspect-square flex-col items-center justify-center rounded-xl p-2 transition-all sf-focus",
                         inMonth
-                          ? "border-slate-100 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40"
-                          : "border-transparent text-slate-300 dark:text-slate-600",
-                        isSelected && "ring-2",
+                          ? "hover:bg-slate-100 dark:hover:bg-slate-800"
+                          : "text-slate-300 dark:text-slate-600",
+                        isToday && "bg-sf-primary text-white dark:bg-sf-primary",
                       )}
-                      style={isSelected ? { boxShadow: "inset 0 0 0 2px rgb(var(--sf-primary))" } : undefined}
                     >
-                      <span
-                        className={cn(
-                          "mb-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold",
-                          isToday && "text-white",
-                        )}
-                        style={isToday ? { backgroundColor: "rgb(var(--sf-primary))" } : undefined}
-                      >
-                        {date.getDate()}
-                      </span>
-                      <span className="flex flex-wrap gap-0.5">
-                        {dayEvents.slice(0, 3).map((e) => (
-                          <span key={e.id} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: e.color }} />
-                        ))}
-                      </span>
+                      <span className="text-sm font-medium">{date.getDate()}</span>
+                      <div className="mt-1 flex gap-0.5">
+                        {dots
+                          ? [...dots].slice(0, 3).map((kind) => (
+                              <span
+                                key={kind}
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ backgroundColor: isToday ? "#ffffff" : KIND_COLORS[kind as keyof typeof KIND_COLORS] }}
+                              />
+                            ))
+                          : null}
+                      </div>
                     </button>
                   );
                 })}
               </div>
+              {/* S6-G — the reference's legend (measured): dot + label row. */}
+              <div className="mt-4 flex flex-wrap gap-4 border-t border-slate-100 pt-4 dark:border-slate-800" aria-label="Calendar legend">
+                {(
+                  [
+                    ["task", "Tasks"],
+                    ["assignment", "Assignments"],
+                    ["exam", "Exams"],
+                    ["class", "Classes"],
+                  ] as const
+                ).map(([kind, label]) => (
+                  <div key={kind} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: KIND_COLORS[kind] }} />
+                    {label}
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
 
-          {/* Day detail */}
-          <aside className="sf-card h-fit overflow-hidden">
+          {/* Day detail — S6-G: border-l-4 colored rows per type. */}
+          <aside className="sf-card h-fit overflow-hidden" aria-label="Day detail">
             <header className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-              <h3 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
                 {formatFullDate(selected)}
               </h3>
             </header>
-            <div className="flex flex-col gap-4 p-5">
-              <div>
-                <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  <CalendarDays className="h-3.5 w-3.5" /> Events
-                </h4>
-                {dayDetail.dayEvents.length === 0 ? (
-                  <p className="text-sm text-slate-400">No events</p>
-                ) : (
-                  <ul className="flex flex-col gap-2">
-                    {dayDetail.dayEvents.map((e) => (
-                      <li key={e.id} className="flex items-center gap-2.5 rounded-lg border border-slate-100 px-3 py-2 text-sm dark:border-slate-800">
-                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: e.color }} />
-                        <span className="min-w-0 flex-1 truncate font-medium text-slate-800 dark:text-slate-100">{e.title}</span>
-                        <span className="shrink-0 text-xs text-slate-400">
-                          {new Date(e.startDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                        </span>
-                      </li>
+            <div className="flex flex-col gap-4 p-6">
+              {dayDetail.dayTasks.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase text-slate-500">Tasks</p>
+                  <div className="flex flex-col gap-2">
+                    {dayDetail.dayTasks.map((t: Task) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => navigate("tasks")}
+                        className="rounded-lg border-l-4 border-blue-500 bg-blue-50 p-3 text-left sf-focus dark:border-blue-400 dark:bg-blue-950/30"
+                      >
+                        <p className="font-medium text-slate-800 dark:text-slate-100">{t.title}</p>
+                      </button>
                     ))}
-                  </ul>
-                )}
-              </div>
-              <div>
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Exams</h4>
-                {dayDetail.dayExams.length === 0 ? (
-                  <p className="text-sm text-slate-400">No exams</p>
-                ) : (
-                  <ul className="flex flex-col gap-2">
+                  </div>
+                </div>
+              )}
+              {dayDetail.dayExams.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase text-slate-500">Exams</p>
+                  <div className="flex flex-col gap-2">
                     {dayDetail.dayExams.map((e) => (
-                      <li key={e.id} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: "rgb(var(--sf-primary-soft))" }}>
-                        <span className="font-medium text-slate-800 dark:text-slate-100">{e.title}</span>
-                      </li>
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={() => navigate("exams")}
+                        className="rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-left sf-focus dark:border-red-400 dark:bg-red-950/30"
+                      >
+                        <p className="font-medium text-slate-800 dark:text-slate-100">{e.title}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {new Date(e.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                          {" · "}
+                          {e.duration} min
+                        </p>
+                      </button>
                     ))}
-                  </ul>
-                )}
-              </div>
-              <div>
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Due</h4>
-                {dayDetail.dayAssignments.length === 0 ? (
-                  <p className="text-sm text-slate-400">Nothing due</p>
-                ) : (
-                  <ul className="flex flex-col gap-2">
+                  </div>
+                </div>
+              )}
+              {dayDetail.dayAssignments.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase text-slate-500">Due</p>
+                  <div className="flex flex-col gap-2">
                     {dayDetail.dayAssignments.map((a) => (
-                      <li key={a.id} className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                        {a.title}
-                      </li>
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => navigate("assignments")}
+                        className="rounded-lg border-l-4 border-amber-500 bg-amber-50 p-3 text-left sf-focus dark:border-amber-400 dark:bg-amber-950/30"
+                      >
+                        <p className="font-medium text-slate-800 dark:text-slate-100">{a.title}</p>
+                      </button>
                     ))}
-                  </ul>
-                )}
-              </div>
+                  </div>
+                </div>
+              )}
+              {dayDetail.dayEvents.length > 0 && (
+                <div>
+                  <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
+                    <CalendarDays className="h-3.5 w-3.5" /> Events
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {dayDetail.dayEvents.map((e: AppEvent) => (
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={() => navigate("events")}
+                        className="rounded-lg border-l-4 border-violet-500 bg-violet-50 p-3 text-left sf-focus dark:border-violet-400 dark:bg-violet-950/30"
+                      >
+                        <p className="font-medium text-slate-800 dark:text-slate-100">{e.title}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {new Date(e.startDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {dayDetail.dayClasses.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase text-slate-500">Classes</p>
+                  <div className="flex flex-col gap-2">
+                    {dayDetail.dayClasses.map((c) => (
+                      <div
+                        key={c.id}
+                        className="rounded-lg border-l-4 border-emerald-500 bg-emerald-50 p-3 dark:border-emerald-400 dark:bg-emerald-950/30"
+                      >
+                        <p className="font-medium text-slate-800 dark:text-slate-100">{c.name}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {c.startTime} – {c.endTime}
+                          {c.room ? ` · ${c.room}` : ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {dayDetail.dayTasks.length +
+                dayDetail.dayExams.length +
+                dayDetail.dayAssignments.length +
+                dayDetail.dayEvents.length +
+                dayDetail.dayClasses.length ===
+                0 && (
+                <p className="text-sm text-slate-400">Nothing scheduled for this day.</p>
+              )}
               <Button
                 variant="outline"
                 size="sm"
