@@ -25,7 +25,7 @@ tags:
 
 > **What this is:** the single-source-of-truth reference for working in
 > `nordeim/omni-study`. Every fact below is verified against the codebase
-> (139 tests green at distillation time: 83 Vitest unit + 56 Playwright e2e).
+> (147 tests green at last update: 86 Vitest unit + 61 Playwright e2e).
 > Sections marked with ⚠️ encode non-obvious contracts — violating them has
 > historically produced silent visual or data-path bugs.
 
@@ -156,6 +156,7 @@ value is a parity bug.
 | `--sf-primary-deep` | `109 40 217` (#6d28d9) | Clock time text (reference violet-700) |
 | `--sf-primary-soft` | `243 232 255` | Icon chips, active tint layering |
 | `--sf-primary-softest` | `245 243 255` | Clock chip gradient start (violet-50) |
+| `--sf-primary-softest-adjacent` | `238 242 255` | Clock chip gradient END — the reference's exact indigo-50 (a hue rotation, not a white mix) |
 | `--sf-primary-foreground` | `255 255 255` | Text on primary |
 | `--sf-primary-*-dark` | (per accent) | Dark-mode counterparts |
 
@@ -163,7 +164,7 @@ Seven accents × 4 core stops each: violet / blue / green / orange / pink /
 red / teal — full table in `src/lib/theme.ts` `ACCENT_TOKENS` (v3-pinned
 hexes; adding an accent = one object literal + one `ACCENTS` entry).
 
-**⚠️ The six documented Tailwind v3→v4 traps (all live here):**
+**⚠️ The eight documented Tailwind v3→v4 traps (all live here):**
 1. `@theme inline` vars must be **full `hsl()` colors** — bare triplets
    silently resolve to transparent.
 2. The v3-era palette (slate 50–950, violet 100–900) is **pinned** in
@@ -181,6 +182,13 @@ hexes; adding an accent = one object literal + one `ACCENTS` entry).
    previously inflated every corner ~33% (cards 20px vs reference 16px,
    buttons 8px vs 6px) — fixed in session 2, pinned by the e2e
    "corner radii" spec.
+7. **Opacity utilities serialize as oklab** in Chromium computed styles
+   (`bg-black/20` → `oklab(0 0 0 / 0.2)`, NOT `rgba(0,0,0,0.2)` — same
+   rendered color). E2E pins must accept both serializations.
+8. **`pt-*` after `p-*` REPLACES the shorthand's top** — `p-4 pt-16` is
+   64px of top padding, not 80. The mobile offset models the reference's
+   measured y=80 as a single `pt-20`; always assert the OBSERVABLE
+   position (heading y-coordinate), never the internal padding split.
 
 **Typography:** system sans stack (ui-sans-serif → Apple Color Emoji …);
 page greeting `text-3xl font-bold`; section titles `text-lg font-semibold`
@@ -215,7 +223,7 @@ redirects unauthenticated users there.
 **Layers (trace any import):**
 ```
 app/page.tsx (client shell)
-  └─ components/layout/{sidebar,mobile-chrome,user-avatar}.tsx   chrome
+  └─ components/layout/{sidebar,nav-items,mobile-chrome,user-avatar}.tsx  chrome
   └─ components/views/*-view.tsx (20) + shared.tsx               screens
        └─ components/ui/* (shadcn-style on Radix)                primitives
             └─ lib/{store,data,theme,router,date}.ts             client state
@@ -230,12 +238,20 @@ server shells. Server-only imports (`z-ai-web-dev-dev-sdk`, `node:crypto`,
 `node:fs`) never appear in `components/` or client-reachable `lib/` modules.
 
 **Chrome anatomy (measured):** sidebar `fixed left-0 w-[260px] hidden
-lg:flex` + `.glass`; `main` offsets `lg:ml-[260px] pt-16 lg:pt-0 p-4 lg:p-8`;
-below `lg` an `h-16` app bar + slide-in drawer (brand header, close button,
-all 20 links, Esc/backdrop close, footer with UserAvatar). Active nav item =
-gradient tint `rgb(var(--sf-primary)/0.1) → rgb(var(--sf-primary-strong)/0.1)`
-+ violet-600 text + trailing dot. Sidebar collapse toggles `w-[76px]` with a
-`ChevronLeft`/`ChevronRight` glyph (reference-measured).
+lg:flex` + `.glass`; `main` offsets `lg:ml-[260px] p-4 pt-20 lg:p-8 lg:pt-8`;
+below `lg` a FIXED `h-16` `.glass` app bar (hamburger + 32px gradient brand
+chip + "StudyFlow" + live clock "03:43 AM" on the right — never the view
+title) — `pt-20` models the reference's measured 64px bar + 16px breathing
+room (first heading y=80 on BOTH apps). The slide-in drawer is a `w-72`
+(288px) white panel over a `bg-black/20 backdrop-blur-sm` backdrop with
+`shadow-2xl`, a `p-6` brand header (40px gradient chip), nav items from the
+SHARED `nav-items.tsx` (`NavItemLink`: icon + label + trailing dot,
+px-4 py-3 rounded-xl, active gradient tint), Esc/backdrop close, and NO
+footer (reference-exact). Active nav item = gradient tint
+`rgb(var(--sf-primary)/0.1) → rgb(var(--sf-primary-strong)/0.1)`
++ violet-600 text + trailing dot — ONE markup source for sidebar AND drawer.
+Sidebar collapse toggles `w-[76px]` with a `ChevronLeft`/`ChevronRight`
+glyph (reference-measured).
 
 **The footer avatar (`UserAvatar`):** 36px gradient circle
 (`primary → primary-strong`), white **initial** (first latin letter of
@@ -347,7 +363,11 @@ notes, decks, grades; `avatarEmoji: ""` (reference default state).
 | AP-9 | LOW | Later e2e specs see teal accent | theme spec mutates the shared user record | violet restore at spec end (never break that cleanup) |
 | AP-10 | LOW | Detached-element computed styles read `""` mid-e2e | locator resolved against the SSR splash, React removed it | wait for hydration before `evaluate` (canvas spec) |
 | AP-11 | LOW | Dev server dies silently (~4 GB containers) | OOM killer targets `next-server` under browser load | close extra browser sessions before long runs |
-| AP-12 | LOW | Emoji length test off-by-UTF-16 | Zod v4 `.max()` counts code points | test updated with the semantics documented |
+| AP-12 | HIGH | Mobile content 64px too low (144px vs reference 80px) | app bar was STICKY (in flow) + main `pt-20` → offsets STACKED | fixed glass bar + `pt-20`; e2e "content starts at 80px" pin (session-3 S3-E) |
+| AP-13 | MEDIUM | Clock text/chip stay violet after switching accents | `applyToDocument` wrote 6 of 9 tokens; deep/softest kept `:root` violet defaults | complete `accentCssVars` set; unit pin (session-3 S3-J) |
+| AP-14 | MEDIUM | Sidebar/drawer nav items drift apart | drawer re-implemented item markup instead of sharing | ONE source: `nav-items.tsx` `NavItemLink` (session-3 S3-F) |
+| AP-15 | LOW | e2e backdrop pin fails on identical color | `bg-black/20` computes as `oklab(0 0 0 / 0.2)` in Chromium | accept both serializations (trap 7) |
+| AP-16 | LOW | Emoji length test off-by-UTF-16 | Zod v4 `.max()` counts code points | test updated with the semantics documented |
 
 ---
 
@@ -396,7 +416,7 @@ tail -40 dev.log                            # request traces + prisma queries
 ```bash
 bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
-Current green state: lint ✓ · tsc ✓ · 83 unit ✓ · build ✓ · 56 e2e ✓.
+Current green state: lint ✓ · tsc ✓ · 86 unit ✓ · build ✓ · 61 e2e ✓.
 
 **Pre-deployment:** set a real `AUTH_SECRET` (`openssl rand -hex 32`); use an
 ABSOLUTE `DATABASE_URL` (see `docs/DEPLOYMENT.md` §4); never ship `.env`,
@@ -407,8 +427,9 @@ demo login reaches a seeded dashboard; a PascalCase deep link (`/Tasks`)
 renders with the sidebar active state.
 
 **Visual verification:** computed-style pins green in e2e (shadow, gradient,
-radii, avatar); spot-check the sidebar geometry (260px / glass / 260px
-offset); mobile drawer: open → navigate → auto-close.
+radii, avatar, stat icons, clock chip, mobile app bar + drawer); spot-check
+the sidebar geometry (260px / glass / 260px offset); mobile: content starts
+at y=80, drawer open → navigate → auto-close.
 
 **Security:** no user enumeration on auth errors; rate limiter active;
 uploads capped ≤ 2 MiB; `z-ai-web-dev-sdk` absent from client bundles.
@@ -522,8 +543,13 @@ await page.getByRole("button", { name: "Teal accent" }).click();
 **Accent-aware inline gradient (sRGB-exact, no oklab):**
 ```tsx
 style={{ backgroundImage:
-  "linear-gradient(to bottom right, rgb(var(--sf-primary-softest)), color-mix(in srgb, rgb(var(--sf-primary-strong)) 7%, white))" }}
+  "linear-gradient(to bottom right, rgb(var(--sf-primary-softest)), rgb(var(--sf-primary-softest-adjacent)))" }}
 ```
+
+**Greeting buckets (reference fake-clock-probed):** morning 0–11,
+afternoon 12–16, evening 17–23 — `greetingForHour` has NO "Good night"
+branch. **Clock format:** `formatTime12h` renders a 2-digit hour
+("03:43 AM") — used by the sidebar clock AND the mobile app bar.
 
 **Initial-fallback avatar:** `UserAvatar` renders
 `avatar || initialFor(userName, email)` — empty string means "reference
@@ -570,7 +596,7 @@ Tailwind v4 defaults (no custom breakpoints — verified):
 
 | Region | Behavior |
 |---|---|
-| `< lg` (mobile) | `h-16` sticky app bar (hamburger + brand + view title), slide-in drawer (`z-50`), `pt-16` main padding; stat grid `grid-cols-2` |
+| `< lg` (mobile) | FIXED `h-16` glass app bar (hamburger + brand + live clock), slide-in drawer (`z-50`, 288px), `pt-20` main padding (content y=80); stat grid `grid-cols-2` |
 | `≥ lg` (desktop) | fixed 260px glass sidebar, `lg:ml-[260px]` main, `lg:p-8`, stat grid `lg:grid-cols-4`, content grids `lg:grid-cols-3` (Tasks 2/3 + Exams 1/3) |
 
 The ONLY structural breakpoint is `lg` — the reference's own cut (measured:
@@ -628,7 +654,7 @@ type ViewId = "dashboard" | "myday" | "tasks" | "calendar" | "events"
 type Accent = "violet" | "blue" | "green" | "orange" | "pink" | "red" | "teal";
 type ThemeMode = "light" | "dark" | "system";         // src/lib/theme.ts
 interface AccentToken { primary, primaryFg, soft, softDark, strong,
-  strongDark, deep, softest: string }                 // RGB triplets
+  strongDark, deep, softest, softestAdjacent: string }  // RGB triplets
 interface EntityDelegate { model, createSchema, updateSchema, orderBy, ... }
 ```
 

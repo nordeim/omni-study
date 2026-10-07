@@ -9,9 +9,10 @@ High-signal instructions for coding agents working in this repo. Everything here
 | `bun install` | Install deps (Bun ≥ 1.3) |
 | `bun run dev` | Dev server on :3000 (Turbopack), logs tee'd to `dev.log` |
 | `bun run lint` / `bun run typecheck` | ESLint / `tsc --noEmit` — both must be clean |
-| `bun run test` | Vitest unit layer (`*.test.ts` only — never picks up e2e specs) |
+| `bun run test` | Vitest unit layer (86 tests; `*.test.ts` only — never picks up e2e specs) |
 | `bun run build` | Production build → `.next/standalone` (**required before e2e**) |
-| `bun run test:e2e` | Playwright vs the standalone build on :3100 with `db/e2e.db` |
+| `bun run test:e2e` | Playwright vs the standalone build on :3100 with `db/e2e.db` (61 specs) |
+| `node scripts/capture-studyflow.mjs` | Refresh all 24 `docs/screenshots/` captures from the dev server |
 | `bun run db:push` / `db:seed` | Create schema + demo data at `db/custom.db` |
 | `bunx vitest run tests/calculator.test.ts` | One unit file |
 | `bunx playwright test tests/e2e/tasks.spec.ts --project=chromium` | One e2e file (needs a current build) |
@@ -33,14 +34,15 @@ The e2e suite isolates its own `db/e2e.db` via the same shell-env mechanism (see
 ## Architecture facts you cannot guess from filenames
 
 - **One page, twenty views.** The reference app is an SPA with PascalCase routes (`/Dashboard` … `/Settings`). `src/app/page.tsx` is the whole app: auth gate → shell → view switcher; `next.config.ts` rewrites the 20 paths onto `/`; `src/lib/router.ts` is the single view↔path map (unit-tested). Do not create real route folders for views.
-- **Sidebar is `fixed` + `hidden lg:flex`** (`w-[260px]`, `.glass`); `main` offsets with `lg:ml-[260px] pt-16 lg:pt-0`. Below `lg` everything goes through the mobile drawer (`src/components/layout/mobile-chrome.tsx`).
-- **State:** three Zustand stores — `useAppStore` (view/sidebar/drawer), `useThemeStore` (mode/accent/avatar, applied to `<html>` as RGB-triplet CSS vars), `useDataStore` (per-entity client cache) + a `mutations` object that refreshes touched collections. No React Context, no react-query.
+- **Sidebar is `fixed` + `hidden lg:flex`** (`w-[260px]`, `.glass`); `main` offsets with `lg:ml-[260px] pt-20 lg:pt-8` — the mobile app bar is ALSO `fixed` + `.glass` (64px, brand + live clock), so `pt-20` models the reference's measured 64px bar + 16px breathing room (first heading at y=80 on BOTH apps). Below `lg` everything goes through the mobile drawer (`src/components/layout/mobile-chrome.tsx`).
+- **Nav items have ONE source:** `src/components/layout/nav-items.tsx` (`NAV_ICONS` + `NavItemLink`) is consumed by BOTH the desktop sidebar and the mobile drawer — never re-implement the item markup. The reference drawer has NO footer.
+- **State:** three Zustand stores — `useAppStore` (view/sidebar/drawer), `useThemeStore` (mode/accent/avatar, applied to `<html>` as RGB-triplet CSS vars via `accentCssVars` — the COMPLETE set, or non-violet accents leave stale violet tokens), `useDataStore` (per-entity client cache) + a `mutations` object that refreshes touched collections. No React Context, no react-query.
 - **API pattern:** route files are 3-line shells over `makeCollectionRoutes`/`makeItemRoutes` + an entity delegate in `src/lib/server/entities.ts`. Every query is scoped `where: { userId }` — ownership by construction. Every payload passes its Zod schema in `src/lib/validation.ts` first.
 - **Auth:** scrypt hashes + HMAC-signed stateless cookie sessions (`src/lib/auth.ts`), login rate-limited 10/IP/15 min (in-memory — single instance only). No auth framework.
 - **AI:** `z-ai-web-dev-sdk` is imported **only** inside `src/app/api/{ai,math}/route.ts` files (server-side). Never import it from client code.
 - **Calculator:** `src/lib/calculator.ts` implements a tokenizer + shunting-yard evaluator (incl. a `u-` unary operator). There is no `eval` anywhere.
 
-## Tailwind v4 traps (all live in this repo — see docs/Tailwind-V4-Validation-Report.md + docs/remediation-plan.md)
+## Tailwind v4 traps (all live in this repo — see docs/Tailwind-V4-Validation-Report.md + docs/remediation-plan*.md)
 
 1. Theme vars under `@theme inline` must be **full `hsl()` colors** — bare triplets silently resolve to transparent.
 2. The v3-era palette is **pinned** in `@theme` (v4's oklch defaults drift 1–3 units/channel).
@@ -48,6 +50,8 @@ The e2e suite isolates its own `db/e2e.db` via the same shell-env mechanism (see
 4. **Never** put `mt-*`/`mb-*` children inside `space-y/x-*` containers — v4's `:where()` rewrite flips the specificity outcome. The codebase convention is `flex gap-*` only.
 5. Gradients that need exact sRGB parity use inline-style `linear-gradient(...)` (v4 interpolates utility gradients in oklab). E.g. the `.sf-canvas` background and stat-card chips.
 6. The **radius scale did NOT shift** in v4 (md…3xl are v3-identical; only `rounded-sm` changed meaning — v3's 2px value is now `rounded-xs`). `globals.css` pins `--radius-sm: 0.125rem` for the v3 semantics and NOTHING else — a previous one-notch-up pin block inflated every corner (~33%) and silently broke parity (cards 20px vs the reference's 16px). Pinned by the e2e "corner radii" spec.
+7. **v4 opacity utilities serialize as oklab/oklch in computed styles** — `bg-black/20` computes as `oklab(0 0 0 / 0.2)` in Chromium, not `rgba(0,0,0,0.2)`. Same rendered color; e2e assertions must accept both serializations (see the drawer-backdrop pin).
+8. **`p-4 pt-16` is NOT `p-4 + 16px more top`** — the later `pt-*` utility REPLACES the shorthand's top padding. The mobile offset models the reference's measured y=80 as a single `pt-20`; assert OBSERVABLE positions (heading y-coordinate), not internal padding distribution.
 
 Hover-parity probing must run in Playwright, not a touch-emulating browser — v4 wraps `hover:` in `@media (hover: hover)` and produces false failures on touch emulation.
 
@@ -60,6 +64,8 @@ Hover-parity probing must run in Playwright, not a touch-emulating browser — v
 - The theme spec mutates the shared user record — it **restores the violet accent** at the end; don't break that cleanup or every later spec sees teal.
 - Radix tabs use `data-state="active"` (not `"selected"`); hidden TabsContent panes stay mounted — scope role lookups to `getByRole("tabpanel", { name })`.
 - `next dev` OOMs in ~4 GB containers when several headless browsers run — close extra sessions before long e2e/dev sessions.
+- Greeting buckets are reference-probed: morning 0–11, afternoon 12–16, evening 17–23 — **"Good night" never renders** (faked-clock probe of the live reference; pinned in `tests/router.test.ts`).
+- `formatTime12h` renders a 2-digit hour ("03:43 AM") — the reference clock format (sidebar + mobile app bar).
 
 ## Conventions
 

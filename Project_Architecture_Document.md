@@ -112,7 +112,7 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 **ADR-007: Two-layer testing with an isolated e2e database**
 
 - **Context:** The value concentrated in this codebase is (a) pure domain seams (calculator engine, date math, auth primitives, path resolution, schemas) and (b) cross-cutting UI contracts (the SPA chrome, parity pins, golden-path CRUD).
-- **Decision:** Vitest for unit seams (`tests/*.test.ts`, 83 tests). Playwright for e2e (`tests/e2e/*.spec.ts`, 56 specs) against the production standalone build on `:3100` with its own `db/e2e.db` (pushed + seeded by `global-setup.ts` using the ADR-002 shell-env mechanism), one shared authenticated storageState (rate-limiter budget), unique row titles per run, accent restoration in the theme spec, a hydration gate before post-`goto` clicks, and computed-style parity pins (shadow, canvas gradient, sidebar geometry, corner radii, footer avatar default).
+- **Decision:** Vitest for unit seams (`tests/*.test.ts`, 86 tests). Playwright for e2e (`tests/e2e/*.spec.ts`, 61 specs) against the production standalone build on `:3100` with its own `db/e2e.db` (pushed + seeded by `global-setup.ts` using the ADR-002 shell-env mechanism), one shared authenticated storageState (rate-limiter budget), unique row titles per run, accent restoration in the theme spec, a hydration gate before post-`goto` clicks, and computed-style parity pins (shadow, canvas gradient, sidebar geometry, corner radii, footer avatar default, stat icon size, clock chip gradient, mobile app bar glass/brand/clock, drawer geometry/backdrop/icon items, content offset y=80, CTA width).
 - **Rationale:** Fast feedback where logic lives; end-to-end confidence where integration lives; zero collision between dev and e2e data.
 - **Consequences:** E2E requires a fresh `bun run build` after component changes (stale-build false failures — documented); suite runtime ~1 min single-worker.
 - **Alternatives Rejected:** Running e2e against `next dev` (slower, different engine than production); per-test logins (trips the rate limiter); a shared db (cross-run pollution).
@@ -189,7 +189,8 @@ omni-study/
 │   │       └── ai/{chat,messages}/route.ts, math/solve/route.ts    ← z-ai-web-dev-sdk (server-only)
 │   ├── components/
 │   │   ├── layout/sidebar.tsx           ← fixed w-[260px] glass, hidden lg:flex, active gradient + dot
-│   │   ├── layout/mobile-chrome.tsx     ← h-16 app bar + slide-in drawer (20 links, Esc/backdrop close)
+│   │   ├── layout/nav-items.tsx         ← NAV_ICONS + NavItemLink — the ONE nav-item markup source
+│   │   ├── layout/mobile-chrome.tsx     ← fixed h-16 glass app bar (brand + live clock) + 288px drawer
 │   │   ├── ui/                          ← button, card, input, dialog, select, tabs, badge,
 │   │   │                                  primitives (checkbox/switch/progress/separator/skeleton),
 │   │   │                                  dropdown-menu, toast (zustand toaster)
@@ -424,9 +425,9 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 
 | Category | Files | Tests | Location | Framework |
 |----------|-------|-------|----------|-----------|
-| Unit — pure seams | 7 | 83 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
+| Unit — pure seams | 7 | 86 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
 | E2E — auth | 1 | 5 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
-| E2E — mobile navigation | 1 | 7 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
+| E2E — mobile navigation | 1 | 11 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
 | E2E — desktop nav + views + parity pins | 1 | 31 | `tests/e2e/navigation.spec.ts` | Playwright |
 | E2E — task CRUD golden path | 1 | 6 | `tests/e2e/tasks.spec.ts` | Playwright |
 | E2E — calculator + theme | 1 | 8 | `tests/e2e/calculator.spec.ts` | Playwright |
@@ -446,9 +447,9 @@ No numeric coverage gate is configured; the standard is "every pure seam has a t
 
 - [ ] `bun run lint` clean
 - [ ] `bun run typecheck` clean
-- [ ] `bun run test` green (83+)
+- [ ] `bun run test` green (86+)
 - [ ] `bun run build` succeeds
-- [ ] `bun run test:e2e` green (54+; rebuild first if components changed)
+- [ ] `bun run test:e2e` green (60+; rebuild first if components changed)
 - [ ] No secrets / db files staged (`git status`)
 - [ ] Docs touched if behavior/setup changed
 
@@ -519,6 +520,9 @@ Enforced: ESLint flat config + `tsc --noEmit` (both gate). Convention (review-en
 | INFO | `space-*` ban is convention, not lint rule | A new contributor could reintroduce trap 4 | Accepted (e2e parity pins would not catch spacing regressions) |
 | RESOLVED | Session-2 remediation: radius scale inflated one notch by a mistaken pin block (cards 20px vs reference 16px, buttons 8px vs 6px) | Every corner ~33% larger than the reference | **Fixed** — `--radius-sm: 0.125rem` is the only radius pin; pinned by the e2e "corner radii" spec (see `docs/remediation-plan.md` R1) |
 | RESOLVED | Session-2 remediation: dashboard stat icons (Pending→ListChecks, Focus→Sparkles), footer avatar default (emoji vs initial), collapse glyph, canvas third-stop drift, clock chip one-notch-too-saturated | Minor visual parity drifts vs the live reference | **Fixed** — all measured against the reference DOM and re-verified (VLM verdict EXCELLENT); see `docs/remediation-plan.md` |
+| RESOLVED | Session-3 remediation: mobile app bar was sticky + main pt-20 → 64px dead gap (content at 144px vs reference 80px); header showed the view title instead of brand + live clock | Every mobile view sat 64px too low; header content mismatch | **Fixed** — fixed glass app bar + main pt-20 (see `docs/remediation-plan-session3.md` S3-E) |
+| RESOLVED | Session-3 remediation: drawer divergences (290px panel, 45% backdrop, text-only nav links, extra footer), stat icons 20px, clock "3:43 AM" + indigo-50 stop drift, "Good night" greeting bucket, CTA full-width at mobile, glass blur 16px | Mobile visual parity + token drifts | **Fixed** — drawer mirrors the reference (shared `NavItemLink`), tokens pinned exactly; see `docs/remediation-plan-session3.md` |
+| RESOLVED | Session-3 remediation: accent switching wrote only 6 of 9 theme tokens — `deep`/`softest` stayed violet under every non-violet accent | Clock text/chip stayed violet after switching accents | **Fixed** — `applyToDocument` writes the complete `accentCssVars` set (S3-J; unit-pinned) |
 
 ---
 
@@ -535,7 +539,9 @@ Enforced: ESLint flat config + `tsc --noEmit` (both gate). Convention (review-en
 | `src/lib/calculator.ts` | ~250 | Shunting-yard engine, GPA, unit converter |
 | `src/lib/auth.ts` | ~150 | scrypt, HMAC sessions, rate limiter |
 | `src/components/layout/user-avatar.tsx` | ~60 | Footer avatar: gradient circle, initial fallback (R3) |
-| `src/components/layout/sidebar.tsx` | ~230 | Fixed glass sidebar (measured parity, clock chip tokens) |
+| `src/components/layout/sidebar.tsx` | ~130 | Fixed glass sidebar (measured parity, clock chip tokens) |
+| `src/components/layout/nav-items.tsx` | ~115 | `NAV_ICONS` + `NavItemLink` — the single nav-item source (sidebar + drawer) |
+| `src/components/layout/mobile-chrome.tsx` | ~145 | Fixed glass app bar (brand + live clock) + the reference-exact drawer |
 | `src/components/views/dashboard-view.tsx` | ~250 | The parity-pinned dashboard layout |
 | `prisma/schema.prisma` | ~330 | 21 models + the DB contract header |
 | `prisma/seed.ts` | ~230 | Idempotent demo data |

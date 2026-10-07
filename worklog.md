@@ -171,3 +171,27 @@ Work Log:
 
 Stage Summary:
 - Push (this commit) includes: 6 parity fixes + clock polish + e2e hardening + remediation plan + SKILL.md + refreshed screenshots + aligned docs. Visual parity now measured-exact on all pinned tokens; clone remains the functional superset.
+
+---
+Task ID: S3 (session 3)
+Agent: Super Z (main agent)
+Task: Post-session-2 re-audit (mobile chrome + token parity), remediation, docs, push.
+
+Work Log:
+- git pull → merged remote docs/session_2.md (20de8f0); reviewed AGENTS/CLAUDE/README/PAD/SKILL + remediation-plan + worklog; validated against the codebase (20 views, 21 models, 22 API groups, .env/.env.example contract).
+- Baseline gates green: lint ✓ tsc ✓ 83 unit ✓ dev healthy.
+- Dual-app audit (agent-browser, ref authed as sepnetflix2023@outlook.com; desktop 1280 + mobile 390):
+  - Re-verified all session-2 fixes still GREEN (radius/shadow/canvas/icons/avatar/clock colors/sidebar geometry/stat chips/stat grid).
+  - Fake-clock probe mapped the reference greeting across ALL 24 hours: 0-11 morning, 12-16 afternoon, 17-23 evening — "Good night" NEVER appears; clone said "Good night" 0-4h (S3-D).
+  - Reference accent picker verified BROKEN (Blue + Save + reload → colors stay violet) — clone's working accent system is the superset; violet values are the parity baseline.
+  - 10 gaps found (S3-A..S3-J): stat icons 20px vs 24px; clock "3:43 AM" vs "03:43 AM"; clock chip 2nd stop drift (color-mix ≠ indigo-50 rgb(238,242,255)); greeting map; mobile app bar sticky + pt-20 → content at 144px vs ref 80px + header showed view-title instead of brand + live clock + not glass; drawer divergences (290px vs 288, 45% vs 20%+blur backdrop, border-r/shadow-xl vs shadow-2xl, px-5 py-4 + 36px chip vs p-6 + 40px, text-only nav links vs icon+label+active dot, extra footer vs none); Start My Day full-width at mobile (358 vs 155px); .glass blur 16 vs 20px + missing white hairline; sidebar chip stroke 1.75 vs 2; applyToDocument wrote 6/9 tokens → non-violet accents left stale violet deep/softest (live-reproduced).
+- Remediation plan saved: docs/remediation-plan-session3.md (evidence, fixes, non-gaps incl. oklab serialization + broken reference picker).
+- TDD execution: 5 unit expectations updated first (RED observed) → fixes → 86 unit GREEN. e2e pins added (fixed glass app bar + brand + clock, content y=80, drawer 288px/backdrop/icon items/no footer, stat icon 24px, clock chip exact stops, CTA width) → 61 e2e GREEN after one oklab-serialization assertion fix.
+- Fixes: shared.tsx stat icon h-6; date.ts 2-digit hour; theme.ts + globals.css + sidebar.tsx softestAdjacent token (exact indigo-50); router.ts greeting map; mobile-chrome.tsx fully reworked (fixed glass header + HeaderClock, reference-exact drawer, footer removed) + new shared nav-items.tsx consumed by sidebar AND drawer; page.tsx pt-20 with fixed bar (content y=80 measured on both apps); dashboard-view.tsx CTA self-start; globals.css .glass blur(20px) + white/50 hairline; sidebar chip stroke 2; store.ts applyToDocument writes the complete accentCssVars set.
+- Discovery: p-4 pt-16 REPLACES p-4's top (landed 64px, not 80) — the reference models 64pt + inner p-4; the clone lands the same y=80 via a single pt-20; e2e pins the OBSERVABLE y, not the padding split.
+- Screenshots: all 24 refreshed via new scripts/capture-studyflow.mjs; VLM verified the mobile dashboard (app bar + clock + spacing ✓) and drawer (backdrop/panel/nav items/no footer ✓).
+- Docs aligned: README (counts, design tokens, capture script), AGENTS.md (architecture facts, traps 7-8, quirks), CLAUDE.md (pyramid, anti-patterns), PAD (ADR-007, tree, test distribution, known-issues rows), SKILL.md (counts, chrome anatomy, traps 7-8, AP-12..16, token table, AccentToken).
+- Final gates: lint ✓ tsc ✓ 86 unit ✓ build ✓ 61 e2e ✓ (147 total).
+
+Stage Summary:
+- Push (this commit) includes: 10 measured parity/functional fixes + shared nav-item source + session-3 remediation plan + refreshed 24 screenshots + aligned docs + capture script. Mobile chrome now mirrors the reference exactly (fixed glass bar w/ live clock, 288px drawer w/ icon nav items, content at y=80); desktop parity re-verified; accent switching fully token-correct.
