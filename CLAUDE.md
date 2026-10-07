@@ -46,10 +46,11 @@ Key decisions that shape everything else: **Next.js 16 App Router as a one-page 
 - No `tailwind.config.js`. All tokens live in `src/app/globals.css` under `@theme inline`.
 - Layout with `flex gap-*` exclusively — margin utilities inside `space-y/x-*` containers are forbidden (v4 trap 4).
 - Accent colors via `rgb(var(--sf-*))` inline styles or the generated `*-sf-primary-*` utilities; the v3-pinned palette and `--shadow-sm` pin must not be removed (traps 2 & 5, pinned by e2e specs).
-- The radius scale is v3-identical from `md` up — do NOT re-pin it upward (trap 6); only `--radius-sm: 0.125rem` is pinned for v3 semantics. Opacity utilities serialize as oklab/lab in computed styles (trap 7) — e2e pins accept both serializations. `pt-*` after `p-*` REPLACES the shorthand's side (trap 8) — assert observable positions, not padding internals. The BLUR scale shifted one notch (trap 9): v3's `backdrop-blur-sm` (4px) is v4's `backdrop-blur-xs` — use `backdrop-blur-xs` where the reference measures 4px (drawer backdrop, login card).
+- The radius scale is v3-identical from `md` up — do NOT re-pin it upward (trap 6); only `--radius-sm: 0.125rem` is pinned for v3 semantics. Opacity utilities serialize as oklab/lab in computed styles (trap 7) — e2e pins accept both serializations. `pt-*` after `p-*` REPLACES the shorthand's side (trap 8) — assert observable positions, not padding internals. The BLUR scale shifted one notch (trap 9): v3's `backdrop-blur-sm` (4px) is v4's `backdrop-blur-xs` — use `backdrop-blur-xs` where the reference measures 4px (drawer backdrop, login card). Colors serialize as their LEGACY forms (trap 10): modern `rgb(0 0 0 / 0.1)` syntax reads back as `rgba(...)`, and unpinned palette classes read back as `lab(...)` — pin every asserted color and write expectations in the serialized form.
+- Primary CTAs use the Button `gradient` variant (`.sf-gradient` + `.sf-gradient-shadow` in globals.css) — sRGB-exact stops through the accent tokens; empty-state CTAs add `.sf-gradient-shadow-lg`. Never render solid-violet primary buttons.
 
 **State (Zustand)**
-- `useAppStore` (view/sidebar/drawer), `useThemeStore` (mode/accent/avatar), `useDataStore` + `mutations` (entity cache; every mutation refreshes the touched collections). No React Context for app state, no new state libraries. Theme vars go to `<html>` through `accentCssVars` — the COMPLETE 14-var token set (dropping tokens silently leaves stale violet values under other accents; the S4-G gradient/avatar/empty tokens are part of the set).
+- `useAppStore` (view/sidebar/drawer), `useThemeStore` (mode/accent/avatar), `useDataStore` + `mutations` (entity cache; every mutation refreshes the touched collections). No React Context for app state, no new state libraries. Theme vars go to `<html>` through `accentCssVars` — the COMPLETE 15-var token set (dropping tokens silently leaves stale violet values under other accents; the S4-G gradient/avatar/empty tokens and the S5 gradient hover stop are part of the set).
 
 **Prisma / SQLite**
 - Schema edits: update `prisma/schema.prisma`, then `bun run db:push`. Seeds stay idempotent (`bun run db:seed` is safe to re-run).
@@ -83,8 +84,8 @@ bun run dev                           # http://localhost:3000 (demo@studyflow.ap
 
 ### Test Pyramid
 
-- **Unit (Vitest, 87 tests)** — pure seams: router mapping (incl. the reference-probed greeting buckets), date math (2-digit-hour clock format), calculator engine (incl. unary ops), auth primitives (scrypt/HMAC/rate-limit), Zod schemas, db-path resolution (the full anchor contract), theme tokens (measured values + complete 14-var accent set incl. the S4-G gradient stops).
-- **E2E (Playwright, 72 specs)** — auth flows (incl. the login card's measured chrome), mobile chrome (fixed glass app bar + brand + clock, drawer geometry/backdrop blur(4px)/icon items/no footer, content offset y=80), desktop sidebar active states, all 20 views render, task CRUD golden path, calculator + theme switching; computed-style parity pins (v3 `shadow-sm`, canvas gradient, sidebar geometry, corner radii, footer avatar default + gradient stops, stat icon size + text metrics, clock chip gradient, CTA width + gradient, view-title h1/icon/subtitle model, empty-state design, "My Lists" label).
+- **Unit (Vitest, 93 tests)** — pure seams: router mapping (incl. the reference-probed greeting buckets), date math (2-digit-hour clock format + ISO calendar week), calculator engine (incl. unary ops), auth primitives (scrypt/HMAC/rate-limit), Zod schemas (incl. Event location/repeat/reminders + Timetable weekType), db-path resolution (the full anchor contract), theme tokens (measured values + the complete 15-var accent set incl. the S4-G gradient stops and the S5 hover stop + emerald/amber migrations).
+- **E2E (Playwright, 91 specs)** — auth flows (incl. the login card's measured chrome), mobile chrome (fixed glass app bar + brand + clock, drawer geometry/backdrop blur(4px)/icon items/no footer, content offset y=80), desktop sidebar active states, all 20 views render, task CRUD golden path, calculator + theme switching; computed-style parity pins (v3 `shadow-sm`, canvas gradient, sidebar geometry, corner radii, footer avatar default + gradient stops, stat icon size + text metrics, clock chip gradient, CTA width + gradient, view-title h1/icon/subtitle model, empty-state design, "My Lists" label) and the session-5 interactive-chrome pins (gradient CTAs, Events dark panel + dialog field set, dialog geometry, gray outline palette, FocusTimer layout, Settings appearance cards, Calendar segmented switch, Calculator keypad/display, MyDay quick-add row, Timetable week bar + All Weeks options, Files chrome, Notes left pane, GradeTracker gradient card, AI quick-action cards) in `tests/e2e/parity-session5.spec.ts`.
 
 ### Test Commands
 
@@ -92,10 +93,10 @@ bun run dev                           # http://localhost:3000 (demo@studyflow.ap
 bun run test                                   # all unit
 bunx vitest run tests/date.test.ts             # one file
 bun run build && bun run test:e2e              # e2e (build first — always)
-bunx playwright test tests/e2e/mobile-navigation.spec.ts --project=chromium
+bunx playwright test tests/e2e/parity-session5.spec.ts --project=chromium
 ```
 
-Rules: unique row titles in e2e (the db persists across runs); exactly one shared login via storageState (rate limiter!); the theme spec restores the default accent; Radix tabs assert `aria-selected` (not `data-state="selected"`); gate clicks on hydration when a spec clicks right after `goto` (see `hydrated()` in `calculator.spec.ts`).
+Rules: unique row titles in e2e (the db persists across runs); exactly one shared login via storageState (rate limiter!); the theme spec restores the default accent; Radix tabs assert `aria-selected` (not `data-state="selected"`); gate clicks on hydration when a spec clicks right after `goto` (see `hydrated()` in `calculator.spec.ts`); `getByRole({ name })` is substring + case-insensitive — use `exact: true` when names collide.
 
 ## Code Quality Standards
 
@@ -121,7 +122,7 @@ Rules: unique row titles in e2e (the db persists across runs); exactly one share
 ## Project-Specific Standards
 
 ### Architecture
-One-page SPA shell + rewrites; fixed glass sidebar ≥ lg; below lg a fixed glass app bar (64px, brand + live clock) + mobile drawer (288px, nav items from the shared `nav-items.tsx`, no footer); view router + theme + data stores; CRUD delegate factory; stateless HMAC sessions. Nav item markup has ONE source (`NavItemLink`) shared by sidebar and drawer; view page headers have ONE source (`ViewHeader` — h1 + optional 24px icon + reference subtitle) consumed by all 20 views.
+One-page SPA shell + rewrites; fixed glass sidebar ≥ lg; below lg a fixed glass app bar (64px, brand + live clock) + mobile drawer (288px, nav items from the shared `nav-items.tsx`, no footer); view router + theme + data stores; CRUD delegate factory; stateless HMAC sessions. Nav item markup has ONE source (`NavItemLink`) shared by sidebar and drawer; view page headers have ONE source (`ViewHeader` — h1 + optional 24px icon + reference subtitle) consumed by all 20 views. Primary CTAs are gradient buttons (Button `gradient` variant); the Events view is a dark terminal panel (slate-900, both themes); dialogs are shadcn-v3 stock (max-w-md, rounded-lg, h-9 transparent inputs on the GRAY neutral ramp).
 
 ### API Design
 REST-ish `/api/<entity>` collections with `/[id]` items; Zod at every boundary; ownership in the WHERE clause; destructive ops are plain DELETE behind auth (no tokens/approvals — single-user contexts).
@@ -151,6 +152,8 @@ You are successful when: the full gate is green; e2e specs that pin parity still
 - Re-implementing nav item markup instead of using `NavItemLink` (sidebar/drawer drift).
 - Writing only SOME accent tokens to `<html>` (stale violet tokens under other accents).
 - Hand-rolled page headers (use `ViewHeader`) or empty states (use the shared `EmptyState`/`SimpleEmptyState` reference pattern).
+- Solid-violet primary CTAs (use the Button `gradient` variant — the reference's CTAs are violet→indigo gradients).
+- Zinc/zinc-neutral form controls (the reference's shadcn theme is on the GRAY ramp — see globals.css).
 - Routing brand/avatar gradients through `primary`/`strong` (they end at the ADJACENT hue — use `--sf-primary-gradient-to` / `-avatar-*`).
 - Extra real logins in e2e specs (rate limiter poisons the run).
 - Weakening lint/type gates to ship.

@@ -25,7 +25,7 @@ tags:
 
 > **What this is:** the single-source-of-truth reference for working in
 > `nordeim/omni-study`. Every fact below is verified against the codebase
-> (159 tests green at last update: 87 Vitest unit + 72 Playwright e2e).
+> (184 tests green at last update: 93 Vitest unit + 91 Playwright e2e).
 > Sections marked with ⚠️ encode non-obvious contracts — violating them has
 > historically produced silent visual or data-path bugs.
 
@@ -164,7 +164,7 @@ Seven accents × 4 core stops each: violet / blue / green / orange / pink /
 red / teal — full table in `src/lib/theme.ts` `ACCENT_TOKENS` (v3-pinned
 hexes; adding an accent = one object literal + one `ACCENTS` entry).
 
-**⚠️ The nine documented Tailwind v3→v4 traps (all live here):**
+**⚠️ The ten documented Tailwind v3→v4 traps (all live here):**
 1. `@theme inline` vars must be **full `hsl()` colors** — bare triplets
    silently resolve to transparent.
 2. The v3-era palette (slate 50–950, violet 100–900) is **pinned** in
@@ -194,6 +194,12 @@ hexes; adding an accent = one object literal + one `ACCENTS` entry).
    (4px) is v4's `backdrop-blur-xs`, and v4's `backdrop-blur-sm` computes
    8px. Same family as the radius trap. The drawer backdrop and the login
    card use `backdrop-blur-xs` (e2e-pinned at `blur(4px)`).
+10. **Colors serialize as their LEGACY forms** (session 5): modern
+   `rgb(0 0 0 / 0.1)` box-shadow syntax reads back as `rgba(0, 0, 0, 0.1)`,
+   and any UNPINNED palette class reads back as `lab(...)` —
+   `text-cyan-400` computed `lab(76.6 -40.9 -29.6)` before cyan-400 got
+   pinned to `#22d3ee`. Pin every asserted color; write e2e expectations in
+   the serialized form.
 
 **Typography:** system sans stack (ui-sans-serif → Apple Color Emoji …);
 page greeting `text-3xl font-bold`; view titles `h1 text-2xl font-bold
@@ -216,7 +222,24 @@ drifted it 4 units/channel). Dark variant swaps to a slate-950 family ramp.
 
 **Custom classes:** `.glass` (sidebar `rgba(255,255,255,0.8)` + blur),
 `.sf-card`, `.sf-focus` (accent focus ring), `.sf-scroll` (thin scrollbars),
-`.sf-skeleton` + 2 keyframes (`sf-shimmer`, `sf-slide-in`).
+`.sf-skeleton` + 2 keyframes (`sf-shimmer`, `sf-slide-in`), `.sf-gradient` +
+`.sf-gradient-shadow` / `-lg` (the session-5 gradient CTA surfaces — sRGB-exact
+stops through `--sf-primary` → `--sf-primary-gradient-to`, hover via
+`--sf-primary-gradient-to-strong`), `.sf-calc-display` (the calculator's
+softest-token gradient).
+
+**Interactive chrome (session-5, measured):** primary CTAs are GRADIENT
+buttons (`Button variant="gradient"`), never solid violet — the reference's
+Add Task / New Event / Create … buttons all render
+`linear-gradient(to right, rgb(139,92,246), rgb(79,70,229))` + the v3
+`shadow`; empty-state CTAs add the accent-tinted shadow-lg (0.25). The
+reference's own gradient-button text renders YELLOW (a pixel-verified
+Base44 platform bug — 180 yellow vs 21 white glyph pixels) — the clone keeps
+white. Form controls run the GRAY ramp (gray-200 borders, gray-950 text,
+gray-400 placeholders, h-9 transparent inputs); dialogs are
+`max-w-md` + `rounded-lg`. The Events view is a DARK slate-900 terminal
+panel (intentionally, in both themes) with a `CW <n>` calendar-week label
+(`isoWeekNumber`) and a cyan-400 New Event link.
 
 ---
 
@@ -382,6 +405,12 @@ notes, decks, grades; `avatarEmoji: ""` (reference default state).
 | AP-19 | HIGH | Every empty view renders the wrong empty-state design | ad-hoc slate circle + gray text vs the reference's gradient-block pattern | shared `EmptyState`/`SimpleEmptyState` on 80px gradient block + 40px icon + h3 20px (session-4 S4-C) |
 | AP-20 | MEDIUM | View headers drift (h2 in 8 views, tracking-tight slate-900, no icons, wrong subtitles) | hand-rolled headers in 11 views + a stale ViewHeader | ONE source: `ViewHeader` h1+icon+reference subtitle, all 20 views (session-4 S4-D) |
 | AP-21 | LOW | e2e order-dependent flake: later specs see TEAL | theme spec's Violet-restore PATCH aborted by page teardown at test end | restore awaits the settings PATCH + asserts the violet triplet (session-4) |
+| AP-22 | HIGH | Primary CTAs render SOLID violet | the reference's CTAs are violet→indigo GRADIENTS + v3 shadow (measured); solid bg-sf-primary was a clone-side assumption | Button `gradient` variant — `.sf-gradient` + `.sf-gradient-shadow` (session-5 S5-A) |
+| AP-23 | HIGH | Events view rebuilt as a light list misses the reference entirely | the reference's Events body is a DARK slate-900 terminal panel (58% dark pixels — never audited before session-5) | `bg-slate-900 rounded-2xl shadow-2xl` panel in BOTH themes + CW label + cyan New Event (session-5 S5-B) |
+| AP-24 | MEDIUM | Form controls drift zinc vs the reference's GRAY shadcn theme | the reference's base palette is gray-200 borders / gray-950 text / gray-400 muted (zinc was a clone-side default) | GRAY base palette in `@theme` (session-5 S5-D) |
+| AP-25 | MEDIUM | Dialogs render rounded-2xl max-w-lg h-10 inputs | the reference's dialogs are shadcn-v3 stock: rounded-lg (8px), max-w-md (448px), h-9 transparent inputs | `dialog.tsx`/`input.tsx` reworked (session-5 S5-C) |
+| AP-26 | LOW | Unpinned palette classes read back as `lab()` in computed styles | v4's oklch defaults — `text-cyan-400` computed `lab(76.6 -40.9 -29.6)` | pin every asserted color (cyan-300/400, red-600 now pinned) (session-5, trap 10) |
+| AP-27 | LOW | `getByRole({ name })` strict-mode collisions in e2e | Playwright role names are substring + case-insensitive — "New note" matches "New notebook" | use `exact: true` when names collide (session-5) |
 
 ---
 
@@ -430,7 +459,7 @@ tail -40 dev.log                            # request traces + prisma queries
 ```bash
 bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
-Current green state: lint ✓ · tsc ✓ · 87 unit ✓ · build ✓ · 72 e2e ✓.
+Current green state: lint ✓ · tsc ✓ · 93 unit ✓ · build ✓ · 91 e2e ✓.
 
 **Pre-deployment:** set a real `AUTH_SECRET` (`openssl rand -hex 32`); use an
 ABSOLUTE `DATABASE_URL` (see `docs/DEPLOYMENT.md` §4); never ship `.env`,

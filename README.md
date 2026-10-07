@@ -1,6 +1,6 @@
 # StudyFlow (Omni-Study)
 
-![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-159%20green-22c55e)
+![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-184%20green-22c55e)
 
 **StudyFlow — your study companion.** A production-ready, self-hosted clone (functional superset) of the [`omni-study1.base44.app`](https://omni-study1.base44.app/) study-planning app, rebuilt as a single Next.js application you fully own: your database, your AI keys, your deployment.
 
@@ -13,7 +13,7 @@ The reference app is a study companion that keeps a student's whole life in one 
 | ![Dashboard](docs/screenshots/desktop-Dashboard.png) | ![Timetable](docs/screenshots/desktop-Timetable.png) | ![Flashcards](docs/screenshots/desktop-Flashcards.png) |
 | ![Calculator](docs/screenshots/desktop-Calculator.png) | ![Mobile nav](docs/screenshots/mobile-navigation-drawer.png) | ![Grade tracker](docs/screenshots/desktop-GradeTracker.png) |
 
-All 20 views (plus the login card and three mobile captures) are in [`docs/screenshots/`](docs/screenshots/) — refreshed after the session-4 text-metrics & login remediation (`node scripts/capture-studyflow.mjs` regenerates them).
+All 20 views (plus the login card and three mobile captures) are in [`docs/screenshots/`](docs/screenshots/) — refreshed after the session-5 interactive-chrome remediation (`node scripts/capture-studyflow.mjs` regenerates them).
 
 ## Key Features
 
@@ -23,14 +23,14 @@ All 20 views (plus the login card and three mobile captures) are in [`docs/scree
 | ☀️ | My Day | Quick-add tasks with a day-completion meter |
 | ✅ | Tasks | Lists (custom lists + Important), search, filters, full CRUD |
 | 📅 | Calendar | Month grid + day detail, timeline agenda mode |
-| 🔔 | Events & Reminders | 7-day strip, day-grouped list, color-coded events |
-| 🏫 | Timetable | Weekly grid with class blocks, Grid Builder, My Classes |
+| 🔔 | Events & Reminders | Dark terminal-style panel: 7-day sections, recurring events, multi-reminders, color-coded |
+| 🏫 | Timetable | Weekly grid with class blocks, Grid Builder, alternating Week A/B timetables, My Classes cards |
 | 📚 | Assignments / Exams | Subject-tagged, urgency badges, status tracking |
 | 🗒️ | Notes | Notebooks, tags, pinned notes, autosaving editor |
 | 🃏 | Flashcards | Decks, flip-card study mode, mastered progress |
 | 📝 | Practice Tests | Score recording with completion % |
 | 👥 | Study Groups | Members, next meeting, subject linking |
-| 📈 | Grade Tracker | Weighted averages per subject, GPA, SVG trend chart |
+| 📈 | Grade Tracker | Gradient summary cards, weighted averages per subject, GPA, SVG trend chart |
 | 🧠 | Analytics | Task completion, focus minutes, grade trend, subject distribution |
 | 📁 | Files | Folders, uploads (≤ 2 MiB), links, grid/list views |
 | 🧮 | Calculator Suite | Basic, scientific (shunting-yard engine, no `eval`), GPA, unit converter + history |
@@ -93,13 +93,14 @@ flowchart TB
 │   ├── 📄 schema.prisma         ← 21 models; DATABASE PATH CONTRACT header
 │   └── 📄 seed.ts               ← idempotent demo data
 ├── 📂 tests/
-│   ├── 📄 *.test.ts             ← Vitest unit layer (87 tests)
-│   └── 📂 e2e/                  ← Playwright specs (72 specs)
+│   ├── 📄 *.test.ts             ← Vitest unit layer (93 tests)
+│   └── 📂 e2e/                  ← Playwright specs (91 specs)
 └── 📂 docs/
     ├── 📄 Tailwind-V4-Validation-Report.md  ← the five documented v3→v4 traps
     ├── 📄 remediation-plan.md   ← session-2 parity audit: evidence, fixes, non-gaps
     ├── 📄 remediation-plan-session3.md ← session-3 mobile-chrome & token audit
     ├── 📄 remediation-plan-session4.md ← session-4 text-metrics & login audit
+    ├── 📄 remediation-plan-session5.md ← session-5 interactive-chrome & view-body audit
     ├── 📂 screenshots/          ← dev-server captures of every view
     └── 📄 DEPLOYMENT.md         ← production notes
 ```
@@ -140,9 +141,9 @@ Copy `.env.example` to `.env` (the defaults above already work locally):
 ## Testing
 
 ```bash
-bun run test        # Vitest — 87 unit tests (router, theme, date, calculator, auth, validation, db-path)
+bun run test        # Vitest — 93 unit tests (router, theme, date, calculator, auth, validation, db-path)
 bun run build       # REQUIRED before e2e — the suite boots the standalone server
-bun run test:e2e    # Playwright — 72 specs against the production build on :3100
+bun run test:e2e    # Playwright — 91 specs against the production build on :3100
 ```
 
 E2E notes: the suite pushes and seeds an isolated `db/e2e.db` (never touches `custom.db`), signs the demo user in **once** via a setup project (the login endpoints are rate-limited — 10 attempts/IP/15 min), and asserts the reference-measured design pins (sidebar geometry, v3 `shadow-sm`, canvas gradient, view-title model, stat-card text metrics, empty-state design, brand-gradient stops, login chrome). Full gate order: `lint → typecheck → test → build → test:e2e`.
@@ -169,9 +170,13 @@ Measured from the live reference (see `docs/Tailwind-V4-Validation-Report.md` fo
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| Primary | `#8b5cf6` (violet-500) via `--sf-primary` RGB triplet | Buttons, active nav, accents |
+| Primary | `#8b5cf6` (violet-500) via `--sf-primary` RGB triplet | Active states, accents |
+| Primary CTAs | `linear-gradient(to right, violet-500, indigo-600)` + v3 `shadow` — accent-aware via `.sf-gradient` (session-5 pin) | Every primary action button |
 | View titles | `h1 text-2xl font-bold text-slate-800` + 24px accent icon (MyDay/FocusTimer are 30px) | Every view header (session-4 pin) |
+| Form controls | gray-200 borders, gray-950 text, gray-400 placeholders, `h-9` transparent inputs, v3 `shadow-sm` (session-5 pin) | Dialogs, selects, tabs, outline buttons |
+| Dialogs | `max-w-md` (448px), `rounded-lg` (8px), 36px inputs (session-5 pin) | Every modal |
 | Empty states | 80px rounded-2xl gradient block (`violet-100 → indigo-100`), 40px accent icon, 20px/600 h3, 16px hint | Every empty view (session-4 pin) |
+| Events panel | `slate-900` rounded-2xl shadow-2xl terminal panel, cyan New Event link, `CW <n>` calendar-week label | Events view (session-5 pin) |
 | Strong | `#7c3aed` (violet-600) | Links ("View All"), active nav text |
 | Card | white, `1px solid #f1f5f9`, radius 16px | Every surface |
 | Shadow | `0 1px 2px 0 rgb(0 0 0 / 0.05)` | v3 `shadow-sm`, **pinned** in `@theme` |
@@ -181,7 +186,7 @@ Measured from the live reference (see `docs/Tailwind-V4-Validation-Report.md` fo
 | Mobile drawer | 288px white panel, `shadow-2xl`, 20% blurred backdrop, icon nav items | No footer (reference-exact) |
 | Clock chip | `violet-50 → indigo-50` gradient (`rgb(245,243,255) → rgb(238,242,255)`), violet-700 time | Accent-aware via `--sf-primary-softest(-adjacent)` |
 | Brand gradients | chips + CTA end **indigo-600** (`rgb(79,70,229)`); avatar runs violet-400 → indigo-500 (the lighter pair) | Accent-aware via `--sf-primary-gradient-to` / `-avatar-*` tokens |
-| Accents | violet · blue · green · orange · pink · red · teal | Settings → Appearance |
+| Accents | violet · blue · **emerald** · **amber** · pink · red · teal (session-5 migration — the reference's swatch faces) | Settings → Appearance |
 | Font | system sans stack | Matches reference body styles |
 
 Six accent themes × Light/Dark/System × 24 emoji avatars, all persisted to the user record.
@@ -218,11 +223,12 @@ The verification gate before any push: `bun run lint && bun run typecheck && bun
 |-------|--------|--------------|
 | Reference recon (all 20 views, computed-style tokens) | ✅ Complete | Traps + measured tokens in `docs/Tailwind-V4-Validation-Report.md` |
 | Codebase build (20 views, 21 models, 40+ endpoints) | ✅ Complete | `src/**`, `prisma/**` |
-| Test suites (87 unit + 72 e2e) | ✅ Complete | `tests/**` |
+| Test suites (93 unit + 91 e2e) | ✅ Complete | `tests/**` |
 | Visual parity verification | ✅ Complete | `docs/screenshots/**`, `docs/remediation-plan*.md` |
 | Session-2 parity remediation (radius trap, icons, avatar, clock) | ✅ Complete | `docs/remediation-plan.md` |
 | Session-3 mobile-chrome & token remediation (fixed glass app bar + live clock, drawer mirror, greeting map, accent token completeness) | ✅ Complete | `docs/remediation-plan-session3.md` |
 | Session-4 text-metrics & second-order remediation (v4 blur trap, stat-card metrics, reference empty states, view-title h1+icon model, login card, measured gradient stops, heading hierarchy) | ✅ Complete | `docs/remediation-plan-session4.md` |
+| Session-5 interactive-chrome & view-body remediation (gradient CTAs, Events dark panel + repeat/reminders, FocusTimer/Settings/Calculator/Timetable/Notes/GradeTracker/Files/MyDay/AI reworks, gray form-control palette, dialog chrome, emerald/amber accents) | ✅ Complete | `docs/remediation-plan-session5.md` |
 | Docs (README / AGENTS / CLAUDE / PAD / SKILL) | ✅ Complete | repo root |
 
 No license file is present in this repository; treat the code as proprietary to the repo owner.
