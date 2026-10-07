@@ -1,6 +1,6 @@
 # StudyFlow (Omni-Study)
 
-![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-184%20green-22c55e)
+![Next.js](https://img.shields.io/badge/Next.js-16.4-000000) ![React](https://img.shields.io/badge/React-19-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4) ![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748) ![Bun](https://img.shields.io/badge/Bun-1.3-F69220) ![Tests](https://img.shields.io/badge/tests-202%20green-22c55e)
 
 **StudyFlow — your study companion.** A production-ready, self-hosted clone (functional superset) of the [`omni-study1.base44.app`](https://omni-study1.base44.app/) study-planning app, rebuilt as a single Next.js application you fully own: your database, your AI keys, your deployment.
 
@@ -13,19 +13,19 @@ The reference app is a study companion that keeps a student's whole life in one 
 | ![Dashboard](docs/screenshots/desktop-Dashboard.png) | ![Timetable](docs/screenshots/desktop-Timetable.png) | ![Flashcards](docs/screenshots/desktop-Flashcards.png) |
 | ![Calculator](docs/screenshots/desktop-Calculator.png) | ![Mobile nav](docs/screenshots/mobile-navigation-drawer.png) | ![Grade tracker](docs/screenshots/desktop-GradeTracker.png) |
 
-All 20 views (plus the login card and three mobile captures) are in [`docs/screenshots/`](docs/screenshots/) — refreshed after the session-5 interactive-chrome remediation (`node scripts/capture-studyflow.mjs` regenerates them).
+All 20 views (plus the login card and three mobile captures) are in [`docs/screenshots/`](docs/screenshots/) — refreshed after the session-6 populated-state remediation (`node scripts/capture-studyflow.mjs` regenerates them).
 
 ## Key Features
 
 | | Feature | What it does |
 |---|---------|--------------|
 | 📊 | Dashboard | Time-aware greeting, four stat cards, today's tasks, upcoming exams & assignments |
-| ☀️ | My Day | Quick-add tasks with a day-completion meter |
-| ✅ | Tasks | Lists (custom lists + Important), search, filters, full CRUD |
-| 📅 | Calendar | Month grid + day detail, timeline agenda mode |
+| ☀️ | My Day | Quick-add tasks, amber "Today's Progress" card, Suggestions for overdue/upcoming tasks |
+| ✅ | Tasks | Lists (custom lists + Important), search, filters, full CRUD — priority (colored round checkbox), repeat, My Day toggle, subtasks |
+| 📅 | Calendar | Month grid + day detail (border-l-4 colored rows), timeline agenda mode, legend |
 | 🔔 | Events & Reminders | Dark terminal-style panel: 7-day sections, recurring events, multi-reminders, color-coded |
 | 🏫 | Timetable | Weekly grid with class blocks, Grid Builder, alternating Week A/B timetables, My Classes cards |
-| 📚 | Assignments / Exams | Subject-tagged, urgency badges, status tracking |
+| 📚 | Assignments / Exams | Subject-tagged, urgency badges, status tracking — type + priority pills, interactive progress sliders; exam cards with subject color strips, durations, topics |
 | 🗒️ | Notes | Notebooks, tags, pinned notes, autosaving editor |
 | 🃏 | Flashcards | Decks, flip-card study mode, mastered progress |
 | 📝 | Practice Tests | Score recording with completion % |
@@ -93,14 +93,15 @@ flowchart TB
 │   ├── 📄 schema.prisma         ← 21 models; DATABASE PATH CONTRACT header
 │   └── 📄 seed.ts               ← idempotent demo data
 ├── 📂 tests/
-│   ├── 📄 *.test.ts             ← Vitest unit layer (93 tests)
-│   └── 📂 e2e/                  ← Playwright specs (91 specs)
+│   ├── 📄 *.test.ts             ← Vitest unit layer (96 tests)
+│   └── 📂 e2e/                  ← Playwright specs (106 specs)
 └── 📂 docs/
     ├── 📄 Tailwind-V4-Validation-Report.md  ← the five documented v3→v4 traps
     ├── 📄 remediation-plan.md   ← session-2 parity audit: evidence, fixes, non-gaps
     ├── 📄 remediation-plan-session3.md ← session-3 mobile-chrome & token audit
     ├── 📄 remediation-plan-session4.md ← session-4 text-metrics & login audit
     ├── 📄 remediation-plan-session5.md ← session-5 interactive-chrome & view-body audit
+    ├── 📄 remediation-plan-session6.md ← session-6 populated-state & row-design audit
     ├── 📂 screenshots/          ← dev-server captures of every view
     └── 📄 DEPLOYMENT.md         ← production notes
 ```
@@ -141,12 +142,12 @@ Copy `.env.example` to `.env` (the defaults above already work locally):
 ## Testing
 
 ```bash
-bun run test        # Vitest — 93 unit tests (router, theme, date, calculator, auth, validation, db-path)
+bun run test        # Vitest — 96 unit tests (router, theme, date, calculator, auth, validation, db-path)
 bun run build       # REQUIRED before e2e — the suite boots the standalone server
-bun run test:e2e    # Playwright — 91 specs against the production build on :3100
+bun run test:e2e    # Playwright — 106 specs against the production build on :3100
 ```
 
-E2E notes: the suite pushes and seeds an isolated `db/e2e.db` (never touches `custom.db`), signs the demo user in **once** via a setup project (the login endpoints are rate-limited — 10 attempts/IP/15 min), and asserts the reference-measured design pins (sidebar geometry, v3 `shadow-sm`, canvas gradient, view-title model, stat-card text metrics, empty-state design, brand-gradient stops, login chrome). Full gate order: `lint → typecheck → test → build → test:e2e`.
+E2E notes: the suite pushes and seeds an isolated `db/e2e.db` (never touches `custom.db`), signs the demo user in **once** via a setup project (the login endpoints are rate-limited — 10 attempts/IP/15 min), and asserts the reference-measured design pins (sidebar geometry, v3 `shadow-sm`, canvas gradient, view-title model, stat-card text metrics, empty-state design, brand-gradient stops, login chrome, the session-5 interactive-chrome pins, and the session-6 populated-row pins). Full gate order: `lint → typecheck → test → build → test:e2e`.
 
 ## API Reference
 
@@ -172,6 +173,11 @@ Measured from the live reference (see `docs/Tailwind-V4-Validation-Report.md` fo
 |-------|-------|-------|
 | Primary | `#8b5cf6` (violet-500) via `--sf-primary` RGB triplet | Active states, accents |
 | Primary CTAs | `linear-gradient(to right, violet-500, indigo-600)` + v3 `shadow` — accent-aware via `.sf-gradient` (session-5 pin) | Every primary action button |
+| Task rows | standalone `rounded-xl` cards, slate-200 border, 24px round priority-colored checkbox, slate-700 titles, due/repeat pills, hover-revealed actions (session-6 pin) | Tasks + My Day |
+| Dashboard rows | bare `p-4 gap-4` rows, 20px round checkbox, title-only (session-6 pin) | Today's Tasks |
+| Assignment rows | 24px round checkbox, blue due-in pill, priority/type pills, gradient progress slider + violet % label (session-6 pin) | Assignments |
+| Exam cards | 3-col grid, `h-2` subject color strip, amber urgency badge, icon detail rows, type footer (session-6 pin) | Exams |
+| Calendar cells | `aspect-square` centered cells, 4-color dots, solid-accent TODAY fill, legend + border-l-4 day-detail rows (session-6 pin) | Calendar |
 | View titles | `h1 text-2xl font-bold text-slate-800` + 24px accent icon (MyDay/FocusTimer are 30px) | Every view header (session-4 pin) |
 | Form controls | gray-200 borders, gray-950 text, gray-400 placeholders, `h-9` transparent inputs, v3 `shadow-sm` (session-5 pin) | Dialogs, selects, tabs, outline buttons |
 | Dialogs | `max-w-md` (448px), `rounded-lg` (8px), 36px inputs (session-5 pin) | Every modal |
@@ -229,6 +235,7 @@ The verification gate before any push: `bun run lint && bun run typecheck && bun
 | Session-3 mobile-chrome & token remediation (fixed glass app bar + live clock, drawer mirror, greeting map, accent token completeness) | ✅ Complete | `docs/remediation-plan-session3.md` |
 | Session-4 text-metrics & second-order remediation (v4 blur trap, stat-card metrics, reference empty states, view-title h1+icon model, login card, measured gradient stops, heading hierarchy) | ✅ Complete | `docs/remediation-plan-session4.md` |
 | Session-5 interactive-chrome & view-body remediation (gradient CTAs, Events dark panel + repeat/reminders, FocusTimer/Settings/Calculator/Timetable/Notes/GradeTracker/Files/MyDay/AI reworks, gray form-control palette, dialog chrome, emerald/amber accents) | ✅ Complete | `docs/remediation-plan-session5.md` |
+| Session-6 populated-state remediation (task card rows + priority/repeat/myDay/subtasks, MyDay amber progress card + Suggestions, dashboard bare rows, assignment sliders, exam card grid, calendar grid/legend/day-detail — measured against live reference data) | ✅ Complete | `docs/remediation-plan-session6.md` |
 | Docs (README / AGENTS / CLAUDE / PAD / SKILL) | ✅ Complete | repo root |
 
 No license file is present in this repository; treat the code as proprietary to the repo owner.
