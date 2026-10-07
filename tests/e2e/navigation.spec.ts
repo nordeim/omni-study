@@ -143,5 +143,42 @@ test.describe("view chrome (computed parity pins)", () => {
     const bg = await canvas.evaluate((el) => getComputedStyle(el).backgroundImage);
     expect(bg).toContain("linear-gradient");
     expect(bg).toContain("rgb(248, 250, 252)"); // slate-50 first stop (measured)
+    // Third stop measured live on the reference: rgba(245,243,255,0.3)
+    // (violet-50). A previous approximation rendered rgb(241,237,255).
+    expect(bg).toContain("rgba(245, 243, 255, 0.3)");
+  });
+
+  test("corner radii match the reference's v3 semantics (radius trap pin)", async ({ page }) => {
+    await page.goto("/Dashboard");
+    // Tailwind v4 did NOT shift the radius scale above the small end:
+    // rounded-2xl is 16px in v3 AND v4; the reference (a v3 app) measures
+    // cards at 16px and buttons (rounded-md) at 6px. A one-notch-up pin
+    // block previously inflated these to 20px / 8px — this spec pins the
+    // corrected contract (see docs/remediation-plan.md R1).
+    const card = page.locator("main .overflow-hidden.rounded-2xl").first();
+    await expect(card).toHaveCSS("border-radius", "16px");
+
+    const button = page.getByRole("button", { name: "Start My Day" });
+    await expect(button).toHaveCSS("border-radius", "6px");
+
+    // Sidebar nav items use rounded-xl → 12px (reference inner div measured).
+    const navItem = page.getByRole("navigation", { name: "Primary" }).locator("span.rounded-xl").first();
+    await expect(navItem).toHaveCSS("border-radius", "12px");
+  });
+
+  test("the sidebar footer avatar renders the reference default state", async ({ page }) => {
+    await page.goto("/Dashboard");
+    // The reference shows a 36px gradient circle with the user's initial
+    // when no emoji avatar is set (w-9 h-9, gradient, white letter).
+    const avatar = page.locator("aside span.rounded-full").filter({ hasText: /./ }).first();
+    const box = await avatar.boundingBox();
+    expect(Math.round(box?.width ?? 0)).toBe(36);
+    const style = await avatar.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { bg: cs.backgroundImage || cs.backgroundColor, color: cs.color };
+    });
+    expect(style.bg).toContain("linear-gradient");
+    expect(style.color).toBe("rgb(255, 255, 255)");
+    expect(await avatar.textContent()).toMatch(/^[A-Za-z]$/); // single initial
   });
 });

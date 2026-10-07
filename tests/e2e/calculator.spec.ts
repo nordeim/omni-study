@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 // Calculator + theme switching: the pure engines are unit-tested in
 // Vitest (tests/calculator.test.ts, tests/theme.test.ts); these specs pin
@@ -62,8 +62,20 @@ test.describe("calculator suite", () => {
 });
 
 test.describe("theme system", () => {
+  // Hydration gate: the accent buttons exist in the SSR HTML, but their
+  // onClick handlers attach only after React hydrates — clicking earlier
+  // silently no-ops and the spec flakes (order-dependent; observed when the
+  // standalone server was cold on the Settings route). The theme store
+  // stamps an inline --sf-primary var on <html> the moment it applies the
+  // user's saved preferences, which only happens post-hydration.
+  const hydrated = (page: Page) =>
+    page.waitForFunction(
+      () => document.documentElement.style.getPropertyValue("--sf-primary") !== "",
+    );
+
   test("switching the accent recolors the active nav chip", async ({ page }) => {
     await page.goto("/Settings");
+    await hydrated(page);
     await page.getByRole("button", { name: "Teal accent" }).click();
     // The token change is applied to <html> as an RGB triplet var.
     const primary = await page.evaluate(
@@ -79,11 +91,13 @@ test.describe("theme system", () => {
     // Restore the default accent — later specs (and the shared user record)
     // must not inherit this test's teal.
     await page.goto("/Settings");
+    await hydrated(page);
     await page.getByRole("button", { name: "Violet accent" }).click();
   });
 
   test("dark mode toggles the html class", async ({ page }) => {
     await page.goto("/Settings");
+    await hydrated(page);
     await page.getByRole("button", { name: "Dark", exact: true }).click();
     await expect(page.locator("html")).toHaveClass(/dark/);
     await page.getByRole("button", { name: "Light", exact: true }).click();

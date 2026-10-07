@@ -125,7 +125,10 @@ function applyToDocument(mode: ThemeMode, accent: Accent) {
 export const useThemeStore = create<ThemeState>((set, get) => ({
   mode: "system",
   accent: "violet",
-  avatar: "🎓",
+  // Empty avatar = the reference's default state: the UserAvatar component
+  // renders the user's initial in a gradient circle until an emoji is chosen
+  // in Settings (session-2 remediation R3).
+  avatar: "",
   userName: "",
   email: "",
   applied: false,
@@ -148,7 +151,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     set({
       mode,
       accent,
-      avatar: user.avatarEmoji || "🎓",
+      avatar: user.avatarEmoji || "",
       userName: user.name || "",
       email: user.email || "",
       applied: true,

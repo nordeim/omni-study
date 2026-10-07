@@ -39,7 +39,9 @@ async function main() {
       email: demoEmail,
       passwordHash: hashPassword("Demo1234!"),
       name: "Demo Student",
-      avatarEmoji: "🎓",
+      // Empty avatar = reference default state (initial "D" in the gradient
+      // circle); pick an emoji in Settings → Appearance to demo the feature.
+      avatarEmoji: "",
       themeMode: "system",
       accentColor: "violet",
     },

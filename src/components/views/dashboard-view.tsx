@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, GraduationCap, ListChecks, Sparkles, SquareCheckBig, Target } from "lucide-react";
+import { BookOpen, Flame, GraduationCap, Sparkles, SquareCheckBig, Target } from "lucide-react";
 import { useAppStore, useThemeStore } from "@/lib/store";
 import { useDataStore, mutations, type Task } from "@/lib/data";
 import { STAT_COLORS, SectionCard, SimpleEmptyState, StatCard, ViewAllLink, useSubjectMap } from "./shared";
@@ -118,9 +118,9 @@ export function DashboardView() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Today's Progress" value={`${doneToday}/${todayTasks.length}`} hint="tasks completed" icon={Target} colors={STAT_COLORS.violet} />
-        <StatCard label="Pending Tasks" value={String(pending)} hint="to be done" icon={ListChecks} colors={STAT_COLORS.blue} />
+        <StatCard label="Pending Tasks" value={String(pending)} hint="to be done" icon={SquareCheckBig} colors={STAT_COLORS.blue} />
         <StatCard label="Due Soon" value={String(dueSoon)} hint="assignments" icon={BookOpen} colors={STAT_COLORS.orange} />
-        <StatCard label="Focus Time" value={focusHours} hint="this month" icon={Sparkles} colors={STAT_COLORS.pink} />
+        <StatCard label="Focus Time" value={focusHours} hint="this month" icon={Flame} colors={STAT_COLORS.pink} />
       </div>
 
       {/* Today's Tasks (2/3) + Upcoming Exams (1/3) */}

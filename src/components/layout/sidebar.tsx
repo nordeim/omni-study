@@ -9,14 +9,14 @@ import {
   CalendarDays,
   CalendarPlus,
   Calculator,
+  ChevronLeft,
+  ChevronRight,
   FileQuestion,
   Folder,
   GraduationCap,
   LayoutDashboard,
   Layers,
   Notebook,
-  PanelLeftClose,
-  PanelLeftOpen,
   Settings as SettingsIcon,
   Sparkles,
   SquareRadical,
@@ -30,6 +30,7 @@ import { NAV, useAppStore, useThemeStore } from "@/lib/store";
 import { formatShortWithYear, formatTime12h } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import type { ViewId } from "@/lib/router";
+import { UserAvatar } from "./user-avatar";
 
 const ICONS: Record<ViewId, React.ComponentType<{ className?: string; strokeWidth?: number; style?: React.CSSProperties }>> = {
   dashboard: LayoutDashboard,
@@ -64,16 +65,21 @@ function SidebarClock() {
     <div
       className="mb-3 rounded-xl p-3"
       style={{
-        backgroundImage: "linear-gradient(to bottom right, rgb(var(--sf-primary-soft)), rgb(var(--sf-primary-soft)))",
+        // Reference (measured): bg-gradient-to-br from-violet-50 to-indigo-50
+        // — a 50-level tint gradient, NOT the violet-100 soft chip. The
+        // second stop blends the accent's strong tone into white (the
+        // reference's adjacent-hue indigo-50 analog, accent-aware).
+        backgroundImage:
+          "linear-gradient(to bottom right, rgb(var(--sf-primary-softest)), color-mix(in srgb, rgb(var(--sf-primary-strong)) 7%, white))",
       }}
     >
       <p
         className="text-2xl font-bold leading-tight"
-        style={{ color: "rgb(var(--sf-primary-strong))" }}
+        style={{ color: "rgb(var(--sf-primary-deep))" }}
       >
         {formatTime12h(now)}
       </p>
-      <p className="text-sm font-medium" style={{ color: "rgb(var(--sf-primary))" }}>
+      <p className="text-sm font-medium" style={{ color: "rgb(var(--sf-primary-strong))" }}>
         {formatShortWithYear(now)}
       </p>
     </div>
@@ -85,7 +91,6 @@ export function Sidebar() {
   const navigate = useAppStore((s) => s.navigate);
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
-  const avatar = useThemeStore((s) => s.avatar);
   const userName = useThemeStore((s) => s.userName);
   const email = useThemeStore((s) => s.email);
 
@@ -123,7 +128,8 @@ export function Sidebar() {
             aria-label="Collapse sidebar"
             className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 sf-focus dark:hover:bg-slate-800"
           >
-            <PanelLeftClose className="h-4 w-4" />
+            {/* Reference uses a bare chevron-left glyph (measured live). */}
+            <ChevronLeft className="h-4 w-4" />
           </button>
         )}
       </div>
@@ -135,7 +141,7 @@ export function Sidebar() {
             aria-label="Expand sidebar"
             className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 sf-focus dark:hover:bg-slate-800"
           >
-            <PanelLeftOpen className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -199,13 +205,7 @@ export function Sidebar() {
       <div className="border-t border-slate-100 p-4 dark:border-slate-800">
         {!collapsed && <SidebarClock />}
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl shadow-sm"
-            style={{ backgroundColor: "rgb(var(--sf-primary-soft))" }}
-            aria-hidden="true"
-          >
-            {avatar}
-          </span>
+          <UserAvatar size="sm" />
           {!collapsed && (
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">

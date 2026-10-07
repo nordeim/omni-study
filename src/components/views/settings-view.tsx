@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
+import { UserAvatar } from "@/components/layout/user-avatar";
 import { apiSend } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -199,13 +200,7 @@ export function SettingsView() {
         <TabsContent value="profile">
           <div className="sf-card flex max-w-lg flex-col gap-6 p-6">
             <div className="flex items-center gap-4">
-              <span
-                className="flex h-14 w-14 items-center justify-center rounded-2xl text-3xl shadow-sm"
-                style={{ backgroundColor: "rgb(var(--sf-primary-soft))" }}
-                aria-hidden="true"
-              >
-                {avatar}
-              </span>
+              <UserAvatar size="lg" />
               <div>
                 <p className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">
                   {userName || "Student"}

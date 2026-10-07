@@ -7,6 +7,7 @@ import { NAV, useAppStore, useThemeStore } from "@/lib/store";
 import { formatShortWithYear, formatTime12h } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import type { ViewId } from "@/lib/router";
+import { UserAvatar } from "./user-avatar";
 
 // Mobile chrome: full-width app bar with hamburger + brand, and the slide-in
 // drawer with every nav item (measured live at 390×844 — the drawer carries
@@ -48,7 +49,6 @@ function MobileDrawer() {
   const setMobileMenu = useAppStore((s) => s.setMobileMenu);
   const navigate = useAppStore((s) => s.navigate);
   const view = useAppStore((s) => s.view);
-  const avatar = useThemeStore((s) => s.avatar);
   const userName = useThemeStore((s) => s.userName);
   const email = useThemeStore((s) => s.email);
 
@@ -137,13 +137,7 @@ function MobileDrawer() {
         </nav>
         <div className="border-t border-slate-100 px-5 py-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-full text-lg shadow-sm"
-              style={{ backgroundColor: "rgb(var(--sf-primary-soft))" }}
-              aria-hidden="true"
-            >
-              {avatar}
-            </span>
+            <UserAvatar size="sm" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {userName || "Student"}
