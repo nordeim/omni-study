@@ -238,18 +238,15 @@ export function CalendarView() {
                       isSelected
                         ? "text-white"
                         : isToday
-                          ? "text-sf-primary-strong dark:text-sf-primary-strong-dark"
+                          ? // S10-4 — the today tint lives in the .sf-today-cell
+                            // class (light empty-from value; .dark soft-dark
+                            // wash — inline styles cannot re-theme).
+                            "sf-today-cell text-sf-primary-strong dark:text-sf-primary-strong-dark"
                           : inMonth
                             ? "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                             : "text-slate-300 dark:text-slate-600",
                     )}
-                    style={
-                      isSelected
-                        ? { backgroundColor: "rgb(var(--sf-primary))" }
-                        : isToday
-                          ? { backgroundColor: "rgb(var(--sf-primary-empty-from))" }
-                          : undefined
-                    }
+                    style={isSelected ? { backgroundColor: "rgb(var(--sf-primary))" } : undefined}
                   >
                     <span className="text-sm font-medium">{date.getDate()}</span>
                     <div className="mt-1 flex gap-0.5">

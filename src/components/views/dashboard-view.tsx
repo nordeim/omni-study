@@ -167,16 +167,13 @@ export function DashboardView() {
       {/* S9-A — Overdue alert banner (reference-measured): gradient
           red-50 → orange-50, red-200 border, rounded-2xl, circle-alert block,
           red-700/600 text, ghost View All CTA linking to /Tasks. Sits between
-          the greeting and the stats grid. */}
+          the greeting and the stats grid. S10-2 — the gradient lives in the
+          .sf-overdue-banner class (sRGB-exact light stops per trap 5; a
+          .dark red-800/orange-900 wash — inline styles cannot re-theme). */}
       {overdueCount > 0 && (
         <div
           aria-label="Overdue alert"
-          className="rounded-2xl border border-red-200 p-4 dark:border-red-900/60"
-          style={{
-            // Trap 5 — sRGB-exact inline gradient (the utility interpolates
-            // in oklab; measured: red-50 #fef2f2 → orange-50 #fff7ed).
-            backgroundImage: "linear-gradient(to right, #fef2f2, #fff7ed)",
-          }}
+          className="sf-overdue-banner rounded-2xl border border-red-200 p-4 dark:border-red-900/60"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/60">

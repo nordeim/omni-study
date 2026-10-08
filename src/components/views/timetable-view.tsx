@@ -248,8 +248,12 @@ export function TimetableView() {
                 type="button"
                 onClick={() => setOpenDay(openDay === col ? null : col)}
                 aria-expanded={openDay === col}
-                className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                style={colToIso(col) === todayIso ? { backgroundColor: "rgb(var(--sf-primary-softest))" } : undefined}
+                className={cn(
+                  "flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60",
+                  // S10-4 — the today tint lives in the class (light softest
+                  // tint; .dark soft-dark wash — inline styles cannot re-theme).
+                  colToIso(col) === todayIso && "sf-today-tint",
+                )}
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -315,11 +319,22 @@ export function TimetableView() {
                   <div
                     key={label}
                     data-today-header={isToday || undefined}
-                    className="border-l border-slate-100 p-3 text-center dark:border-slate-800"
-                    style={isToday ? { backgroundColor: "rgb(var(--sf-primary-softest))" } : undefined}
+                    className={cn(
+                      "border-l border-slate-100 p-3 text-center dark:border-slate-800",
+                      // S10-4 — class-based today tint (.sf-today-tint carries
+                      // the light softest value + the .dark soft-dark wash).
+                      isToday && "sf-today-tint",
+                    )}
                   >
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{WEEKDAY_LONG[colToIso(col)]}</p>
-                    <p className={cn("text-lg font-bold", isToday ? "text-sf-primary-strong" : "text-slate-700 dark:text-slate-200")}>
+                    <p
+                      className={cn(
+                        "text-lg font-bold",
+                        isToday
+                          ? "text-sf-primary-strong dark:text-sf-primary-strong-dark"
+                          : "text-slate-700 dark:text-slate-200",
+                      )}
+                    >
                       {date.getDate()}
                     </p>
                   </div>

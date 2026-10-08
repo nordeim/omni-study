@@ -34,6 +34,22 @@ if (!session) throw new Error("no sf_session cookie after login");
 console.log("login: ok");
 await loginCtx.close();
 
+// The captures are LIGHT-mode by contract — force the demo user's persisted
+// themeMode to light first (the dev user may have been left dark by a prior
+// session-10 audit probe).
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  await ctx.addCookies([{ name: "sf_session", value: session.value, url: BASE }]);
+  const page = await ctx.newPage();
+  await page.goto(BASE + "/Dashboard", { waitUntil: "load" });
+  const res = await page.request.patch(BASE + "/api/settings/preferences", {
+    data: { themeMode: "light" },
+  });
+  if (!res.ok()) throw new Error("light-mode guard PATCH failed");
+  await ctx.close();
+  console.log("theme: light (guard)");
+}
+
 // The login page capture + desktop views run against the FIRST browser
 // instance; the mobile phase relaunches a fresh one — long capture runs
 // degrade the shared Chromium (memory pressure) and the drawer tap timed
@@ -116,5 +132,47 @@ await shot("mobile-navigation-drawer", mobileTouch, "/Dashboard", async (page) =
 });
 await shot("mobile-tasks", mobile, "/Tasks");
 
+// 25–30 — session-10 DARK-mode captures: the same dev server with the demo
+// user PATCHed to dark mode (restored to light afterward). The reference's
+// own Dark option is a measured platform no-op, so these captures document
+// the clone's dark-mode superset — every surface re-themes (token utilities,
+// the overdue banner, the clock chip, chart axes).
+{
+  const ctx = await currentBrowser.newContext({ viewport: { width: 1280, height: 800 } });
+  await ctx.addCookies([{ name: "sf_session", value: session.value, url: BASE }]);
+  const page = await ctx.newPage();
+  await page.goto(BASE + "/Dashboard", { waitUntil: "load" });
+  const res = await page.request.patch(BASE + "/api/settings/preferences", {
+    data: { themeMode: "dark" },
+  });
+  if (!res.ok()) throw new Error("dark-mode PATCH failed");
+  await ctx.close();
+  console.log("theme: dark");
+}
+const darkHydrated = async (page) => {
+  await page.waitForFunction(() => document.documentElement.classList.contains("dark"));
+};
+for (const view of ["Dashboard", "Tasks", "Calendar", "Analytics", "Settings"]) {
+  await shot(`dark-${view}`, desktop, `/${view}`, darkHydrated);
+}
+await shot("dark-mobile-navigation-drawer", mobileTouch, "/Dashboard", async (page) => {
+  await darkHydrated(page);
+  await page.getByRole("button", { name: "Open navigation menu" }).tap();
+  await page.waitForTimeout(700);
+});
+// Restore light for the demo user (the dev server's resting state).
+{
+  const ctx = await currentBrowser.newContext();
+  await ctx.addCookies([{ name: "sf_session", value: session.value, url: BASE }]);
+  const page = await ctx.newPage();
+  await page.goto(BASE + "/Dashboard", { waitUntil: "load" });
+  const res = await page.request.patch(BASE + "/api/settings/preferences", {
+    data: { themeMode: "light" },
+  });
+  if (!res.ok()) throw new Error("light-restore PATCH failed");
+  await ctx.close();
+  console.log("theme: light (restored)");
+}
+
 await currentBrowser.close();
-console.log("done — " + (VIEWS.length + 4) + " captures in " + OUT);
+console.log("done — " + (VIEWS.length + 10) + " captures in " + OUT);

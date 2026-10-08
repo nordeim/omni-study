@@ -104,18 +104,52 @@ function AreaChart({
         )}
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={padL} y1={yAt(t)} x2={W - padR} y2={yAt(t)} stroke="#f1f5f9" strokeDasharray="3 3" />
-            <text x={padL - 8} y={yAt(t) + 4} textAnchor="end" fontSize="12" fill="#666">
+            {/* S10-7 — dark: gridlines slate-800 (CSS stroke overrides the
+                presentation attribute; the light values are the measured
+                S9-K pins). */}
+            <line
+              x1={padL}
+              y1={yAt(t)}
+              x2={W - padR}
+              y2={yAt(t)}
+              stroke="#f1f5f9"
+              strokeDasharray="3 3"
+              className="dark:stroke-slate-800"
+            />
+            <text
+              x={padL - 8}
+              y={yAt(t) + 4}
+              textAnchor="end"
+              fontSize="12"
+              fill="#666"
+              className="dark:fill-slate-400"
+            >
               {fmtTick(t)}
             </text>
           </g>
         ))}
         {data.map((d, i) => (
-          <text key={`${d.label}-${i}`} x={xAt(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#666">
+          <text
+            key={`${d.label}-${i}`}
+            x={xAt(i)}
+            y={H - 8}
+            textAnchor="middle"
+            fontSize="12"
+            fill="#666"
+            className="dark:fill-slate-400"
+          >
             {d.label}
           </text>
         ))}
-        {areaPath && <path d={areaPath} fill={line ? `url(#${gradId})` : "#e2e8f0"} />}
+        {/* S10-7 — the Task Activity area fill goes slate-800 in dark (the
+            Focus Time gradient area already reads on dark cards). */}
+        {areaPath && (
+          <path
+            d={areaPath}
+            fill={line ? `url(#${gradId})` : "#e2e8f0"}
+            className={line ? undefined : "dark:fill-slate-800"}
+          />
+        )}
         {line && path && <path d={path} fill="none" stroke="#8b5cf6" strokeWidth="2" />}
         {data.map((d, i) => {
           const colW = data.length > 0 ? iw / data.length : iw;
@@ -199,7 +233,16 @@ function StatusDonut({
       <div className="flex h-[250px] items-center justify-center" aria-label="Assignment status chart">
         <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Assignment status donut chart">
-            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={stroke} />
+            {/* S10-7 — donut track: slate-800 in dark. */}
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={r}
+              fill="none"
+              stroke="#f1f5f9"
+              strokeWidth={stroke}
+              className="dark:stroke-slate-800"
+            />
             {total > 0 &&
               slices.map((s) => {
                 if (s.value <= 0) return null;
@@ -287,8 +330,24 @@ function LineChart({ points, title }: { points: { x: string; y: number }[]; titl
     <div className="flex flex-col gap-2">
       <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</p>
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={`${title} line chart`}>
-        <line x1={pad} y1={h - pad} x2={w - pad} y2={h - pad} stroke="#e2e8f0" />
-        <line x1={pad} y1={pad} x2={pad} y2={h - pad} stroke="#e2e8f0" />
+        {/* S10-7 — grade-trend axes: slate-800 in dark (labels are already
+            slate-400, readable in both). */}
+        <line
+          x1={pad}
+          y1={h - pad}
+          x2={w - pad}
+          y2={h - pad}
+          stroke="#e2e8f0"
+          className="dark:stroke-slate-800"
+        />
+        <line
+          x1={pad}
+          y1={pad}
+          x2={pad}
+          y2={h - pad}
+          stroke="#e2e8f0"
+          className="dark:stroke-slate-800"
+        />
         <text x={pad - 4} y={pad + 4} textAnchor="end" fontSize="9" fill="#94a3b8">100</text>
         <text x={pad - 4} y={h - pad} textAnchor="end" fontSize="9" fill="#94a3b8">0</text>
         <path d={path} fill="none" stroke="rgb(var(--sf-primary))" strokeWidth="2" />

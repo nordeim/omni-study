@@ -131,15 +131,15 @@ export function MyDayView() {
           (bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 border
           border-amber-100, amber-700 label + amber-600 bold fraction + h-2
           amber progressbar). S8-D: sits directly under the header (mt-6).
-          sRGB-exact inline gradient per trap 5. */}
+          S10-3 — the gradient lives in the .sf-amber-card class (sRGB-exact
+          light stops per trap 5; .dark amber-800/orange-900 wash). */}
       {/* S9-B (live re-measure): the reference HIDES this card when there
           are no today-tasks — its My Day shows only the header, quick-add,
           amber empty state and Suggestions. */}
       {todayTasks.length > 0 && (
       <div
         aria-label="Today progress"
-        className="mt-6 rounded-2xl border border-amber-100 p-4 dark:border-amber-900/50"
-        style={{ backgroundImage: "linear-gradient(to right, #fffbeb, #fff7ed)" }}
+        className="sf-amber-card mt-6 rounded-2xl border border-amber-100 p-4 dark:border-amber-900/50"
       >
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Today&apos;s Progress</span>

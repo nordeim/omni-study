@@ -15,28 +15,16 @@ function SidebarClock() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div
-      className="mb-3 rounded-xl p-3"
-      style={{
-        // Reference (measured): bg-gradient-to-br from-violet-50 to-indigo-50
-        // = linear-gradient(to right bottom, rgb(245,243,255), rgb(238,242,255)).
-        // The second stop is a FIXED adjacent-hue tint (indigo-50) — a hue
-        // rotation that cannot be approximated by mixing toward white —
-        // so it lives in its own --sf-primary-softest-adjacent token
-        // (accent-aware: each accent maps to its adjacent hue's 50-level).
-        backgroundImage:
-          "linear-gradient(to bottom right, rgb(var(--sf-primary-softest)), rgb(var(--sf-primary-softest-adjacent)))",
-      }}
-    >
-      <p
-        className="text-2xl font-bold leading-tight"
-        style={{ color: "rgb(var(--sf-primary-deep))" }}
-      >
+    // S10-5 — the chip's gradient + text colors live in the .sf-clock-chip /
+    // .sf-clock-time / .sf-clock-date classes (globals.css): the light values
+    // are the measured S3-B/S3-C pins (softest → softest-adjacent stops; deep
+    // time text) and .dark swaps in the soft-dark washes + violet-300 text —
+    // inline styles cannot re-theme.
+    <div className="sf-clock-chip mb-3 rounded-xl p-3">
+      <p className="sf-clock-time text-2xl font-bold leading-tight">
         {formatTime12h(now)}
       </p>
-      <p className="text-sm font-medium" style={{ color: "rgb(var(--sf-primary-strong))" }}>
-        {formatShortWithYear(now)}
-      </p>
+      <p className="sf-clock-date text-sm font-medium">{formatShortWithYear(now)}</p>
     </div>
   );
 }

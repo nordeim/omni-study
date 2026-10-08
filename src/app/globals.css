@@ -28,26 +28,36 @@
      not zinc/slate: form-control borders measured rgb(229,229,229)
      (gray-200 #E5E5E5), outline text rgb(10,10,10) (gray-950 #0A0A0A),
      inactive tabs/placeholders rgb(115,115,115) (gray-400 #737373).
-     View-level text stays slate (measured separately). */
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(0 0% 3.92%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(0 0% 3.92%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(0 0% 3.92%);
-  --color-primary: hsl(258 90% 66%);
-  --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(240 4.8% 95.9%);
-  --color-secondary-foreground: hsl(240 5.9% 10%);
-  --color-muted: hsl(240 4.8% 95.9%);
-  --color-muted-foreground: hsl(0 0% 45.1%);
-  --color-accent: hsl(240 4.8% 95.9%);
-  --color-accent-foreground: hsl(240 5.9% 10%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: hsl(0 0% 89.8%);
-  --color-input: hsl(0 0% 89.8%);
-  --color-ring: hsl(258 90% 66%);
+     View-level text stays slate (measured separately).
+     S10-1 — the shadcn Tailwind v4 dark-mode contract: the base tokens route
+     through RAW triplet vars (:root / .dark below) via hsl(var(--x)) so the
+     generated utilities resolve them at RUNTIME. A LITERAL value here is
+     INLINED into the utility at build time (that is what `inline` means) —
+     the .dark overrides of the same token could then never reach the
+     utilities (measured session 10: white dialogs + invisible outline
+     buttons in dark mode while .sf-card — a direct var() reference — re-themed
+     correctly). The accent block at the bottom of this file already used the
+     same indirection shape; the light values are byte-identical to the
+     previous literals. */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
 
   /* Gray scale (the reference's form-control ramp — S5-D). */
   --color-gray-50: #f9fafb;
@@ -102,6 +112,9 @@
   --color-pink-500: #ec4899;
   --color-red-100: #fee2e2;
   --color-red-700: #b91c1c;
+  /* S10 — the overdue banner's dark-mode title (dark:text-red-300) joins the
+     pin block (trap 10 family: unpinned classes serialize as lab()). */
+  --color-red-300: #fca5a5;
 
   /* S9 — dashboard overdue-banner palette (measured live: gradient
      red-50 → orange-50, border red-200, icon block red-100) + the exam
@@ -137,10 +150,15 @@
   --color-violet-900: #4c1d95;
 
   /* TRAP 5 — pin v3's shadow-sm geometry (measured on the reference cards
-     and white navbar: rgba(0,0,0,0.05) 0px 1px 2px 0px). */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+     and white navbar: rgba(0,0,0,0.05) 0px 1px 2px 0px). S10-1 — routed
+     through raw vars (:root / .dark --sf-shadow-*) with the same indirection
+     rationale as the color tokens: a literal here would be inlined into the
+     shadow utilities and the .dark override could never reach them (the
+     previous .dark --shadow-sm line was exactly that dead pin). Light
+     computed values are byte-identical to the previous literals. */
+  --shadow-sm: var(--sf-shadow-sm);
+  --shadow-md: var(--sf-shadow-md);
+  --shadow-lg: var(--sf-shadow-lg);
 
   /* TRAP 6 (radius — session-2 remediation R1): Tailwind v4 did NOT shift
      the radius scale above the small end. v4 defaults (theme.css) are
@@ -159,6 +177,33 @@
 }
 
 :root {
+  /* S10-1 — raw shadcn triplets (LIGHT palette; the @theme inline block
+     consumes them as hsl(var(--x))). Values identical to the previous
+     @theme inline literals. */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.92%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 3.92%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 3.92%;
+  --primary: 258 90% 66%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 0 0% 45.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 89.8%;
+  --input: 0 0% 89.8%;
+  --ring: 258 90% 66%;
+  /* S10-1 — shadow raw vars (light = the v3 pins, byte-identical). */
+  --sf-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --sf-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --sf-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
   /* Accent tokens (RGB triplets — the reference app's own convention:
      `--primary: 139 92 246`). Overridden at runtime per accent by
      src/lib/theme.ts; these defaults match the Violet default. */
@@ -188,26 +233,32 @@
 }
 
 .dark {
-  --color-background: hsl(240 10% 3.92%);
-  --color-foreground: hsl(0 0% 98%);
-  --color-card: hsl(240 10% 5.92%);
-  --color-card-foreground: hsl(0 0% 98%);
-  --color-popover: hsl(240 10% 3.92%);
-  --color-popover-foreground: hsl(0 0% 98%);
-  --color-primary: hsl(258 90% 66%);
-  --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(240 3.7% 15.9%);
-  --color-secondary-foreground: hsl(0 0% 98%);
-  --color-muted: hsl(240 3.7% 15.9%);
-  --color-muted-foreground: hsl(240 5% 64.9%);
-  --color-accent: hsl(240 3.7% 15.9%);
-  --color-accent-foreground: hsl(0 0% 98%);
-  --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: hsl(0 0% 98%);
-  --color-border: hsl(240 3.7% 15.9%);
-  --color-input: hsl(240 3.7% 15.9%);
-  --color-ring: hsl(258 90% 66%);
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  /* S10-1 — the RAW triplets flip in dark mode (values unchanged from the
+     previous --color-* declarations here; only the reachability changed —
+     utilities now resolve hsl(var(--x)) at runtime). */
+  --background: 240 10% 3.92%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 5.92%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.92%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 258 90% 66%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 258 90% 66%;
+  /* S10-1 — the dark shadow override (previously dead: the literal
+     @theme inline pin inlined the light geometry into every shadow
+     utility; now routed through --sf-shadow-sm). */
+  --sf-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
 }
 
 @theme inline {
@@ -332,6 +383,99 @@
     rgb(var(--sf-primary-soft-dark) / 0.35),
     rgb(var(--sf-primary-soft-dark) / 0.12)
   );
+}
+
+/* ---- Session-10 dark-mode consistency classes -----------------------------
+   Inline-style gradients/tints authored for the S3–S9 light-mode parity work
+   render IDENTICALLY in dark mode (inline styles cannot carry dark:
+   variants). These classes keep the light values byte-identical (the S3–S9
+   e2e pins) and add the .dark counterparts, following the .sf-calc-display
+   precedent: low-alpha dark washes over the zinc-950 canvas + the *-dark
+   accent tokens for text. The reference's own Dark option is a Base44
+   platform no-op (measured session 10), so the clone's dark palette here is
+   the documented superset — internal consistency is the standard. */
+
+/* S10-2 — the dashboard overdue banner (S9-A surface). Light: the measured
+   red-50 → orange-50 gradient (sRGB-exact per trap 5). Dark: red-800 /
+   orange-900 washes — the banner's border, icon block and text already carry
+   dark: variants in the view. */
+.sf-overdue-banner {
+  background-image: linear-gradient(to right, #fef2f2, #fff7ed);
+}
+.dark .sf-overdue-banner {
+  background-image: linear-gradient(
+    to right,
+    rgb(127 29 29 / 0.2),
+    rgb(124 45 18 / 0.14)
+  );
+}
+
+/* S10-3 — MyDay "Today's Progress" card (S6-C surface). Light: the measured
+   amber-50 → orange-50 gradient. Dark: amber-800 / orange-900 washes (the
+   amber-400 dark text variants in the view then read correctly). */
+.sf-amber-card {
+  background-image: linear-gradient(to right, #fffbeb, #fff7ed);
+}
+.dark .sf-amber-card {
+  background-image: linear-gradient(
+    to right,
+    rgb(120 53 15 / 0.22),
+    rgb(124 45 18 / 0.16)
+  );
+}
+
+/* S10-4 — accent-tinted "today" surfaces: the timetable's today HEADER cell
+   + mobile day chips (softest tint) and the calendar's TODAY-unselected cell
+   (empty-from tint — both light values are separately e2e-pinned). One dark
+   treatment: the soft-dark accent wash. */
+.sf-today-tint {
+  background-color: rgb(var(--sf-primary-softest));
+}
+.sf-today-cell {
+  background-color: rgb(var(--sf-primary-empty-from));
+}
+.dark .sf-today-tint,
+.dark .sf-today-cell {
+  background-color: rgb(var(--sf-primary-soft-dark) / 0.3);
+}
+
+/* S10-5 — the sidebar clock chip (S3-B/S3-C surface). Light: the measured
+   violet-50 → indigo-50 gradient (accent-aware softest tokens). Dark: the
+   calc-display soft-dark washes (the two surfaces are design siblings) with
+   violet-300 time text (--sf-primary-strong-dark). */
+.sf-clock-chip {
+  background-image: linear-gradient(
+    to bottom right,
+    rgb(var(--sf-primary-softest)),
+    rgb(var(--sf-primary-softest-adjacent))
+  );
+}
+.dark .sf-clock-chip {
+  background-image: linear-gradient(
+    to bottom right,
+    rgb(var(--sf-primary-soft-dark) / 0.35),
+    rgb(var(--sf-primary-soft-dark) / 0.12)
+  );
+}
+.sf-clock-time {
+  color: rgb(var(--sf-primary-deep));
+}
+.sf-clock-date {
+  color: rgb(var(--sf-primary-strong));
+}
+.dark .sf-clock-time,
+.dark .sf-clock-date {
+  color: rgb(var(--sf-primary-strong-dark));
+}
+
+/* S10-6 — the Settings appearance selected card (S5-F surface). Light:
+   accent border + 50-level tint. Dark: accent border + the soft-dark wash. */
+.sf-selected-tint {
+  border-color: rgb(var(--sf-primary));
+  background-color: rgb(var(--sf-primary-softest));
+}
+.dark .sf-selected-tint {
+  background-color: rgb(var(--sf-primary-soft-dark) / 0.3);
 }
 
 /* Thin scrollbars for long lists (sidebar, notes list, chat). */

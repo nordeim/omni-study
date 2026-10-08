@@ -152,17 +152,13 @@ export function SettingsView() {
                       className={cn(
                         "flex flex-1 flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all sf-focus",
                         selected
-                          ? ""
+                          ? // S10-6 — the selected tint lives in the
+                            // .sf-selected-tint class (light: accent border +
+                            // softest bg; .dark: accent border + soft-dark
+                            // wash — inline styles cannot re-theme).
+                            "sf-selected-tint"
                           : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600",
                       )}
-                      style={
-                        selected
-                          ? {
-                              borderColor: "rgb(var(--sf-primary))",
-                              backgroundColor: "rgb(var(--sf-primary-softest))",
-                            }
-                          : undefined
-                      }
                     >
                       <m.icon className="h-6 w-6" aria-hidden="true" />
                       <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{m.label}</span>
