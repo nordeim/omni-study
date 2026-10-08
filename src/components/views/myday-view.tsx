@@ -286,7 +286,7 @@ export function MyDayView() {
           <button
             type="button"
             onClick={() => quickRef.current?.focus()}
-            className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-4 text-sm font-medium text-white transition-opacity hover:opacity-90 sf-focus"
+            className="sf-print-exact inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-4 text-sm font-medium text-white transition-opacity hover:opacity-90 sf-focus"
             style={{
               backgroundImage: "linear-gradient(to right, rgb(245, 158, 11), rgb(249, 115, 22))",
               boxShadow: "0 10px 15px -3px rgb(245 158 11 / 0.25)",

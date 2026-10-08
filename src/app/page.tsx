@@ -108,13 +108,20 @@ export default function StudyFlowApp() {
   const CurrentView = VIEWS[view] ?? DashboardView;
   return (
     <div className="sf-canvas min-h-screen">
+      {/* S12-B — WCAG 2.4.1 Bypass Blocks: 21 sidebar stops precede the
+          content on every view; this link is the first focusable element
+          and skips straight to main. Visually hidden until focused
+          (.sf-skip-link — off-screen, NOT display:none). */}
+      <a href="#main-content" className="sf-skip-link">
+        Skip to main content
+      </a>
       <Sidebar />
       <MobileChrome />
       {/* pt-20 (80px) offsets the FIXED mobile app bar: 64px of bar + the
           16px the reference's content keeps below it (its main is pt-16 and
           an inner p-4 wrapper adds the rest — measured: first heading at
           y=80 on BOTH apps). At lg the bar is hidden and lg:pt-8 applies. */}
-      <main className="sf-scroll min-h-screen overflow-x-clip p-4 pt-20 transition-all duration-300 lg:ml-[260px] lg:p-8 lg:pt-8">
+      <main id="main-content" tabIndex={-1} className="sf-scroll min-h-screen overflow-x-clip p-4 pt-20 transition-all duration-300 lg:ml-[260px] lg:p-8 lg:pt-8">
         <CurrentView />
       </main>
     </div>

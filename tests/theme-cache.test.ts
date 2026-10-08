@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  THEME_BOOT_SCRIPT,
   THEME_CACHE_KEY,
   parseThemeCache,
   themeCachePayload,
@@ -51,5 +52,24 @@ describe("THEME_CACHE_KEY", () => {
     // The boot script hardcodes the literal — this pin fails if the key
     // drifts, forcing the script string to be updated in the same change.
     expect(THEME_CACHE_KEY).toBe("sf-theme");
+  });
+});
+
+describe("THEME_BOOT_SCRIPT (S12-C1 — the print handlers, pinned)", () => {
+  it("registers beforeprint/afterprint listeners that force light for print", () => {
+    // The script is hand-maintained and cannot import this module — these
+    // presence pins are the sync contract: removing or renaming the print
+    // handlers must fail here and force the string to be updated in the
+    // same change (the S11 cache-format convention, applied to S12).
+    expect(THEME_BOOT_SCRIPT).toContain("beforeprint");
+    expect(THEME_BOOT_SCRIPT).toContain("afterprint");
+    // The handler must remember the pre-print dark state so afterprint can
+    // restore it (the __sfPrintDark flag is the script's own convention).
+    expect(THEME_BOOT_SCRIPT).toContain("__sfPrintDark");
+  });
+
+  it("still applies the cached mode pre-paint (the S11 contract holds)", () => {
+    expect(THEME_BOOT_SCRIPT).toContain('localStorage.getItem("sf-theme")');
+    expect(THEME_BOOT_SCRIPT).toContain("classList.add(\"dark\")");
   });
 });

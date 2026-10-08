@@ -511,7 +511,14 @@
 /* S11-6 — minimal print styles (superset; the reference has none): hide the
    app chrome (sidebar, mobile app bar, drawer, toaster), reset the canvas to
    white, and let the content flow. Scope the display:none to the app shell
-   wrappers so nothing inside main is affected. */
+   wrappers so nothing inside main is affected.
+   S12-C2 — plus print-color-adjust: exact on the essential backgrounds the
+   white text sits on (browsers drop backgrounds by default; the property
+   is inherited, so the timetable class cards' inline subject colors print
+   too) and the S12-D timetable width reset (the min-w-[900px] desktop
+   scroll canvas clipped Saturday on A4). Dark-mode print is handled by the
+   boot script's beforeprint/afterprint handlers (THEME_BOOT_SCRIPT — they
+   force light for the print duration). */
 @media print {
   aside,
   header[role="banner"],
@@ -529,6 +536,89 @@
     padding-top: 0 !important;
     margin-left: 0 !important;
   }
+  .sf-gradient,
+  .sf-print-exact {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .sf-timetable-canvas {
+    min-width: 0 !important;
+  }
+  .sf-scroll {
+    overflow: visible !important;
+  }
+}
+
+/* S12-A — forced-colors (Windows High Contrast) state restoration. The
+   forced palette wipes every fill/tint that ENCODES STATE (the calendar
+   selected day, the today markers, the mode-switch active segment, the
+   active tab, the active nav item, the slider progress fill) while text
+   stays readable by construction (0 invisible-text findings across all 20
+   views in the session-12 sweep) and Chromium auto-provides focus
+   indicators. System-color outlines (Highlight) + a bold active nav
+   restore the state without fighting the palette; the slider fill opts
+   out entirely (an essential non-text graphic, WCAG 1.4.11 — its
+   violet→indigo gradient clears 3:1 against the forced Canvas track in
+   both stops). Scoping note: a bare [aria-pressed] rule would outline
+   every toggle in the app (12 files use it) — the selectors target the
+   two stable Calendar containers the e2e layer already pins. */
+@media (forced-colors: active) {
+  [aria-label="Calendar days"] button[aria-pressed="true"],
+  [aria-label="Calendar mode"] button[aria-pressed="true"],
+  [role="tab"][data-state="active"],
+  [data-today],
+  .sf-today-tint {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  nav a[aria-current="page"],
+  nav a[aria-current="page"] span {
+    font-weight: 700;
+  }
+  .sf-slider-fill {
+    forced-color-adjust: none;
+  }
+}
+
+/* S12-E — prefers-reduced-motion (superset): collapse the app's motion
+   (the two keyframes + the pervasive transition-* utilities) for users who
+   opt out. Playwright's default media leaves motion ON, so every existing
+   e2e pin is unaffected; the a11y spec emulates reduce explicitly. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* S12-B — skip-to-content (WCAG 2.4.1 Bypass Blocks): visually hidden
+   until keyboard focus (off-screen, NOT display:none — it must stay
+   focusable). First focusable element of the app shell; its target is
+   main#main-content (tabIndex -1). */
+.sf-skip-link {
+  position: fixed;
+  top: 8px;
+  left: -9999px;
+  z-index: 100;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: rgb(30 41 59);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+  text-decoration: none;
+}
+.sf-skip-link:focus {
+  left: 8px;
+}
+.dark .sf-skip-link {
+  background: rgb(15 23 42);
+  color: rgb(241 245 249);
 }
 
 /* Thin scrollbars for long lists (sidebar, notes list, chat). */

@@ -291,4 +291,16 @@ export function parseThemeCache(raw: string | null): { mode: ThemeMode; accent: 
  *  the violet :root defaults — the reference's own login is
  *  platform-default-styled). Keep the localStorage key in sync with
  *  THEME_CACHE_KEY (unit-pinned). */
-export const THEME_BOOT_SCRIPT = `(function(){try{var t=JSON.parse(localStorage.getItem("sf-theme")||"null");var m=t&&t.mode;var d=m==="dark"||(m!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
+// S11-1: applies the cached mode (sf-theme) pre-paint with a matchMedia
+// fallback. S12-C1: also registers beforeprint/afterprint handlers — the
+// print media never un-themes (the S11 print block forces the canvas white
+// while every dark:text-* utility keeps rendering LIGHT text on it —
+// measured 2–8 invisible elements per view, all 20 views), so beforeprint
+// removes the dark class for the print duration (remembering it in
+// __sfPrintDark) and afterprint restores it. Running on BOTH routes from
+// the single <head> injection; Chromium fires both events for real print
+// dialogs AND for page.pdf() (measured). The handler strings are unit-
+// pinned in tests/theme-cache.test.ts — the hand-maintained-script sync
+// contract.
+export const THEME_BOOT_SCRIPT = `(function(){try{var t=JSON.parse(localStorage.getItem("sf-theme")||"null");var m=t&&t.mode;var d=m==="dark"||(m!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");}catch(e){}
+try{window.addEventListener("beforeprint",function(){var c=document.documentElement.classList;if(c.contains("dark")){c.remove("dark");window.__sfPrintDark=true;}});window.addEventListener("afterprint",function(){if(window.__sfPrintDark){document.documentElement.classList.add("dark");window.__sfPrintDark=false;}});}catch(e){}})();`;

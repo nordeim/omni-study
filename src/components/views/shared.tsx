@@ -349,7 +349,7 @@ export function TaskRowCard({
           className={cn(
             "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:scale-110 sf-focus",
             task.completed
-              ? "border-transparent bg-sf-primary text-white"
+              ? "sf-print-exact border-transparent bg-sf-primary text-white"
               : PRIORITY_BORDER[task.priority] ?? PRIORITY_BORDER.none,
           )}
         >

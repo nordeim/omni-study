@@ -8,7 +8,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-sf-primary text-sf-primary-foreground shadow-sm hover:bg-sf-primary-strong",
+        default:
+          "sf-print-exact bg-sf-primary text-sf-primary-foreground shadow-sm hover:bg-sf-primary-strong",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline: "border border-input bg-card shadow-sm hover:bg-accent hover:text-accent-foreground",
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",

@@ -390,7 +390,7 @@ export function EventsView() {
         <LoadingCards />
       ) : (
         <section
-          className="w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl"
+          className="sf-print-exact w-full overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl"
           aria-label="Events panel"
         >
           {/* Panel header — S5-B measured spec. The panel is intentionally

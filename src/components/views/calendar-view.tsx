@@ -156,7 +156,7 @@ export function CalendarView() {
               className={cn(
                 "flex h-8 items-center gap-2 rounded-md px-3 text-xs font-medium transition-colors sf-focus",
                 mode === "calendar"
-                  ? "bg-sf-primary text-sf-primary-foreground"
+                  ? "sf-print-exact bg-sf-primary text-sf-primary-foreground"
                   : "text-gray-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
               )}
             >
@@ -188,7 +188,7 @@ export function CalendarView() {
               legend stacked inside. */}
           <section
             aria-label="Calendar month"
-            className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
+            className="sf-print-exact rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
           >
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">

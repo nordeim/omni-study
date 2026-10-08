@@ -308,8 +308,8 @@ export function TimetableView() {
           + full day-name headers (text-sm medium + text-lg bold dates),
           60px hour rows with hairline separators, min-w-[900px]. */}
       <section className="hidden overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm md:block dark:border-slate-800 dark:bg-slate-900" aria-label="Week grid">
-        <div className="sf-scroll overflow-x-auto">
-          <div className="min-w-[900px]">
+        <div className="sf-scroll overflow-x-auto sf-print-exact">
+          <div className="sf-timetable-canvas min-w-[900px]">
             <div className="grid grid-cols-8 border-b border-slate-100 dark:border-slate-800" aria-label="Week header">
               <div className="p-3 text-center text-sm font-medium text-slate-500 dark:text-slate-400">Time</div>
               {WEEK_COLUMNS.map((label, col) => {

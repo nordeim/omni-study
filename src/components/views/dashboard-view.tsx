@@ -60,7 +60,7 @@ function TaskRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
         className={cn(
           "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:scale-110 sf-focus",
           task.completed
-            ? "border-transparent bg-sf-primary text-white"
+            ? "sf-print-exact border-transparent bg-sf-primary text-white"
             : "border-slate-300 dark:border-slate-600",
         )}
       >
@@ -153,7 +153,7 @@ export function DashboardView() {
         <button
           type="button"
           onClick={() => navigate("myday")}
-          className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 self-start sf-focus"
+          className="sf-print-exact inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 self-start sf-focus"
           style={{
             backgroundImage: "linear-gradient(to right, rgb(var(--sf-primary)), rgb(var(--sf-primary-gradient-to)))",
             boxShadow: "0 10px 15px -3px rgb(var(--sf-primary) / 0.25)",
