@@ -152,6 +152,15 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 - **Consequences:** New AI call sites should pass the timeout opt; optimistic-append patterns elsewhere must capture the rollback id BEFORE the request; upload guards must be tested at BOTH runtimes (Node undici dev vs Bun standalone — the empty-name behavior differs, a 201-stored-empty vs a 500-crash pre-fix); e2e probes that hold routes open must reload between probes (the latched `busy` state silently no-ops later sends — the audit's own first run tripped on it).
 - **Alternatives Rejected:** a failed-message chip with a retry button (store schema change + a new visual surface for a rare state — the bounced-back text is the same affordance at zero schema cost); a 30 s timeout (kills legitimate long completions); rejecting non-ASCII filenames entirely (RFC 5987 exists precisely to carry them); pagination/virtualization (the stress audit measured the unbounded lists as a non-gap at 3–10× seed volume — re-verify with `scripts/data-volume-audit.mjs` before ever adding it).
 
+
+**ADR-012: Hardening — ambient connectivity, per-user AI budgets, download headers, AI live regions (session-14)**
+
+- **Context:** The S13 failure paths were per-request; the S14 audit (five new committed tools: drawer-check-s14, connectivity-audit, settings-roundtrip-audit, security-audit, ai-a11y-audit) found the AMBIENT states invisible: no connectivity awareness anywhere (a dropped network was discoverable only by watching actions fail — the per-request paths themselves were verified green: the S13 bounce-back survives a REAL transport failure, dialogs keep their forms, SPA navigation runs on cached data); the settings schema accepted whitespace-only display names (`bounded(80)` has no trim/min — the record wiped to blank while the sidebar fell back to "Student"); the four AI routes had no rate limit (the app's only per-request COST surface — unlimited authenticated LLM calls) while the download response echoed the stored client-supplied Content-Type with no `nosniff` and no `Cache-Control`; and AI output landed in static containers — the assistant transcript, the Thinking indicator, and the solver's solution were silent for screen readers (WCAG 4.1.3). Plus repo hygiene: 14 stale pre-clone scripts (crash on nonexistent models, foreign absolute paths, the original app's routes) shipped in `scripts/`.
+- **Decision:** (1) A `ConnectivityBanner` (`src/components/layout/connectivity-banner.tsx`) bridges `navigator.onLine` via `useSyncExternalStore` — null online (byte-identical DOM, structural parity guarantee), an amber `role="status"` pill offline; and `doFetch` in `src/lib/api.ts` maps fetch `TypeError`s to `ApiError(0, "You appear to be offline…")` with the S13 timeout classification checked FIRST and propagated untouched. No service worker / offline queue (the per-request paths already preserve the user's work — documented). (2) The limiter generalizes to `checkRateLimit(key, max = 10)`; the four AI routes enforce `checkRateLimit(`ai:${user.id}`, 20)` after `requireUser`, before validation — 429 + `Retry-After` + a clear message. (3) File downloads carry `X-Content-Type-Options: nosniff` + `Cache-Control: private, no-store`; NO upload MIME allowlist (the reference stores arbitrary types — parity over restriction; the residual risk re-classified as mitigated). (4) The settings route rejects whitespace-only names (400, mirroring the S13 empty-filename guard) and stores padded names trimmed; the client trims too. (5) The assistant transcript pane and the solver's solution card are `aria-live="polite"` regions with `aria-busy={busy}` — busy suppresses churn, the completed output announces. (6) `git rm` of the 14 stale scripts.
+- **Rationale:** The banner is the ONE ambient signal every surface shares (per-request banners would multiply); 20/15-min per user is ~3× the heaviest realistic burst while a runaway script hits it in seconds; `nosniff` + `no-store` harden the echoed Content-Type without regressing what files the reference lets users store; the live-region pattern is the chat-correct level (polite, busy-suppressed) applied at the two seams every AI surface already shares.
+- **Consequences:** New AI output surfaces must land in live regions (the AGENTS AI-ACCESSIBILITY contract); new expensive routes should join the `ai:` budget family; audit tooling must reload BEFORE unrouting held routes (unrouting alone releases the pending request to the real server — probe rows landed in the chat history mid-audit); e2e AI-rate pins exhaust the per-user budget by design (no other spec makes real AI calls — verified).
+- **Alternatives Rejected:** a service worker + offline queue (large surface, and the measured failure paths already preserve user work — the banner + human messages cover the awareness gap); an upload MIME allowlist (regresses the reference's arbitrary-type Files feature; nosniff+no-store+attachment are the defensible stack); IP-keyed AI limits (the routes are authenticated — the user IS the right key); assertive live regions (would interrupt the SR user mid-task; polite is the chat convention).
+
 ---
 
 ## 2. High-Level System Topology
@@ -458,8 +467,9 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 | Session forgery | HMAC + expiry | Secret leakage = valid sessions until expiry; rotate AUTH_SECRET |
 | IDOR on entities | Factory WHERE-scoping | Bypassing the factory is a code-review concern |
 | XSS | React escaping only; no `dangerouslySetInnerHTML` anywhere | AI/markdown rendered as plain text |
-| Upload abuse | 2 MiB cap, attachment disposition | No MIME allowlist (content sniffing relies on disposition) |
+| Upload abuse | 2 MiB cap, attachment disposition, `nosniff` + `private, no-store` on downloads (session-14) | No MIME allowlist — DOCUMENTED DECISION (the reference stores arbitrary types; parity over restriction — see ADR-012) |
 | SQLi | Prisma parameterized queries | — |
+| LLM cost abuse (authenticated) | Per-user AI budget 20/15 min on all four AI routes (session-14) | Budget is per-process in-memory (same as the login limiter) |
 | CSRF | sameSite=lax cookies + JSON-only APIs | Cross-site POSTs with JSON bodies are blocked by CORS/preflight defaults |
 
 ---
@@ -470,7 +480,7 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 
 | Category | Files | Tests | Location | Framework |
 |----------|-------|-------|----------|-----------|
-| Unit — pure seams | 11 | 123 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
+| Unit — pure seams | 12 | 131 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
 | E2E — auth | 1 | 6 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
 | E2E — mobile navigation | 1 | 11 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
 | E2E — desktop nav + views + parity pins | 1 | 41 | `tests/e2e/navigation.spec.ts` | Playwright |
@@ -485,7 +495,8 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 | E2E — session-11 theme-system pins (boot script, System tracking, meta, accent re-themes, print) | 1 | 12 | `tests/e2e/theme-system.spec.ts` | Playwright |
 | E2E — session-12 accessibility pins (forced-colors state, skip link, print pipeline, reduced-motion) | 1 | 15 | `tests/e2e/accessibility.spec.ts` | Playwright |
 | E2E — session-13 resilience pins (AI failure rollback + recovery, solver MIME guard, upload edges, RFC 5987) | 1 | 5 | `tests/e2e/resilience.spec.ts` | Playwright |
-| **Total** | **24** | **348** | `tests/` (123 unit + 225 e2e incl. 1 setup) | Vitest + Playwright |
+| E2E — session-14 hardening pins (offline banner + byte-parity guard, offline toast, display-name guard, AI rate limit, download headers, live regions) | 1 | 7 | `tests/e2e/s14-hardening.spec.ts` | Playwright |
+| **Total** | **25** | **363** | `tests/` (131 unit + 232 e2e incl. 1 setup) | Vitest + Playwright |
 
 ### 8.2 Test Patterns
 
@@ -565,12 +576,12 @@ Enforced: ESLint flat config + `tsc --noEmit` (both gate). Convention (review-en
 
 | Priority | Issue | Impact | Status |
 |----------|-------|--------|--------|
-| MEDIUM | In-memory login rate limiter is per-process | A multi-instance deploy would multiply the attempt budget | Open (single-instance by design; document before scaling) |
+| MEDIUM | In-memory rate limiters (login + AI budgets) are per-process | A multi-instance deploy would multiply the attempt budgets | Open (single-instance by design; document before scaling) |
 | MEDIUM | `next dev` OOM-killed in ~4 GB containers under parallel load (observed: 1.6 GB RSS + headless browsers) | Dev server dies silently mid-session | Mitigated (close extra browsers; restart) — no memory cap configured |
 | LOW | "Continue with Google" renders but is not wired to OAuth | Visual parity only; email/password is the real flow | Open (honest toast; future integration point) |
 | LOW | Notifications preferences persist to localStorage only | No delivery channel exists | Open (documented in Settings UI) |
 | LOW | Zod v4 `.max()` counts code points, not UTF-16 units | `avatarEmoji` limit allows up to 8 code points (≈8 emoji) | Accepted (pinned by test with the semantics documented) |
-| LOW | No `prefers-reduced-motion` handling for CSS animations | Motion-sensitive users still see shimmer/slide | Open |
+| LOW | ~~No `prefers-reduced-motion` handling~~ | ~~Motion-sensitive users still see shimmer/slide~~ | **Resolved** — the global reduced-motion collapse block landed in session-12 (ADR-010) |
 | LOW | Prisma `db push` workflow (no migrations history) | Schema changes are not versioned | Accepted for SQLite/single-user; revisit if multi-user |
 | INFO | `space-*` ban is convention, not lint rule | A new contributor could reintroduce trap 4 | Accepted (e2e parity pins would not catch spacing regressions) |
 | RESOLVED | Session-2 remediation: radius scale inflated one notch by a mistaken pin block (cards 20px vs reference 16px, buttons 8px vs 6px) | Every corner ~33% larger than the reference | **Fixed** — `--radius-sm: 0.125rem` is the only radius pin; pinned by the e2e "corner radii" spec (see `docs/remediation-plan.md` R1) |
@@ -581,7 +592,7 @@ Enforced: ESLint flat config + `tsc --noEmit` (both gate). Convention (review-en
 | RESOLVED | Session-4 remediation: v4 blur trap (drawer backdrop 8px vs reference 4px); stat-card text metrics (tracking-tight/leading-none/12px hint); empty-state design divergence; view titles tracking-tight slate-900 h2-in-8-views with NO icons; subtitle text drift on ~12 views; login card chrome; brand gradients ending violet-600 instead of indigo-600; "My Lists" label; dashboard date 14px | Second-order parity across every view | **Fixed** — all measured against the reference DOM; 11 new e2e pins + 2 unit pins; see `docs/remediation-plan-session4.md` |
 | RESOLVED | Session-5 remediation: primary CTAs rendered solid violet (reference: violet→indigo gradient + v3 shadow); Events view was a light 7-day-strip design (reference: dark slate-900 terminal panel); dialog chrome (rounded-2xl/max-w-lg/h-10 inputs); zinc form-control palette (reference: gray); FocusTimer/Settings-Appearance/Calculator/Timetable/Notes/GradeTracker/Files/MyDay/AI body divergences; green/orange accents off the reference swatch faces | Third-order (interactive-chrome + view-body) parity across every surface | **Fixed** — 19 new e2e pins + 6 unit pins; see `docs/remediation-plan-session5.md` |
 | RESOLVED | Session-6 remediation: populated rows were unmeasurable in prior sessions (reference account empty) — task rows rendered bare `li`s in one card with 16px square checkboxes and amber stars (reference: standalone r12 card rows, 24px round priority-colored checkboxes, pill meta, hover-revealed violet-star actions); task model lacked priority/repeat/myDay/subtasks; MyDay lacked the amber progress card + Suggestions; dashboard rows/assignment rows/exam cards/calendar grid+legend+day-detail all diverged from the (newly measured) reference designs | Fourth-order (populated-state) parity across every list surface | **Fixed** — 15 new e2e pins + 3 unit pins; see `docs/remediation-plan-session6.md` |
-| MITIGATED | The sandbox reaps background processes at tool-call boundaries — a plain `&` dev server dies silently between agent commands | Dev server instability during long agent sessions | **Mitigated** — `scripts/dev-daemon.py` (double-fork + setsid) keeps the dev server alive; documented in the session-4 plan |
+| MITIGATED | The sandbox reaps background processes at tool-call boundaries — a plain `&` dev server dies silently between agent commands | Dev server instability during long agent sessions | **Mitigated** — `setsid nohup` keeps the dev server alive across tool calls in this environment (the session-4-era `scripts/dev-daemon.py` from the original repo was never carried into this codebase; the 14 stale pre-clone scripts were removed in session-14) |
 | MITIGATED | SQLite serves a deleted `db/custom.db` through the open file handle — reseeding under a running dev server changes nothing until restart | Stale demo data after reseed | **Mitigated** — restart the dev daemon after `rm db/custom.db && db:push && db:seed` (documented in the session-5 plan) |
 
 ---
