@@ -495,7 +495,7 @@ export function LoginCard({ initialResetToken }: { initialResetToken: string | n
                     <button
                       type="submit"
                       disabled={busy || !email || !password}
-                      className="inline-flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-slate-900 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:pointer-events-none disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sf-focus"
+                      className="inline-flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-slate-900 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:pointer-events-none disabled:opacity-50 sm:h-12 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sf-focus"
                     >
                       {busy ? "Signing in…" : "Sign in"}
                     </button>
@@ -536,8 +536,9 @@ export function LoginCard({ initialResetToken }: { initialResetToken: string | n
             {screen === "signup" && (
               <div>
                 <BackToSignIn onBack={goBackToSignIn} />
-                {/* Measured: Back → h2 gap 8px. */}
-                <h2 className="mt-2 text-center text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                {/* Measured: Back → h2 gap 8px. S16 mobile probe: the
+                    reference's h2 is text-xl sm:text-2xl — 20px below sm. */}
+                <h2 className="mt-2 text-center text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-slate-50">
                   Create your account
                 </h2>
                 <form onSubmit={onSubmitSignup} className="mt-6 space-y-4 sm:space-y-5" noValidate>
@@ -593,15 +594,18 @@ export function LoginCard({ initialResetToken }: { initialResetToken: string | n
             {screen === "verify" && (
               <div>
                 <BackToSignIn onBack={goBackToSignIn} />
-                {/* Measured: 64px slate-100 circle + ShieldCheck, 16px gaps. */}
-                <div className="mx-auto mt-4 mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 sm:h-16 sm:w-16 dark:bg-slate-800">
+                {/* S16 mobile probe: the reference's Back-bottom→h2 gap is
+                    76px mobile / 96px desktop. The whole spacing rides the
+                    circle (mb-5 sm:mb-8) — an h2 margin would COLLAPSE with
+                    it as adjacent siblings (max, not sum). */}
+                <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 sm:mb-8 sm:h-16 sm:w-16 dark:bg-slate-800">
                   <ShieldCheck
                     className="h-7 w-7 text-slate-700 sm:h-8 sm:w-8 dark:text-slate-300"
                     strokeWidth={2}
                     aria-hidden="true"
                   />
                 </div>
-                <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                <h2 className="text-center text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-slate-50">
                   Verify your email
                 </h2>
                 <p className="mt-2 text-center text-slate-600 text-sm sm:text-base dark:text-slate-400">
@@ -666,8 +670,9 @@ export function LoginCard({ initialResetToken }: { initialResetToken: string | n
             {screen === "forgot" && (
               <div>
                 <BackToSignIn onBack={goBackToSignIn} />
-                {/* Measured: Back → h2 gap 16px. */}
-                <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                {/* S16 mobile probe: the reference's gap is RESPONSIVE —
+                    8px below sm (h2 mt-2), 16px at desktop (sm:mt-4). */}
+                <h2 className="mt-2 text-center text-xl font-bold tracking-tight text-slate-900 sm:mt-4 sm:text-2xl dark:text-slate-50">
                   Reset your password
                 </h2>
                 <p className="mt-2 text-center text-slate-600 text-sm sm:text-base dark:text-slate-400">
@@ -693,15 +698,16 @@ export function LoginCard({ initialResetToken }: { initialResetToken: string | n
 
             {screen === "check-email" && (
               <div>
-                {/* Measured: envelope-in-circle (same 64px slate-100 shape). */}
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 sm:h-16 sm:w-16 dark:bg-slate-800">
+                {/* Measured: envelope-in-circle (the reference's responsive
+                    family: circle mb-3 sm:mb-4, h2 mt-0 → 12px mobile gap). */}
+                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 sm:mb-4 sm:h-16 sm:w-16 dark:bg-slate-800">
                   <Mail
                     className="h-7 w-7 text-slate-700 sm:h-8 sm:w-8 dark:text-slate-300"
                     strokeWidth={2}
                     aria-hidden="true"
                   />
                 </div>
-                <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                <h2 className="text-center text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-slate-50">
                   Check your email
                 </h2>
                 <p className="mt-2 text-center text-slate-600 text-sm sm:text-base dark:text-slate-400">
@@ -741,7 +747,7 @@ export function LoginCard({ initialResetToken }: { initialResetToken: string | n
             {screen === "reset" && (
               <div>
                 <BackToSignIn onBack={goBackToSignIn} />
-                <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                <h2 className="mt-2 text-center text-xl font-bold tracking-tight text-slate-900 sm:mt-4 sm:text-2xl dark:text-slate-50">
                   Reset your password
                 </h2>
                 <p className="mt-2 text-center text-slate-600 text-sm sm:text-base dark:text-slate-400">

@@ -30,6 +30,7 @@ import { FocusTimerView } from "@/components/views/focustimer-view";
 import { SettingsView } from "@/components/views/settings-view";
 import { GraduationCap } from "lucide-react";
 import type { ViewId } from "@/lib/router";
+import { INITIAL_COLLECTIONS } from "@/lib/view-collections";
 
 const VIEWS: Record<ViewId, React.ComponentType> = {
   dashboard: DashboardView,
@@ -83,9 +84,32 @@ export default function StudyFlowApp() {
     let cancelled = false;
     (async () => {
       try {
+        // S16-A — the load-stability fix (docs/remediation-plan-session16.md):
+        // the auth call and the ACTIVE view's initial collections are fetched
+        // in PARALLEL (the session cookie already exists; the data calls do
+        // not need the auth result), and the shell flips only when BOTH have
+        // settled. Pre-fix the shell rendered with an empty data store and
+        // the data arrival re-laid the conditional overdue banner + sections
+        // out from under the viewport (CLS 0.117–0.125). The Splash→shell
+        // REPLACEMENT then renders with final geometry — replacements are
+        // not moves, so the shift source disappears entirely.
+        // `view` is read from the store AFTER hydrate() ran (syncFromPath is
+        // synchronous) — never from the render-time closure, which would
+        // capture the pre-hydration default (the AP-59 stale-closure family).
+        const activeView = useAppStore.getState().view;
+        const initial = INITIAL_COLLECTIONS[activeView] ?? [];
+        const dataPromise = initial.length
+          ? useDataStore.getState().loadAll(initial).catch(() => {
+              // A failed pre-warm never blocks the app: the view's own
+              // loadAll effect retries (status left on "error"), so the
+              // shell must still flip on auth alone.
+            })
+          : null;
         const { user } = await apiGet<{ user: PublicUserShape }>("/api/auth/me");
         if (cancelled) return;
         loadFromUser(user);
+        if (dataPromise) await dataPromise;
+        if (cancelled) return;
         setStatus("authed");
       } catch {
         if (cancelled) return;

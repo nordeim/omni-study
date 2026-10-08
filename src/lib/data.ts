@@ -285,7 +285,7 @@ const EMPTY: Collections = {
   holidays: [],
 };
 
-const PATHS: Record<CollectionKey, string> = {
+export const PATHS: Record<CollectionKey, string> = {
   subjects: "/api/subjects",
   taskLists: "/api/task-lists",
   tasks: "/api/tasks",
