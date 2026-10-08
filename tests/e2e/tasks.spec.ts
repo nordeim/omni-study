@@ -31,8 +31,10 @@ test.describe("tasks golden path", () => {
     await row.getByRole("checkbox").click();
     // Completed tasks leave the default "Active" filter view.
     await expect(page.getByText(`E2E — complete me ${stamp}`)).toHaveCount(0);
-    await page.getByRole("combobox").first().click();
-    await page.getByRole("option", { name: "Completed" }).click();
+    // S9-C: the status filter is now an outline button + DropdownMenu (the
+    // reference's chrome) — not a combobox.
+    await page.getByRole("button", { name: "Filter tasks" }).click();
+    await page.getByRole("menuitem", { name: "Completed" }).click();
     await expect(page.getByText(`E2E — complete me ${stamp}`)).toBeVisible();
     const style = await page
       .locator('[aria-label="Task rows"] > div', { hasText: `E2E — complete me ${stamp}` })
@@ -68,10 +70,12 @@ test.describe("tasks golden path", () => {
 });
 
 test.describe("my day quick add", () => {
-  test("quick-add creates a task for today", async ({ page }) => {
+  test("quick-add creates a task for today (Enter submits — S9-Q)", async ({ page }) => {
     await page.goto("/MyDay");
     await page.getByLabel("Add a task for today").fill(`E2E — my day task ${stamp}`);
-    await page.getByRole("button", { name: "Add task" }).click();
+    // S9-Q: the reference's quick-add row has no submit button — Enter
+    // submits the form.
+    await page.getByLabel("Add a task for today").press("Enter");
     await expect(page.getByText(`E2E — my day task ${stamp}`)).toBeVisible();
   });
 });

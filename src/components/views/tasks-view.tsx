@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { List as ListIcon, ListChecks, Plus, Search, Star } from "lucide-react";
+import { Filter, List as ListIcon, ListChecks, Plus, Search, Star } from "lucide-react";
 import { useDataStore, mutations, type Task, type Subtask } from "@/lib/data";
 import { useSubjectMap, EmptyState, ErrorText, TaskRowCard } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import { isSameDay } from "@/lib/date";
@@ -248,9 +249,8 @@ export function TasksView() {
               <Plus className="h-4 w-4" />
             </button>
           </div>
-          {taskLists.length === 0 && (
-            <p className="py-2 text-xs text-slate-400">No lists yet</p>
-          )}
+          {/* S9-D (measured): the reference's My Lists body is EMPTY when no
+              lists exist — no placeholder text. */}
           <div className="flex flex-col gap-1">
             {taskLists.map((list) => {
               const count = tasks.filter((t) => t.listId === list.id && !t.completed).length;
@@ -318,16 +318,24 @@ export function TasksView() {
                 className="h-9 pl-9"
               />
             </div>
-            <Select value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-              <SelectTrigger className="h-9 w-[110px]" aria-label="Filter tasks">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="all">All</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* S9-C (re-measured): the reference's status filter is a plain
+                outline BUTTON — `lucide-filter w-4 h-4` icon + current value,
+                NO chevron/combobox chrome. A DropdownMenu keeps the filter
+                function (the reference's own popover never opens under
+                synthetic clicks — contents unmeasurable; clone superset). */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-9 w-[110px] justify-between gap-2" aria-label="Filter tasks">
+                  <Filter className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                  <span>{filter === "all" ? "All" : filter === "completed" ? "Completed" : "Active"}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setFilter("active")}>Active</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter("completed")}>Completed</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter("all")}>All</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={openCreate} variant="gradient" className="shrink-0 gap-1.5">
               <Plus className="h-4 w-4" /> Add Task
             </Button>

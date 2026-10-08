@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, FolderPlus, Pin, PinOff, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, Folder, FolderPlus, Pin, PinOff, Plus, Search, Tag, Trash2 } from "lucide-react";
 import { useDataStore, mutations, type Note, type Notebook } from "@/lib/data";
 import { EmptyState } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,14 @@ export function NotesView() {
               onValueChange={(v) => setNotebookFilter(v === "all" ? "" : v)}
             >
               <SelectTrigger aria-label="Filter by notebook" className="h-9 w-full">
-                <SelectValue />
+                {/* S9-N (measured): the reference's combobox triggers carry
+                    leading icons — folder for notebooks, tag for tags. The
+                    icon+value group sits left; the chevron stays right
+                    (justify-between trigger). */}
+                <span className="flex min-w-0 items-center gap-2">
+                  <Folder className="h-4 w-4 shrink-0 text-slate-400" strokeWidth={1.75} aria-hidden="true" />
+                  <SelectValue />
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Notebooks</SelectItem>
@@ -144,7 +151,10 @@ export function NotesView() {
               onValueChange={(v) => setTagFilter(v === "all" ? "" : v)}
             >
               <SelectTrigger aria-label="Filter by tag" className="h-9 w-full">
-                <SelectValue />
+                <span className="flex min-w-0 items-center gap-2">
+                  <Tag className="h-4 w-4 shrink-0 text-slate-400" strokeWidth={1.75} aria-hidden="true" />
+                  <SelectValue />
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Tags</SelectItem>

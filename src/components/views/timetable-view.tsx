@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Calendar, ChevronLeft, ChevronRight, Grid3x3, Plus, Trash2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useDataStore, mutations, type TimetableClass } from "@/lib/data";
 import { useSubjectMap, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -185,8 +185,10 @@ export function TimetableView() {
               ))}
             </SelectContent>
           </Select>
+          {/* S9-H (measured): the reference's Grid Builder is TEXT-ONLY —
+              no icon on the outline button. */}
           <Button variant="outline" onClick={() => setGridBuilder((v) => !v)} aria-pressed={gridBuilder}>
-            <Grid3x3 className="h-4 w-4" /> Grid Builder
+            Grid Builder
           </Button>
           <Button variant="gradient" onClick={openCreate}>
             <Plus className="h-4 w-4" /> Add Class

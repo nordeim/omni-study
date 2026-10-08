@@ -1,16 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Grid3x3, List } from "lucide-react";
 import { useDataStore, type AppEvent, type Task } from "@/lib/data";
 import { useAppStore } from "@/lib/store";
 import { EmptyState, useSubjectMap, ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { addMonths, formatFullDate, isSameDay, monthGrid, WEEKDAY_SHORT } from "@/lib/date";
+import { addMonths, CALENDAR_WEEKDAYS, formatFullDate, isSameDay, monthGrid } from "@/lib/date";
 
-// Calendar — month grid (Monday-first, 6×7, leading/trailing days muted —
-// matches the reference) + day detail panel. Timeline toggle switches to a
+// Calendar — month grid (S9-E: SUNDAY-first, dynamic week count — the
+// reference's measured column order — with leading/trailing days muted) +
+// day detail panel. Timeline toggle switches to a
 // chronological agenda of events/exams/assignments.
 //
 // S6-G — the month grid + legend + day detail were re-measured against the
@@ -97,7 +98,7 @@ export function CalendarView() {
     }
     for (const c of timetable) {
       // Classes repeat weekly on their dayOfWeek.
-      for (let i = 0; i < 42; i++) {
+      for (let i = 0; i < cells.length; i++) {
         const d = new Date(cells[0].date);
         d.setDate(d.getDate() + i);
         if (d.getDay() === c.dayOfWeek) add(d, "class");
@@ -140,26 +141,43 @@ export function CalendarView() {
         title="Calendar"
         subtitle="View all your tasks, assignments and classes"
         actions={
-          // S5-G — measured segmented control: white bg, rounded-lg,
-          // border-slate-200, p-1; tabs 12px; active = solid accent bg.
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          {(["calendar", "timeline"] as const).map((m) => (
+          // S9-F (re-measured): segmented control — `flex items-center gap-2
+          // bg-white rounded-lg border border-slate-200 p-1` container (42px)
+          // with h-8 px-3 text-xs tabs carrying icons (Calendar = grid3x3,
+          // Timeline = list); active = solid accent fill, inactive = ghost.
+          <div
+            aria-label="Calendar mode"
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900"
+          >
             <button
-              key={m}
               type="button"
-              onClick={() => setMode(m)}
+              onClick={() => setMode("calendar")}
+              aria-pressed={mode === "calendar"}
               className={cn(
-                "rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors",
-                mode === m
+                "flex h-8 items-center gap-2 rounded-md px-3 text-xs font-medium transition-colors sf-focus",
+                mode === "calendar"
                   ? "bg-sf-primary text-sf-primary-foreground"
                   : "text-gray-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
               )}
-              aria-pressed={mode === m}
             >
-              {m}
+              <Grid3x3 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              Calendar
             </button>
-          ))}
-        </div>
+            <button
+              type="button"
+              onClick={() => setMode("timeline")}
+              aria-pressed={mode === "timeline"}
+              className={cn(
+                "flex h-8 items-center gap-2 rounded-md px-3 text-xs font-medium transition-colors sf-focus",
+                mode === "timeline"
+                  ? "bg-sf-primary text-sf-primary-foreground"
+                  : "text-gray-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+              )}
+            >
+              <List className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              Timeline
+            </button>
+          </div>
         }
       />
 
@@ -188,9 +206,10 @@ export function CalendarView() {
               </div>
             </div>
             {/* S8-C (measured): weekday header — text-center text-sm
-                font-medium text-slate-500 py-2 cells on grid-cols-7 gap-1. */}
-            <div className="grid grid-cols-7 gap-1" aria-label="Calendar weekdays">
-              {WEEKDAY_SHORT.map((d) => (
+                font-medium text-slate-500 py-2 cells on grid-cols-7 gap-1.
+                S9-E: the reference's column order is SUNDAY-FIRST. */}
+            <div className="mb-2 grid grid-cols-7 gap-1" aria-label="Calendar weekdays">
+              {CALENDAR_WEEKDAYS.map((d) => (
                 <span key={d} className="py-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
                   {d}
                 </span>

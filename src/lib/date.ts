@@ -4,6 +4,8 @@
 // ---------------------------------------------------------------------------
 
 export const WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+/** Sunday-first weekday labels — the reference CALENDAR column order (S9-E). */
+export const CALENDAR_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 export const WEEKDAY_LONG = [
   "Monday",
   "Tuesday",
@@ -90,16 +92,21 @@ export function formatTime12h(d: Date): string {
 }
 
 /**
- * Calendar grid for a month: 6 rows × 7 cols starting Monday (the reference
- * grid shows leading days of the previous month — measured live). Returns
- * Date objects plus whether each belongs to the target month.
+ * Calendar grid for a month: SUNDAY-first (S9-E, re-measured live on the
+ * reference — the weekday header runs Sun…Sat and October 2026 starts at
+ * Sep 27), with a dynamic week count: exactly the weeks needed
+ * (ceil((lead + daysInMonth) / 7) rows — 35 cells for October 2026, six
+ * rows only when the month spills past five). Returns Date objects plus
+ * whether each belongs to the target month.
  */
 export function monthGrid(year: number, monthIndex0: number): { date: Date; inMonth: boolean }[] {
   const first = new Date(year, monthIndex0, 1);
-  const lead = isoWeekday(first);
+  const lead = first.getDay(); // Sunday = 0 — the reference's column order
+  const daysInMonth = new Date(year, monthIndex0 + 1, 0).getDate();
+  const weeks = Math.ceil((lead + daysInMonth) / 7);
   const cells: { date: Date; inMonth: boolean }[] = [];
   const start = addDays(first, -lead);
-  for (let i = 0; i < 42; i++) {
+  for (let i = 0; i < weeks * 7; i++) {
     const date = addDays(start, i);
     cells.push({ date, inMonth: date.getMonth() === monthIndex0 });
   }

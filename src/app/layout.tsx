@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/toast";
+import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: {
     default: "StudyFlow — Your study companion",
     template: "%s · StudyFlow",

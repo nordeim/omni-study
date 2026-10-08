@@ -89,12 +89,27 @@ describe("formatters", () => {
 });
 
 describe("monthGrid", () => {
-  it("produces a 6×7 Monday-first grid with leading days", () => {
+  // S9-E (re-measured live on the reference): the reference's calendar month
+  // grid is SUNDAY-FIRST — weekday header runs Sun…Sat and October 2026
+  // starts at Sep 27 (Sunday) with exactly 35 cells (5 weeks).
+  it("produces a Sunday-first grid (October 2026 = 35 cells, starts Sep 27)", () => {
     const cells = monthGrid(2026, 9); // October 2026 starts on Thursday
-    expect(cells).toHaveLength(42);
-    expect(cells[0]!.date.getDay()).toBe(1); // Monday
-    expect(cells[0]!.inMonth).toBe(false); // Sep 28
+    expect(cells).toHaveLength(35);
+    expect(cells[0]!.date.getDay()).toBe(0); // Sunday
+    expect(cells[0]!.date.getDate()).toBe(27); // Sep 27
+    expect(cells[0]!.date.getMonth()).toBe(8); // September
+    expect(cells[0]!.inMonth).toBe(false);
     expect(cells.filter((c) => c.inMonth)).toHaveLength(31);
+    // Last cell covers Oct 31 (Saturday) — no sixth week.
+    expect(cells[34]!.date.getDate()).toBe(31);
+    expect(cells[34]!.inMonth).toBe(true);
+  });
+
+  it("rounds up to a sixth week when the month spills past five", () => {
+    // November 2026 starts on a Sunday: lead 0 + 30 days = 30 → 5 weeks.
+    expect(monthGrid(2026, 10)).toHaveLength(35);
+    // January 2027 starts on a Friday: lead 5 + 31 = 36 → 6 weeks.
+    expect(monthGrid(2027, 0)).toHaveLength(42);
   });
 });
 

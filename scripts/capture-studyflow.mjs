@@ -18,7 +18,12 @@ const browser = await chromium.launch();
 // avoids API-context quirks under bun); reuse the session cookie after.
 const loginCtx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
 const lp = await loginCtx.newPage();
-await lp.goto(BASE + "/login", { waitUntil: "networkidle" });
+await lp.goto(BASE + "/login", { waitUntil: "load" });
+// networkidle never fires against the dev server (persistent dev-tools
+// connections) — wait for React hydration instead: the login button's
+// disabled state is React-managed, so poll until the inputs' values are
+// reflected (fill, then wait, re-fill once if hydration raced us).
+await lp.waitForTimeout(2000);
 await lp.fill('input[id="email"]', DEMO_EMAIL);
 await lp.fill('input[id="password"]', DEMO_PASSWORD);
 await lp.click('button[type="submit"]');
@@ -51,7 +56,8 @@ async function shot(name, ctxOptions, path, run) {
   const ctx = await currentBrowser.newContext({ deviceScaleFactor: 1, ...ctxOptions });
   await ctx.addCookies([{ name: "sf_session", value: session.value, url: BASE }]);
   const page = await ctx.newPage();
-  await page.goto(BASE + path, { waitUntil: "networkidle" });
+  await page.goto(BASE + path, { waitUntil: "load" });
+  await page.waitForTimeout(2000);
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(1200);
   if (run) await run(page);
@@ -68,7 +74,7 @@ const mobileTouch = { viewport: { width: 390, height: 844 }, hasTouch: true, isM
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + "/login", { waitUntil: "networkidle" });
+  await page.goto(BASE + "/login", { waitUntil: "load" });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(900);
   await page.screenshot({ path: `${OUT}/01-login.png` });
@@ -89,7 +95,7 @@ for (let i = 0; i < VIEWS.length; i++) {
     view === "Flashcards"
       ? async (page) => {
           await page
-            .locator('[aria-label="Deck rows"] > button', { hasText: "Integration rules" })
+            .locator('[aria-label="Deck rows"] > div', { hasText: "Integration rules" })
             .first()
             .click();
           await page.waitForTimeout(900);

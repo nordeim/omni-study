@@ -9,7 +9,8 @@ import {
   Folder,
   FolderOpen,
   FolderPlus,
-  LayoutGrid,
+  Grid3x3,
+  House,
   Link2,
   List,
   Trash2,
@@ -302,6 +303,9 @@ export function FilesView() {
               : "text-slate-800 dark:text-slate-200",
           )}
         >
+          {/* S9-G (measured): the reference's breadcrumb root carries a
+              house icon before "All Files". */}
+          <House className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
           All Files
         </button>
         {breadcrumb.map((f, i) => {
@@ -362,7 +366,7 @@ export function FilesView() {
             aria-pressed={viewMode === "grid"}
             className="rounded-none"
           >
-            <LayoutGrid className="h-4 w-4" strokeWidth={1.75} />
+            <Grid3x3 className="h-4 w-4" strokeWidth={1.75} />
           </Button>
           <Button
             variant={viewMode === "list" ? "secondary" : "ghost"}

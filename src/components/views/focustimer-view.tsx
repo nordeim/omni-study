@@ -6,13 +6,14 @@ import {
   Check,
   Coffee,
   Flame,
-  Moon,
   Pause,
   Play,
   RotateCcw,
   Settings2,
+  Target,
   Timer,
   Volume2,
+  Zap,
 } from "lucide-react";
 import { useDataStore, mutations } from "@/lib/data";
 import { ErrorText, LoadingCards } from "./shared";
@@ -35,7 +36,8 @@ interface Preset {
 const MODE_META: Record<TimerMode, { label: string; ringLabel: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = {
   focus: { label: "Focus", ringLabel: "Focus Time", icon: Brain },
   short_break: { label: "Short Break", ringLabel: "Short Break", icon: Coffee },
-  long_break: { label: "Long Break", ringLabel: "Long Break", icon: Moon },
+  // S9-L: Long Break uses the reference's coffee glyph (not moon).
+  long_break: { label: "Long Break", ringLabel: "Long Break", icon: Coffee },
 };
 
 const PRESETS: Preset[] = [
@@ -248,9 +250,11 @@ export function FocusTimerView() {
                 centered, 24px icon + text-2xl/700 value + text-xs label. */}
             <div className="grid grid-cols-3 gap-4">
               {[
-                { icon: Brain, value: String(todayFocus.length), label: "Pomodoros" },
-                { icon: Flame, value: formatMinutes(totalTodayMinutes), label: "Today" },
-                { icon: Timer, value: String(todaySessions.length), label: "Sessions" },
+                // S9-L (measured): the reference's stat icons are
+                // flame (Pomodoros) / target (Today) / zap (Sessions).
+                { icon: Flame, value: String(todayFocus.length), label: "Pomodoros" },
+                { icon: Target, value: formatMinutes(totalTodayMinutes), label: "Today" },
+                { icon: Zap, value: String(todaySessions.length), label: "Sessions" },
               ].map(({ icon: Icon, value, label }) => (
                 <div
                   key={label}

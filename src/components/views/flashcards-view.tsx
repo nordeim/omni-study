@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Layers, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Ellipsis, Layers, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useDataStore, mutations, type FlashcardDeck, type Flashcard } from "@/lib/data";
 import { EmptyState, useSubjectMap } from "./shared";
 import { apiSend } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -248,19 +249,26 @@ export function FlashcardsView() {
         ) : (
           <div className="sf-scroll flex-1 space-y-2 overflow-y-auto" aria-label="Deck rows">
             {visibleDecks.map((deck) => (
-              <button
+              // S9-O (measured): the row carries a hover-revealed h-8 w-8
+              // ghost ellipsis menu (opacity-0 group-hover:opacity-100) as a
+              // flex child at the row's right — nested buttons are invalid
+              // HTML, so the row is a div and selection rides the inner
+              // button (the reference nests buttons inside its row).
+              <div
                 key={deck.id}
-                type="button"
-                onClick={() => openDeck(deck.id)}
-                aria-pressed={selectedId === deck.id}
                 className={cn(
-                  "group w-full rounded-xl border-2 border-transparent p-4 text-left transition-all",
+                  "group flex w-full items-center gap-3 rounded-xl border-2 border-transparent p-4 text-left transition-all",
                   selectedId === deck.id
                     ? "border-sf-primary/40 bg-slate-100"
                     : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800",
                 )}
               >
-                <span className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => openDeck(deck.id)}
+                  aria-pressed={selectedId === deck.id}
+                  className="sf-focus flex min-w-0 flex-1 items-center gap-3 text-left"
+                >
                   <span
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
                     style={{ backgroundColor: deck.color || "#8b5cf6" }}
@@ -276,8 +284,37 @@ export function FlashcardsView() {
                       {deck.cardCount} {deck.cardCount === 1 ? "card" : "cards"}
                     </p>
                   </span>
-                </span>
-              </button>
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={`Options for ${deck.name}`}
+                      className="sf-focus flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 opacity-0 transition-opacity hover:bg-slate-200/70 hover:text-slate-600 group-hover:opacity-100 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
+                    >
+                      <Ellipsis className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditDeck(deck)}>
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
+                      Edit deck
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        void mutations.deleteDeck(deck.id).then(() => {
+                          toast.success(`Deleted "${deck.name}"`);
+                          if (selectedId === deck.id) setSelectedId(null);
+                        });
+                      }}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      Delete deck
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ))}
           </div>
         )}

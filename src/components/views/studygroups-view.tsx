@@ -446,7 +446,7 @@ export function StudyGroupsView() {
                 <EmptyState
                   icon={Users}
                   title="Select a group"
-                  hint="Choose a study group from the sidebar to see its members and meetings."
+                  hint="Choose a study group from the sidebar or create a new one"
                 />
               </div>
             )}

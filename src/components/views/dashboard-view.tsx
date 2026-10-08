@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, Calendar, Check, Clock, Flag, Flame, GraduationCap, Sparkles, SquareCheckBig, Target } from "lucide-react";
+import { ArrowRight, BookOpen, Calendar, Check, CircleAlert, Clock, Flag, Flame, GraduationCap, Sparkles, SquareCheckBig, Target } from "lucide-react";
 import { useAppStore, useThemeStore } from "@/lib/store";
 import { useDataStore, mutations, type Task } from "@/lib/data";
-import { STAT_COLORS, SectionCard, SimpleEmptyState, StatCard, ViewAllLink, useSubjectMap } from "./shared";
+import { STAT_COLORS, SectionCard, StatCard, ViewAllLink, useSubjectMap } from "./shared";
 import { greetingForHour } from "@/lib/router";
 import { daysUntil, formatFullDate, isSameDay } from "@/lib/date";
 import { Checkbox } from "@/components/ui/primitives";
@@ -27,6 +27,25 @@ import { cn } from "@/lib/utils";
 function formatExamWhen(iso: string): string {
   const d = new Date(iso);
   return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+}
+
+// S9-R (measured on the reference): the dashboard's per-section empty state
+// is a SLIM inline block — `p-8 text-center text-slate-500` with a leading
+// `w-12 h-12 mx-auto text-slate-300 mb-3` icon — NOT the 80px gradient
+// EmptyState used by whole-view empties.
+function DashSectionEmpty({
+  icon: Icon,
+  message,
+}: {
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  message: string;
+}) {
+  return (
+    <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+      <Icon className="mx-auto mb-3 h-12 w-12 text-slate-300 dark:text-slate-600" strokeWidth={1.75} aria-hidden="true" />
+      <p>{message}</p>
+    </div>
+  );
 }
 
 function TaskRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
@@ -111,6 +130,12 @@ export function DashboardView() {
 
   const greeting = greetingForHour(now.getHours());
 
+  // S9-A — the reference's overdue alert (live-measured): incomplete tasks
+  // whose due date is strictly before today.
+  const overdueCount = tasks.filter(
+    (t) => !t.completed && t.dueDate && daysUntil(new Date(t.dueDate), now) < 0,
+  ).length;
+
   return (
     <div className="flex flex-col gap-8">
       {/* Greeting row */}
@@ -139,6 +164,41 @@ export function DashboardView() {
         </button>
       </div>
 
+      {/* S9-A — Overdue alert banner (reference-measured): gradient
+          red-50 → orange-50, red-200 border, rounded-2xl, circle-alert block,
+          red-700/600 text, ghost View All CTA linking to /Tasks. Sits between
+          the greeting and the stats grid. */}
+      {overdueCount > 0 && (
+        <div
+          aria-label="Overdue alert"
+          className="rounded-2xl border border-red-200 p-4 dark:border-red-900/60"
+          style={{
+            // Trap 5 — sRGB-exact inline gradient (the utility interpolates
+            // in oklab; measured: red-50 #fef2f2 → orange-50 #fff7ed).
+            backgroundImage: "linear-gradient(to right, #fef2f2, #fff7ed)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/60">
+              <CircleAlert className="h-5 w-5 text-red-500 dark:text-red-400" strokeWidth={2} aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-red-700 dark:text-red-300">
+                You have {overdueCount} overdue item(s)
+              </h3>
+              <p className="text-sm text-red-600 dark:text-red-400">Don't forget to complete them!</p>
+            </div>
+            <a
+              href="/Tasks"
+              className="inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              View All
+              <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Today's Progress" value={`${doneToday}/${todayTasks.length}`} hint="tasks completed" icon={Target} colors={STAT_COLORS.violet} />
@@ -158,9 +218,7 @@ export function DashboardView() {
           flush
         >
           {todayTasks.length === 0 ? (
-            <div className="p-6">
-              <SimpleEmptyState icon={SquareCheckBig} message="No tasks for today. Add some from My Day!" />
-            </div>
+            <DashSectionEmpty icon={SquareCheckBig} message="No tasks for today. Add some from My Day!" />
           ) : (
             <ul className="divide-y divide-slate-50" aria-label="Today's tasks">
               {todayTasks.map((t) => (
@@ -177,9 +235,7 @@ export function DashboardView() {
           flush
         >
           {upcomingExams.length === 0 ? (
-            <div className="p-6">
-              <SimpleEmptyState icon={GraduationCap} message="No upcoming exams" />
-            </div>
+            <DashSectionEmpty icon={GraduationCap} message="No upcoming exams" />
           ) : (
             <ul className="divide-y divide-slate-50" aria-label="Upcoming exams">
               {upcomingExams.map((e) => {
@@ -226,9 +282,7 @@ export function DashboardView() {
         flush
       >
         {upcomingAssignments.length === 0 ? (
-          <div className="p-6">
-            <SimpleEmptyState icon={BookOpen} message="No upcoming assignments" />
-          </div>
+          <DashSectionEmpty icon={BookOpen} message="No upcoming assignments" />
         ) : (
           <ul className="divide-y divide-slate-50" aria-label="Upcoming assignments">
             {upcomingAssignments.map((a) => {

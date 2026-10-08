@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { isSameDay } from "@/lib/date";
+import { greetingForHour } from "@/lib/router";
 import { cn } from "@/lib/utils";
 
 export function MyDayView() {
@@ -23,12 +24,17 @@ export function MyDayView() {
   const [dueDate, setDueDate] = React.useState(() => new Date().toISOString().slice(0, 10));
   const [editing, setEditing] = React.useState<Task | null>(null);
   const [suggestionsOpen, setSuggestionsOpen] = React.useState(false);
+  // S9-B/S9-Q — the empty-state CTA focuses the quick-add input; the ref
+  // replaces the removed gradient submit button (Enter submits the form).
+  const quickRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     void loadAll(["tasks", "subjects"]);
   }, [loadAll]);
 
   const now = new Date();
+  // S9-B — the empty state's greeting title (reference-measured wording).
+  const greeting = greetingForHour(now.getHours());
   // S6-C — My Day is the explicit task set (myDay flag, reference-measured
   // toggle) — falling back to due-today so legacy rows still surface.
   const todayTasks = tasks.filter(
@@ -126,6 +132,10 @@ export function MyDayView() {
           border-amber-100, amber-700 label + amber-600 bold fraction + h-2
           amber progressbar). S8-D: sits directly under the header (mt-6).
           sRGB-exact inline gradient per trap 5. */}
+      {/* S9-B (live re-measure): the reference HIDES this card when there
+          are no today-tasks — its My Day shows only the header, quick-add,
+          amber empty state and Suggestions. */}
+      {todayTasks.length > 0 && (
       <div
         aria-label="Today progress"
         className="mt-6 rounded-2xl border border-amber-100 p-4 dark:border-amber-900/50"
@@ -153,6 +163,7 @@ export function MyDayView() {
           />
         </div>
       </div>
+      )}
 
       {/* Quick add — S5-I: measured as a bare flex row (no card wrapper):
           h-12 rounded-xl input + "More Options" outline text button. S8-D:
@@ -165,6 +176,7 @@ export function MyDayView() {
             aria-hidden="true"
           />
           <Input
+            ref={quickRef}
             value={quick}
             onChange={(e) => setQuick(e.target.value)}
             placeholder="Add a task for today..."
@@ -181,9 +193,6 @@ export function MyDayView() {
           aria-expanded={moreOpen}
         >
           More Options
-        </Button>
-        <Button type="submit" variant="gradient" className="h-12 rounded-xl px-4" disabled={!quick.trim()} aria-label="Add task">
-          <Plus className="h-4 w-4" strokeWidth={2} />
         </Button>
       </form>
       {moreOpen && (
@@ -255,12 +264,37 @@ export function MyDayView() {
           same task-row component as the Tasks view; measured). S8-D: the
           reference's list column is space-y-3 with an mb-8 tail. */}
       {todayTasks.length === 0 ? (
-        <div className="sf-card">
-          <EmptyState
-            icon={Sun}
-            title="No tasks yet"
-            hint="Add your first task for today using the box above."
-          />
+        // S9-B (re-measured on the reference): My Day's empty state is the
+        // view-local AMBER design — a bare `text-center py-12` wrapper (no
+        // card), an 80px from-amber-100→orange-100 block with an amber sun,
+        // a greeting-titled h3 ("Good morning!" — time-aware) and the
+        // "Add Your First Task" amber-gradient CTA. The reference's yellow
+        // button text is the known Base44 platform bug — white stays.
+        <div className="py-12 text-center">
+          <div
+            className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl"
+            style={{
+              // Trap 5 — sRGB-exact inline gradient (measured:
+              // amber-100 #fef3c7 → orange-100 #ffedd5).
+              backgroundImage: "linear-gradient(to right bottom, #fef3c7, #ffedd5)",
+            }}
+          >
+            <Sun className="h-10 w-10 text-amber-500" strokeWidth={1.75} aria-hidden="true" />
+          </div>
+          <h3 className="mb-2 text-xl font-semibold text-slate-700 dark:text-slate-200">{greeting}!</h3>
+          <p className="mb-6 text-slate-500 dark:text-slate-400">What would you like to accomplish today?</p>
+          <button
+            type="button"
+            onClick={() => quickRef.current?.focus()}
+            className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-4 text-sm font-medium text-white transition-opacity hover:opacity-90 sf-focus"
+            style={{
+              backgroundImage: "linear-gradient(to right, rgb(245, 158, 11), rgb(249, 115, 22))",
+              boxShadow: "0 10px 15px -3px rgb(245 158 11 / 0.25)",
+            }}
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            Add Your First Task
+          </button>
         </div>
       ) : (
         <div className="mb-8 flex flex-col gap-3" aria-label="Today's task rows">

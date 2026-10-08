@@ -18,46 +18,131 @@ interface DayPoint {
   value: number;
 }
 
-function BarChart({
+/** Catmull-Rom → cubic-bezier smoothing (recharts' default curve feel). */
+function smoothPath(pts: { x: number; y: number }[]): string {
+  if (pts.length === 0) return "";
+  if (pts.length === 1) return `M ${pts[0]!.x.toFixed(1)},${pts[0]!.y.toFixed(1)}`;
+  let d = `M ${pts[0]!.x.toFixed(1)},${pts[0]!.y.toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i]!;
+    const p1 = pts[i]!;
+    const p2 = pts[i + 1]!;
+    const p3 = pts[i + 2] ?? p2;
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
+/** S9-K (measured on the reference): the 7-day charts are recharts-style
+ *  AREA charts — a 250px-tall plot with 12px #666 axis labels (X = day
+ *  names Fri…Thu, Y = 5 ticks), horizontal #f1f5f9 gridlines dashed 3 3.
+ *  Task Activity renders a single slate-200-filled area; Focus Time a
+ *  violet gradient area + #8b5cf6 line on top. Y ticks mirror recharts'
+ *  default scale: counts cap at ≥ 2 (0.5 steps at 2 — the reference's
+ *  measured ticks), focus at ≥ 4 whole hours (0h…4h). Hover tooltips are
+ *  the clone's superset. */
+function AreaChart({
   data,
-  color,
-  height = 160,
+  ariaLabel,
   unit = "",
-  title,
+  line = false,
 }: {
   data: DayPoint[];
-  color: string;
-  height?: number;
+  ariaLabel: string;
   unit?: string;
-  title: string;
+  line?: boolean;
 }) {
-  const max = Math.max(1, ...data.map((d) => d.value));
+  const W = 560;
+  const H = 250;
+  const padL = 44;
+  const padR = 10;
+  const padT = 10;
+  const padB = 30;
+  const iw = W - padL - padR;
+  const ih = H - padT - padB;
+  const isHours = unit === "h";
+  const maxVal = Math.max(0, ...data.map((d) => d.value));
+  const niceMax = isHours
+    ? Math.max(240, Math.ceil(Math.max(1, maxVal) / 60) * 60)
+    : Math.max(2, Math.ceil(maxVal));
+  const ticks = Array.from({ length: 5 }, (_, i) => (niceMax * i) / 4);
+  const fmtTick = (v: number) =>
+    isHours ? `${Math.round(v / 60)}h` : Number.isInteger(v) ? String(v) : v.toFixed(1);
+  const xAt = (i: number) => padL + (data.length <= 1 ? iw / 2 : (i / (data.length - 1)) * iw);
+  const yAt = (v: number) => padT + ih - (v / niceMax) * ih;
+  const baseY = padT + ih;
+  const pts = data.map((d, i) => ({ x: xAt(i), y: yAt(d.value) }));
+  const path = smoothPath(pts);
+  const areaPath =
+    pts.length > 0
+      ? `${path} L ${xAt(data.length - 1).toFixed(1)},${baseY} L ${xAt(0).toFixed(1)},${baseY} Z`
+      : "";
+  const gradId = `areaGrad-${ariaLabel.replace(/\W+/g, "")}`;
+  const [hover, setHover] = React.useState<number | null>(null);
+  const fmtValue = (v: number) => (isHours ? formatMinutes(v) : String(v));
+
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</p>
-      <div className="flex items-end gap-1" style={{ height }} role="img" aria-label={`${title} bar chart`}>
-        {data.map((d, i) => (
-          <div key={i} className="group relative flex h-full flex-1 flex-col justify-end">
-            <span className="pointer-events-none absolute -top-6 left-1/2 hidden -translate-x-1/2 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-white group-hover:block">
-              {d.value}{unit}
-            </span>
-            <div
-              className="w-full rounded-t-md transition-all"
-              style={{
-                height: `${Math.max(2, (d.value / max) * 100)}%`,
-                backgroundColor: d.value > 0 ? color : "#e2e8f0",
-              }}
-            />
-          </div>
+    <div className="relative">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        role="img"
+        aria-label={ariaLabel}
+        onMouseLeave={() => setHover(null)}
+      >
+        {line && (
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.05" />
+            </linearGradient>
+          </defs>
+        )}
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={padL} y1={yAt(t)} x2={W - padR} y2={yAt(t)} stroke="#f1f5f9" strokeDasharray="3 3" />
+            <text x={padL - 8} y={yAt(t) + 4} textAnchor="end" fontSize="12" fill="#666">
+              {fmtTick(t)}
+            </text>
+          </g>
         ))}
-      </div>
-      <div className="flex gap-1">
         {data.map((d, i) => (
-          <span key={i} className="flex-1 truncate text-center text-[10px] text-slate-400">
+          <text key={`${d.label}-${i}`} x={xAt(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#666">
             {d.label}
-          </span>
+          </text>
         ))}
-      </div>
+        {areaPath && <path d={areaPath} fill={line ? `url(#${gradId})` : "#e2e8f0"} />}
+        {line && path && <path d={path} fill="none" stroke="#8b5cf6" strokeWidth="2" />}
+        {data.map((d, i) => {
+          const colW = data.length > 0 ? iw / data.length : iw;
+          return (
+            <rect
+              key={`hover-${i}`}
+              x={padL + i * colW}
+              y={padT}
+              width={colW}
+              height={ih}
+              fill="transparent"
+              onMouseEnter={() => setHover(i)}
+            />
+          );
+        })}
+        {hover !== null && data[hover] && (
+          <circle cx={xAt(hover)} cy={yAt(data[hover]!.value)} r="4" fill="#8b5cf6" stroke="#ffffff" strokeWidth="2" />
+        )}
+      </svg>
+      {hover !== null && data[hover] && (
+        <div
+          className="pointer-events-none absolute -translate-x-1/2 rounded bg-slate-800 px-2 py-1 text-[11px] text-white"
+          style={{ left: `${(xAt(hover) / W) * 100}%`, top: 0 }}
+        >
+          {data[hover]!.label}: {fmtValue(data[hover]!.value)}
+        </div>
+      )}
     </div>
   );
 }
@@ -396,10 +481,10 @@ export function AnalyticsView() {
               (S8-I: trending-up / clock / book-open / target). */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <ChartCard title="Task Activity (Last 7 Days)">
-              <BarChart data={completion} color="rgb(139, 92, 246)" title="" />
+              <AreaChart data={completion} ariaLabel="Task activity chart" />
             </ChartCard>
             <ChartCard title="Focus Time (Last 7 Days)" icon={Clock}>
-              <BarChart data={focus} color="rgb(139, 92, 246)" title="" unit="m" />
+              <AreaChart data={focus} ariaLabel="Focus time chart" unit="h" line />
             </ChartCard>
             <ChartCard title="Assignment Status" icon={BookOpen}>
               <StatusDonut slices={assignmentStatus} />

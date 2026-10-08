@@ -104,6 +104,16 @@ async function main() {
         myDay: true,
       },
       { userId: user.id, title: "Flashcards: integration rules", subjectId: math.id, completed: true, dueDate: day(-1, 20) },
+      // S9-A — an INCOMPLETE overdue task so the reference's dashboard
+      // overdue-alert banner renders in dev/e2e (measured live on the
+      // reference: "You have 1 overdue item(s)").
+      {
+        userId: user.id,
+        title: "Return library books",
+        subjectId: literature.id,
+        dueDate: day(-1, 17),
+        priority: "medium",
+      },
     ],
   });
 
@@ -133,6 +143,19 @@ async function main() {
 
   await prisma.exam.createMany({
     data: [
+      // S9-J — a 1-day-out exam exercises the reference's "Tomorrow"
+      // urgency bucket (orange-100/orange-600, live-measured).
+      {
+        userId: user.id,
+        title: "Vocabulary pop quiz",
+        subjectId: literature.id,
+        date: day(1, 9),
+        endTime: day(1, 9, 30),
+        location: "Room 12",
+        type: "quiz",
+        duration: 30,
+        topics: '["Units 3–4 word lists"]',
+      },
       {
         userId: user.id,
         title: "Midterm — Classical Mechanics",

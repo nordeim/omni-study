@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LogOut, Monitor, Moon, Plus, Settings as SettingsIcon, Sun, Trash2 } from "lucide-react";
+import { Bell, BookOpen as BookOpenIcon, Calendar as CalendarIcon, LogOut, Monitor, Moon, Palette, Plus, Settings as SettingsIcon, Sun, Trash2, User as UserIcon } from "lucide-react";
 import { useDataStore, mutations } from "@/lib/data";
 import { ViewHeader } from "./shared";
 import { useThemeStore } from "@/lib/store";
@@ -104,11 +104,28 @@ export function SettingsView() {
             border-slate-200 border, p-1, and flex-wrap (no fixed h-9) —
             the shadcn stock stays default for other consumers. */}
         <TabsList className="h-auto flex-wrap border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="subjects">Subjects</TabsTrigger>
-          <TabsTrigger value="holidays">Holidays</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          {/* S9-M (measured): every tab carries its leading icon —
+              palette / user / book-open / calendar / bell. */}
+          <TabsTrigger value="appearance" className="gap-2">
+            <Palette className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+            Appearance
+          </TabsTrigger>
+          <TabsTrigger value="profile" className="gap-2">
+            <UserIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="subjects" className="gap-2">
+            <BookOpenIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+            Subjects
+          </TabsTrigger>
+          <TabsTrigger value="holidays" className="gap-2">
+            <CalendarIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+            Holidays
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="gap-2">
+            <Bell className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+            Notifications
+          </TabsTrigger>
         </TabsList>
 
         {/* Appearance — S5-F: measured on the reference. Theme = 88px

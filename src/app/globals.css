@@ -103,6 +103,13 @@
   --color-red-100: #fee2e2;
   --color-red-700: #b91c1c;
 
+  /* S9 — dashboard overdue-banner palette (measured live: gradient
+     red-50 → orange-50, border red-200, icon block red-100) + the exam
+     "Tomorrow" badge (orange-100/600 already pinned above). */
+  --color-red-50: #fef2f2;
+  --color-red-200: #fecaca;
+  --color-orange-50: #fff7ed;
+
   /* Slate scale — the reference app's gray ramp (measured rgb(30,41,59) =
      slate-800 for card titles, rgb(241,245,249) = slate-100 for borders). */
   --color-slate-50: #f8fafc;

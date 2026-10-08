@@ -134,7 +134,7 @@ export function AssignmentsView() {
   const subjectMap = useSubjectMap();
 
   const [search, setSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("active");
   const [subjectFilter, setSubjectFilter] = React.useState("all");
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Assignment | null>(null);
@@ -316,7 +316,6 @@ export function AssignmentsView() {
           ) : (
             <div className="flex flex-col gap-4" aria-label="Assignment rows">
               {sorted.map((a) => {
-                const subject = a.subjectId ? subjectMap.get(a.subjectId) : undefined;
                 return (
                   <div
                     key={a.id}
@@ -365,13 +364,11 @@ export function AssignmentsView() {
                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs capitalize text-slate-400 dark:bg-slate-800 dark:text-slate-500">
                             {a.type}
                           </span>
-                          {subject && (
-                            <span className="text-xs text-slate-400 dark:text-slate-500">{subject.name}</span>
-                          )}
+                          {/* S9-I (measured): the reference's assignment rows
+                              render NO subject-name span and NO description
+                              paragraph — subject/description stay in the edit
+                              dialog. */}
                         </div>
-                        {a.description && (
-                          <p className="mb-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{a.description}</p>
-                        )}
                         <ProgressSlider assignment={a} />
                       </div>
 

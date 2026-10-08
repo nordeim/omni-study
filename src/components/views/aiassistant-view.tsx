@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen, Brain, Calculator, FileText, Languages, Lightbulb, Loader2, Send, Sparkles } from "lucide-react";
+import { BookOpen, Brain, Calculator, FileText, Languages, Lightbulb, Loader2, Sparkles, WandSparkles } from "lucide-react";
 import { useDataStore, mutations } from "@/lib/data";
 import { ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -193,7 +193,9 @@ export function AIAssistantView() {
               aria-label="Send message"
               className="h-[60px] w-[60px] shrink-0"
             >
-              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              {/* S9-P (measured): the reference's composer button icon is
+                  wand-sparkles. */}
+              {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <WandSparkles className="h-5 w-5" />}
             </Button>
           </form>
           <p className="mt-2 text-xs text-slate-400">Press Enter to send, Shift + Enter for a new line</p>

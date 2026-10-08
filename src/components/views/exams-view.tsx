@@ -62,14 +62,20 @@ function ExamWhenBadge({ exam, now }: { exam: Exam; now: Date }) {
     );
   }
   const days = daysUntil(new Date(exam.date), now);
-  const label = days < 0 ? "Past" : days === 0 ? "Today" : days === 1 ? "1 day" : `${days} days`;
+  // S9-J (re-measured): days===1 renders "Tomorrow" in the ORANGE family
+  // (orange-100/orange-600); days>=2 keeps the S6-measured amber badge;
+  // today/overdue stays red.
+  const label =
+    days < 0 ? "Past" : days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days`;
   return (
     <span
       className={cn(
         "inline-block rounded-full px-2.5 py-1 text-xs font-semibold",
         days <= 0
           ? "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400"
-          : "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+          : days === 1
+            ? "bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400"
+            : "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
       )}
     >
       {label}

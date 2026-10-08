@@ -153,9 +153,12 @@ test.describe("S6-C · MyDay amber progress card + Suggestions", () => {
     await expect(toggle).toBeVisible();
     await toggle.click();
     // "Weekly vocabulary review" is seeded WITHOUT myDay → suggested.
+    // (S9: the seeded overdue "Return library books" adds a second
+    // suggestion row — scope the Add button to the specific row.)
     const suggestion = page.locator('[aria-label="Suggested tasks"]', { hasText: "Weekly vocabulary review" });
     await expect(suggestion).toBeVisible();
-    await expect(suggestion.getByRole("button", { name: "Add", exact: true })).toBeVisible();
+    const row = suggestion.locator("> div", { hasText: "Weekly vocabulary review" }).first();
+    await expect(row.getByRole("button", { name: "Add", exact: true })).toBeVisible();
   });
 });
 

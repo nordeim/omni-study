@@ -191,7 +191,10 @@ test.describe("S5-G · Calendar segmented switch", () => {
   test("the Calendar/Timeline toggle is a bordered segmented control with a solid active tab", async ({ page }) => {
     await page.goto("/Calendar");
     await hydrated(page);
-    const active = page.getByRole("button", { name: "calendar", exact: true });
+    // S9-F re-measure: the tab labels are now capitalized ("Calendar") and
+    // carry icons (grid3x3 / list) on h-8 tabs inside a white bordered
+    // container — the solid-accent active tab is unchanged.
+    const active = page.getByRole("button", { name: "Calendar", exact: true });
     await expect(active).toBeVisible();
     const bg = await active.evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(bg).toBe("rgb(139, 92, 246)"); // solid accent — measured.
