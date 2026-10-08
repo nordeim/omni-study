@@ -25,7 +25,7 @@ tags:
 
 > **What this is:** the single-source-of-truth reference for working in
 > `nordeim/omni-study`. Every fact below is verified against the codebase
-> (259 tests green at last update: 100 Vitest unit + 159 Playwright e2e).
+> (290 tests green at last update: 106 Vitest unit + 184 Playwright e2e).
 > Sections marked with ⚠️ encode non-obvious contracts — violating them has
 > historically produced silent visual or data-path bugs.
 
@@ -136,7 +136,9 @@ touch resolution.
 
 **Env vars:** `DATABASE_URL` (required, above), `AUTH_SECRET` (HMAC key for
 session cookies; required in prod — dev fallback exists), `NEXT_PUBLIC_SITE_URL`
-(metadata origin, optional).
+(metadata origin, optional — resolved by `src/lib/site.ts`, consumed by
+`sitemap.ts`/`robots.ts`/`layout.tsx`'s `metadataBase`; default
+`http://localhost:3000`; unit-pinned by `tests/site.test.ts`).
 
 ---
 
@@ -421,6 +423,11 @@ notes, decks, grades; `avatarEmoji: ""` (reference default state).
 | AP-35 | HIGH | Tasks/Notes/Study Groups rendered as single padded cards (page-header + card lists) | measured: full-height two-pane layouts — `w-80 border-r border-slate-100 pr-6` left pane (h1 + icon INSIDE, 36px gradient New button, icon search) + a BARE right pane (centered empty state / editor) | S8-F/G/H: tasks two-pane + single-row main header; Notes dropdown New + Radix combobox filters; Study Groups two-pane (session-8) |
 | AP-36 | MEDIUM | Analytics chart cards had no per-card icons, no Assignment Status donut, no Subject Workload, no priority chips; Math Solver rendered input + solution side-by-side | measured: trending-up/clock/book-open/target icon headers, an SVG donut (Not-Started `#94a3b8`), an `h-[250px]` workload body, flame + slate-50 chip card; Math Solver is a single max-w-4xl column (input card + solution BELOW) | S8-I/L: ChartCard `icon` prop + donut + workload + priority chips; mathsolver single-column rework with camera/refresh-cw/sparkles footer buttons (session-8) |
 | AP-37 | LOW | Icon-level drifts: Calculator Clear, AI quick actions, FocusTimer complete (skip-forward), assignment/exam search inputs (no icon), exam card location row + topics counter, Settings tab list chrome | measured: rotate-ccw, the reference quick-action set, check, inline `search` icons + pl-9 inputs, date+time·duration rows ONLY, bg-white wrapped tab list | S8-K/M/N/O/P + the dead-utility sweep (S8-J) (session-8) |
+| AP-38 | HIGH | Dashboard had NO overdue alert banner and used 80px-gradient empty states inside the flush cards | measured live: conditional `from-red-50 to-orange-50 border-red-200` banner between greeting and stats (icon block + "You have N overdue item(s)" + ghost View All) + slim `p-8 text-center` inline empties with `w-12 h-12` slate-300 icons | S9-A/R: banner + `DashSectionEmpty` + the seeded overdue task (session-9) |
+| AP-39 | HIGH | Calendar grid was Monday-first with a fixed 42-cell (6-row) grid; mode switch was 24px text-only tabs with `capitalize` | measured: SUNDAY-first header (Sun…Sat; October 2026 starts at Sep 27 = 35 cells) + dynamic week count; white `border-slate-200 p-1` switch container with `h-8` grid3x3/list icon tabs, capitalized raw text | S9-E/F: `monthGrid()` `first.getDay()` + `ceil((lead+days)/7)` + `CALENDAR_WEEKDAYS`; mode-switch rework (session-9) |
+| AP-40 | HIGH | Analytics 7-day charts were HTML bar charts with 10px labels, no axes, no gridlines | measured: SVG AREA charts — X-axis day labels (12px `#666`), Y-axis ticks, `stroke-dasharray="3 3"` gridlines; Task Activity single area filled `#e2e8f0`; Focus Time `#8b5cf6` line over `url(#focusGradient)` | S9-K: `AreaChart` SVG component rebuild (session-9) |
+| AP-41 | MEDIUM | MyDay empty state was a violet sf-card; quick-add carried an extra gradient submit button; Tasks filter was a combobox + "No lists yet" placeholder; assignments defaulted to "All" with subject/description rows; exams showed "1 day" amber for the 1-day bucket | measured: bare amber greeting empty (`w-20` sun block + time-aware "Good morning!" + amber→orange CTA); input + More Options ONLY (Enter submits); outline filter BUTTON with funnel icon; EMPTY My Lists body; "Active" default + slim rows (no subject span/description); "Tomorrow" in `bg-orange-100 text-orange-600` | S9-B/C/D/I/J/Q (session-9) |
+| AP-42 | LOW | Icon-level drifts: Files text-only breadcrumb + `layout-grid` toggle, Grid Builder grid3x3 icon, FocusTimer stats (brain/flame/timer) + moon long-break, Settings text-only tabs, Notes chevron-only comboboxes, no per-deck menu, `sparkles` composer, groups hint wording | measured: `house` breadcrumb root + `grid3x3` toggle, text-only Grid Builder, flame/target/zap stats + `coffee` preset, palette/user/book-open/calendar/bell tab icons, folder/tag leading combobox icons, hover-revealed `h-8 w-8` ellipsis deck menu, `wand-sparkles`, "or create a new one" | S9-G/H/L/M/N/O/P/S (session-9) |
 
 ---
 
@@ -469,7 +476,7 @@ tail -40 dev.log                            # request traces + prisma queries
 ```bash
 bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
-Current green state: lint ✓ · tsc ✓ · 100 unit ✓ · build ✓ · 159 e2e ✓.
+Current green state: lint ✓ · tsc ✓ · 106 unit ✓ · build ✓ · 184 e2e ✓.
 
 **Pre-deployment:** set a real `AUTH_SECRET` (`openssl rand -hex 32`); use an
 ABSOLUTE `DATABASE_URL` (see `docs/DEPLOYMENT.md` §4); never ship `.env`,
