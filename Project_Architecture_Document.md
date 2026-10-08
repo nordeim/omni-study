@@ -161,6 +161,14 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 - **Consequences:** New AI output surfaces must land in live regions (the AGENTS AI-ACCESSIBILITY contract); new expensive routes should join the `ai:` budget family; audit tooling must reload BEFORE unrouting held routes (unrouting alone releases the pending request to the real server — probe rows landed in the chat history mid-audit); e2e AI-rate pins exhaust the per-user budget by design (no other spec makes real AI calls — verified).
 - **Alternatives Rejected:** a service worker + offline queue (large surface, and the measured failure paths already preserve user work — the banner + human messages cover the awareness gap); an upload MIME allowlist (regresses the reference's arbitrary-type Files feature; nosniff+no-store+attachment are the defensible stack); IP-keyed AI limits (the routes are authenticated — the user IS the right key); assertive live regions (would interrupt the SR user mid-task; polite is the chat convention).
 
+**ADR-013: Auth-flow depth — the reference's full account journey with self-hosted token delivery (session-15)**
+
+- **Context:** The S15 audit (reference ground truth re-probed fresh — `scripts/ref-auth-probe-s15.mjs`) found the clone's auth surface a single flat login card while the reference runs a five-state machine: login errors render INLINE (a shadcn-Alert-shaped `role="alert"` block, red wash, between Password and Sign in); "Sign up" opens a real Create-your-account form (Email/Password/Confirm, 44px inputs); registration lands on a "Verify your email" 6-digit OTP screen (64px slate-100 shield circle, Back→h2 gap 96px, six 40×44 boxes, Resend); unverified login is gated with a measured inline copy; "Forgot password?" runs a 3-state flow (Reset your password → Check your email with a GREEN alert → the emailed reset link). The clone had a toast dead-end for both. The calculator was click-only on BOTH apps (parity) — physical keys chosen as the superset. Files search scope verified folder-scoped on both (non-gap); the pre-1.0 sweep (deps/bundle/long-tasks) verified GREEN (non-gap).
+- **Decision:** (1) Prisma: `User.emailVerified` (default false) + one-shot `VerificationToken` (6-digit, 15 min) and `PasswordResetToken` (48-hex, 30 min) models; the seeded demo user is `emailVerified: true` (the seed also UPDATEs pre-S15 databases in place — otherwise the gate would lock every existing account out). (2) Routes: `register` no longer auto-logs-in (unverified create + code issue; unverified duplicates re-send like the reference platform; verified duplicates keep the 409); `verify-email` matches the latest unexpired code, marks verified, burns the family, signs in; `resend-verification` uniform-200; `login` gates unverified accounts (403, reference copy) AFTER password verification (never an enumeration oracle); `forgot-password` always-200 with a 30-min token; `reset-password` consumes it. (3) UI: the login page is a six-state client machine (`signin`/`signup`/`verify`/`forgot`/`check-email`/`reset`) with the measured sub-screen chrome (Back link, centered h2, per-state gaps 8/96/16px, 44px inputs, OTP boxes with auto-advance + paste distribution); the ROUTE is a server component that awaits `searchParams` and seeds `initialResetToken` (the `/login?token=` deep-link renders in the SSR HTML — no effect setState, no hydration mismatch). (4) Self-hosted delivery: no SMTP exists — the code and reset URL surface to the ACTOR (response JSON + muted on-screen notes below the parity content, the same additive pattern as the demo-account hint). Without this the flows would be dead ends. (5) The calculator gains `mapPhysicalKey` + a guarded window keydown listener (skips form controls and open dialogs; latest-ref indirection — a []-deps closure evaluates the mount-time display forever).
+- **Rationale:** The reference's flow shape IS the parity target (measured, not guessed); the no-SMTP delivery is the only way those flows can complete in a self-hosted deployment — the code/link is shown to the registrant/resetter themselves. The enumeration trade-off (resetUrl presence signals account existence) is bounded by the existing register-409 disclosure and the single-user threat model; the gate sits after password verification so it adds nothing to login's uniform 401.
+- **Consequences:** Spec helpers that need a fresh authenticated user must complete the verify step (the register response carries the code — `registerFreshUser` in parity-session9.spec.ts is the pattern); `role="alert"` locators must be scoped to the auth card (Next's route announcer also uses the role); pre-S15 databases need one seed run to flip the demo user verified; physical-keyboard listeners on window must use the latest-ref pattern (stale closures) and guard form controls.
+- **Alternatives Rejected:** surfacing nothing (dead-end flows — unusable, not "secure"); an SMTP dependency (out of scope for a zero-config self-hosted app; would add env + a service); auto-verifying on register (loses the reference's flow shape AND the gate pin); reading the reset token via `useSearchParams` (forces a Suspense restructure and a blank-HTML fallback for a statically-prerenderable route; the server-component prop is strictly simpler).
+
 ---
 
 ## 2. High-Level System Topology
@@ -480,12 +488,12 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 
 | Category | Files | Tests | Location | Framework |
 |----------|-------|-------|----------|-----------|
-| Unit — pure seams | 12 | 131 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
+| Unit — pure seams | 12 | 149 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
 | E2E — auth | 1 | 6 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
 | E2E — mobile navigation | 1 | 11 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
 | E2E — desktop nav + views + parity pins | 1 | 41 | `tests/e2e/navigation.spec.ts` | Playwright |
 | E2E — task CRUD golden path | 1 | 6 | `tests/e2e/tasks.spec.ts` | Playwright |
-| E2E — calculator + theme | 1 | 8 | `tests/e2e/calculator.spec.ts` | Playwright |
+| E2E — calculator + theme + physical keyboard | 1 | 12 | `tests/e2e/calculator.spec.ts` | Playwright |
 | E2E — session-5 interactive-chrome parity pins | 1 | 19 | `tests/e2e/parity-session5.spec.ts` | Playwright |
 | E2E — session-6 populated-state parity pins | 1 | 15 | `tests/e2e/parity-session6.spec.ts` | Playwright |
 | E2E — session-7 lightly-probed-views parity pins | 1 | 17 | `tests/e2e/parity-session7.spec.ts` | Playwright |
@@ -496,7 +504,8 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 | E2E — session-12 accessibility pins (forced-colors state, skip link, print pipeline, reduced-motion) | 1 | 15 | `tests/e2e/accessibility.spec.ts` | Playwright |
 | E2E — session-13 resilience pins (AI failure rollback + recovery, solver MIME guard, upload edges, RFC 5987) | 1 | 5 | `tests/e2e/resilience.spec.ts` | Playwright |
 | E2E — session-14 hardening pins (offline banner + byte-parity guard, offline toast, display-name guard, AI rate limit, download headers, live regions) | 1 | 7 | `tests/e2e/s14-hardening.spec.ts` | Playwright |
-| **Total** | **25** | **363** | `tests/` (131 unit + 232 e2e incl. 1 setup) | Vitest + Playwright |
+| E2E — session-15 auth-flow pins (inline login error chrome, signup form shape, register→verify→in, unverified gate, forgot→check-email→reset journey, sign-in parity guard) | 1 | 5 | `tests/e2e/auth-flows.spec.ts` | Playwright |
+| **Total** | **26** | **390** | `tests/` (149 unit + 241 e2e incl. 1 setup) | Vitest + Playwright |
 
 ### 8.2 Test Patterns
 

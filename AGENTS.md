@@ -28,6 +28,12 @@ High-signal instructions for coding agents working in this repo. Everything here
 | `node scripts/settings-roundtrip-audit.mjs` | Settings persistence round-trips (display name, avatar, whitespace guard, second-write-wins, concurrent families) |
 | `node scripts/security-audit.mjs` | Security audit (cookie flags, AI-route rate limits, upload MIME decision, download headers, logout, auth-gating) |
 | `node scripts/ai-a11y-audit.mjs` | AI-surface accessibility audit (transcript live region, busy semantics, solver announcement, composer labels) |
+| `node scripts/ref-auth-probe-s15.mjs` | Capture the reference's auth sub-screen ground truth (login error alert, signup, verify OTP, forgot 3-state) as JSON |
+| `node scripts/auth-flow-audit-s15.mjs` | Clone-side auth-flow audit (inline login error, signup form, forgot flow) — GREEN post-S15 |
+| `node scripts/keyboard-audit-s15.mjs` | Clone-side calculator physical-keyboard audit (type/evaluate/clear) — GREEN post-S15 |
+| `node scripts/auth-journey-probe-s15.mjs` | Full register→verify→gate→forgot→reset journey probe (dev server) |
+| `node scripts/pre15-preflight.mjs` | The pre-1.0 dependency/bundle sweep (deps pinned by design, client bundle size) |
+| `node scripts/capture-s15-evidence.mjs` | The S15 evidence captures (5 auth-flow + keyboard screenshots) |
 | `node scripts/capture-s14-evidence.mjs` | The S14 hardening evidence captures (offline banner, rate-limit toast, display-name guard, Thinking live region) |
 | `bun run db:push` / `db:seed` | Create schema + demo data at `db/custom.db` |
 | `bunx vitest run tests/calculator.test.ts` | One unit file |
