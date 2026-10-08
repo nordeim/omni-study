@@ -169,6 +169,14 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 - **Consequences:** Spec helpers that need a fresh authenticated user must complete the verify step (the register response carries the code — `registerFreshUser` in parity-session9.spec.ts is the pattern); `role="alert"` locators must be scoped to the auth card (Next's route announcer also uses the role); pre-S15 databases need one seed run to flip the demo user verified; physical-keyboard listeners on window must use the latest-ref pattern (stale closures) and guard form controls.
 - **Alternatives Rejected:** surfacing nothing (dead-end flows — unusable, not "secure"); an SMTP dependency (out of scope for a zero-config self-hosted app; would add env + a service); auto-verifying on register (loses the reference's flow shape AND the gate pin); reading the reset token via `useSearchParams` (forces a Suspense restructure and a blank-HTML fallback for a statically-prerenderable route; the server-component prop is strictly simpler).
 
+**ADR-014: Load stability — the pre-warmed first paint + the responsive auth sub-screens (session-16)**
+
+- **Context:** The S16 CWV audit (Lighthouse-class synthetics — buffered PerformanceObserver + CDP 4x-CPU/Slow-4G throttle, both apps, both viewports, both themes; `scripts/cwv-audit-s16.mjs`) measured the dashboard cold load at CLS 0.117–0.125 (CWV needs-improvement) on every scenario: the shell flipped from the Splash on `/api/auth/me` with an EMPTY data store, then the five parallel fetches landed, the conditional overdue banner inserted above the stats grid, and the sections grew from slim-empty to populated — one shift moving ~12% of the viewport. The reference's desktop dashboard measures CLS 0.088 (its gated first paint), and its MOBILE dashboard 0.372. The mobile auth probe (both apps at 390×844) found the reference renders the auth sub-screens RESPONSIVELY — h2 `text-xl sm:text-2xl` (20px), Sign in `h-11 sm:h-12` (44px), the verify circle `mb-3 sm:mb-4` rhythm (Back→h2 76px) — where the clone had shipped fixed desktop values; the S15 build had measured desktop only.
+- **Decision:** (1) `src/lib/view-collections.ts` — `INITIAL_COLLECTIONS: Record<ViewId, CollectionKey[]>`, the single source of each view's pre-warm set (the same collections the views' own loadAll effects fetch; unit-pinned for completeness). (2) `page.tsx` fires the active view's `loadAll` IN PARALLEL with `/api/auth/me` and flips `status→authed` only when both settle — the Splash→shell replacement renders with final geometry (a replacement is not a layout move). A failed pre-warm never blocks the shell; the three tool views declare `[]`. The active view is read from `useAppStore.getState().view` after `hydrate()` (no stale closure). (3) The login card's mobile-only responsive fixes: the five sub-screen h2s `text-xl sm:text-2xl`, Sign in `h-11 sm:h-12`, the verify circle `mb-5 sm:mb-8` (the whole rhythm on one element — sibling margins collapse), the forgot h2 `mt-2 sm:mt-4`. Every ≥sm value is byte-identical to the S15 desktop pins by construction.
+- **Rationale:** The performance-skill discipline (measure → fix → verify → guard): the only CWV-red metric was CLS; LCP was already GOOD everywhere (the clone's mobile login LCP ~640 ms vs the reference's 7.6–8.0 s — a 12× advantage that code-splitting 20 views would risk 241 passing pins to improve marginally). The pre-warm mirrors the reference's own gating while REMOVING its LCP cost by parallelism (the data fetch shares the auth round-trip window; measured mobile LCP moved 2308→2428 ms, still GOOD).
+- **Consequences:** New views MUST declare their initial collections in the seam (the unit completeness pin fails otherwise — that is the guard); e2e CLS is pinned at ≤ 0.02 on the cold dashboard load (`tests/e2e/s16-perf-parity.spec.ts`); the audit matrix runs against a standalone build on :3200 (never :3100 — the Playwright webServer's port); adjacent-sibling margin collapse is now a documented trap (spacing rhythms decompose onto ONE element).
+- **Alternatives Rejected:** skeleton rows matching final content heights (data-dependent — cannot be exact, still shifts); holding the Splash on a timeout race (compromise shape — either waits too long or ships the shift); per-view code-splitting (an eager 283 KB app already beats the reference's 634–1087 KB on every axis; the flash-on-first-switch + pin risk buys nothing measurable).
+
 ---
 
 ## 2. High-Level System Topology
@@ -488,7 +496,7 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 
 | Category | Files | Tests | Location | Framework |
 |----------|-------|-------|----------|-----------|
-| Unit — pure seams | 12 | 149 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
+| Unit — pure seams | 13 | 154 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
 | E2E — auth | 1 | 6 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
 | E2E — mobile navigation | 1 | 11 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
 | E2E — desktop nav + views + parity pins | 1 | 41 | `tests/e2e/navigation.spec.ts` | Playwright |
@@ -505,7 +513,8 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 | E2E — session-13 resilience pins (AI failure rollback + recovery, solver MIME guard, upload edges, RFC 5987) | 1 | 5 | `tests/e2e/resilience.spec.ts` | Playwright |
 | E2E — session-14 hardening pins (offline banner + byte-parity guard, offline toast, display-name guard, AI rate limit, download headers, live regions) | 1 | 7 | `tests/e2e/s14-hardening.spec.ts` | Playwright |
 | E2E — session-15 auth-flow pins (inline login error chrome, signup form shape, register→verify→in, unverified gate, forgot→check-email→reset journey, sign-in parity guard) | 1 | 5 | `tests/e2e/auth-flows.spec.ts` | Playwright |
-| **Total** | **26** | **390** | `tests/` (149 unit + 241 e2e incl. 1 setup) | Vitest + Playwright |
+| E2E — session-16 perf/mobile-geometry pins (auth sub-screens at 390×844: 44px Sign in, 20px h2s, 76px verify / 28px forgot rhythms; the dashboard CLS ≤ 0.02 guard) | 1 | 3 | `tests/e2e/s16-perf-parity.spec.ts` | Playwright |
+| **Total** | **28** | **398** | `tests/` (154 unit + 244 e2e incl. 1 setup) | Vitest + Playwright |
 
 ### 8.2 Test Patterns
 
