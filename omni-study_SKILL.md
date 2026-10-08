@@ -25,7 +25,7 @@ tags:
 
 > **What this is:** the single-source-of-truth reference for working in
 > `nordeim/omni-study`. Every fact below is verified against the codebase
-> (290 tests green at last update: 106 Vitest unit + 184 Playwright e2e).
+> (300 tests green at last update: 106 Vitest unit + 194 Playwright e2e).
 > Sections marked with ⚠️ encode non-obvious contracts — violating them has
 > historically produced silent visual or data-path bugs.
 
@@ -428,6 +428,10 @@ notes, decks, grades; `avatarEmoji: ""` (reference default state).
 | AP-40 | HIGH | Analytics 7-day charts were HTML bar charts with 10px labels, no axes, no gridlines | measured: SVG AREA charts — X-axis day labels (12px `#666`), Y-axis ticks, `stroke-dasharray="3 3"` gridlines; Task Activity single area filled `#e2e8f0`; Focus Time `#8b5cf6` line over `url(#focusGradient)` | S9-K: `AreaChart` SVG component rebuild (session-9) |
 | AP-41 | MEDIUM | MyDay empty state was a violet sf-card; quick-add carried an extra gradient submit button; Tasks filter was a combobox + "No lists yet" placeholder; assignments defaulted to "All" with subject/description rows; exams showed "1 day" amber for the 1-day bucket | measured: bare amber greeting empty (`w-20` sun block + time-aware "Good morning!" + amber→orange CTA); input + More Options ONLY (Enter submits); outline filter BUTTON with funnel icon; EMPTY My Lists body; "Active" default + slim rows (no subject span/description); "Tomorrow" in `bg-orange-100 text-orange-600` | S9-B/C/D/I/J/Q (session-9) |
 | AP-42 | LOW | Icon-level drifts: Files text-only breadcrumb + `layout-grid` toggle, Grid Builder grid3x3 icon, FocusTimer stats (brain/flame/timer) + moon long-break, Settings text-only tabs, Notes chevron-only comboboxes, no per-deck menu, `sparkles` composer, groups hint wording | measured: `house` breadcrumb root + `grid3x3` toggle, text-only Grid Builder, flame/target/zap stats + `coffee` preset, palette/user/book-open/calendar/bell tab icons, folder/tag leading combobox icons, hover-revealed `h-8 w-8` ellipsis deck menu, `wand-sparkles`, "or create a new one" | S9-G/H/L/M/N/O/P/S (session-9) |
+| AP-43 | CRITICAL | The shadcn base tokens were LITERAL values inside `@theme inline` — `bg-card`/`bg-popover`/`bg-muted`/`border-input` utilities compiled with the light value inlined, so `.dark { --color-* }` overrides never reached them: white dialogs with near-white titles (unreadable), invisible outline buttons (white-on-white, contrast 1.04), light dropdowns/tabs/badges — for nine sessions, masked because `.sf-card`-style custom CSS (direct `var()` references) re-themed correctly around the light-mode orphan islands | measured dark-mode sweep (`scripts/dark-sweep.mjs`, flashbulb + contrast detector): 10 views affected. Fix: shadcn's own v4 shape — raw triplets in `:root`/`.dark` (`--card`, `--popover`, `--muted`…) consumed as `hsl(var(--x))` inside `@theme inline`; shadows route through `--sf-shadow-sm`. Compiled proof: `.bg-card{background-color:hsl(var(--card))}`. Light values byte-identical (193 prior pins stayed green untouched) | S10-1: the globals.css token indirection (session-10) |
+| AP-44 | HIGH | Inline-style gradients/tints authored for light-mode parity never re-theme: the overdue banner (red-50→orange-50), MyDay amber card, timetable today-header + mobile chips + calendar today cell (softest/empty-from tints), sidebar clock chip (softest→adjacent + deep/strong text), Settings selected theme cards; analytics SVG charts hardcode light fills (#e2e8f0 area, #f1f5f9 gridlines, #666 axis labels) | measured dark flashbulbs/contrast 1.0–1.6 on those surfaces. Fix idiom: globals.css classes with `.dark` washes (`.sf-overdue-banner` red-800/orange-900, `.sf-amber-card` amber-800/orange-900, `.sf-today-tint`/`-cell` + `.sf-clock-chip` + `.sf-selected-tint` soft-dark at 0.3–0.35 alpha, text `--sf-primary-strong-dark` violet-300) + `dark:fill-slate-800`/`dark:fill-slate-400`/`dark:stroke-slate-800` SVG utilities (CSS presentation properties override SVG attributes) | S10-2…S10-7 (session-10) |
+| AP-45 | MEDIUM | Assuming the reference is the dark-mode measuring stick | measured: the reference's Dark/System options are a Base44 platform NO-OP — `html.dark` + dark `body` only; its canvas gradient, glass sidebar, and white cards stay light (VLM read its "dark" dashboard as "properly themed light mode"). The clone's full dark mode is the documented superset; dark parity standard = internal consistency (the dark sweep + the 10-spec pin family) | governing discovery (session-10) |
+| AP-46 | LOW | Theme-mode mutation in specs risks poisoning the shared user record for later spec files | fix pattern: PATCH `/api/settings/preferences` `{ themeMode }` via `page.request` (the storageState cookie rides the request context — no UI navigation), `waitForFunction(html.classList.contains("dark"))` to gate hydration, and an `afterEach` that PATCHes light back and awaits the response — a failed pin can never leak dark mode into the next spec file (the S4 accent-restore lesson, per-hook) | `tests/e2e/dark-mode.spec.ts` (session-10) |
 
 ---
 
@@ -476,7 +480,7 @@ tail -40 dev.log                            # request traces + prisma queries
 ```bash
 bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
-Current green state: lint ✓ · tsc ✓ · 106 unit ✓ · build ✓ · 184 e2e ✓.
+Current green state: lint ✓ · tsc ✓ · 106 unit ✓ · build ✓ · 194 e2e ✓.
 
 **Pre-deployment:** set a real `AUTH_SECRET` (`openssl rand -hex 32`); use an
 ABSOLUTE `DATABASE_URL` (see `docs/DEPLOYMENT.md` §4); never ship `.env`,
