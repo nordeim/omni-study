@@ -7,6 +7,7 @@ import {
   convert,
   evaluate,
   formatCalcResult,
+  mapPhysicalKey,
   type GpaRow,
   type UnitCategory,
   UNITS,
@@ -303,6 +304,44 @@ export function CalculatorView() {
   React.useEffect(() => {
     void load("calcHistory");
   }, [load]);
+
+  // S15-C0 — the physical-keyboard SUPERSET (the reference's calculator is
+  // click-only, verified). Guarded: no key is hijacked while the user types
+  // in a form control (the GPA rows / the converter value input) or while a
+  // dialog is open (the History drawer). Mounted = the calculator is the
+  // active view, so the listener rides the component lifecycle. The
+  // latest-ref indirection keeps the bound handler calling the CURRENT
+  // press/submit (a []-deps closure would evaluate the mount-time display —
+  // "0" — forever; caught by the S15 keyboard audit's Enter probe).
+  const latest = React.useRef({ press, submit });
+  React.useEffect(() => {
+    latest.current = { press, submit };
+  });
+  React.useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (document.querySelector('[role="dialog"][data-state="open"]')) return;
+      const key = mapPhysicalKey(e.key);
+      if (key === null) return;
+      e.preventDefault();
+      if (key === "=") {
+        void latest.current.submit();
+        return;
+      }
+      latest.current.press(key);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   function press(key: string) {
     setDisplay((d) => {

@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   checkRateLimit,
   createSessionToken,
+  generateResetToken,
+  generateVerificationCode,
   hashPassword,
+  normalizeVerificationCode,
   readSessionToken,
   resetRateLimit,
   verifyPassword,
@@ -134,5 +137,68 @@ describe("checkRateLimit custom budget (S14-C1)", () => {
     }
     expect(checkRateLimit(loginKey).ok).toBe(false);
     resetRateLimit(loginKey);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// S15 seams — email-verification + password-reset primitives (the auth-flow
+// depth iteration). Pure functions so the routes stay thin shells.
+// ---------------------------------------------------------------------------
+
+describe("generateVerificationCode (S15)", () => {
+  it("returns exactly 6 digits (leading zeros allowed)", () => {
+    for (let i = 0; i < 200; i++) {
+      const code = generateVerificationCode();
+      expect(code).toMatch(/^\d{6}$/);
+    }
+  });
+
+  it("covers the full zero-padded range (crypto random, not string-sliced floats)", () => {
+    // 2000 samples must include at least one code < 100000 (i.e. a leading
+    // zero) — a naive Math.random().toString().slice(2, 8) implementation
+    // can never produce one.
+    const codes = Array.from({ length: 2000 }, () => Number(generateVerificationCode()));
+    expect(codes.some((c) => c < 100000)).toBe(true);
+    expect(Math.min(...codes)).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...codes)).toBeLessThanOrEqual(999999);
+  });
+
+  it("is not constant (actually random)", () => {
+    const codes = new Set(Array.from({ length: 50 }, () => generateVerificationCode()));
+    expect(codes.size).toBeGreaterThan(1);
+  });
+});
+
+describe("generateResetToken (S15)", () => {
+  it("returns 48 lowercase hex characters (24 random bytes)", () => {
+    for (let i = 0; i < 20; i++) {
+      expect(generateResetToken()).toMatch(/^[0-9a-f]{48}$/);
+    }
+  });
+
+  it("never repeats (24 bytes of entropy)", () => {
+    const tokens = new Set(Array.from({ length: 200 }, () => generateResetToken()));
+    expect(tokens.size).toBe(200);
+  });
+});
+
+describe("normalizeVerificationCode (S15)", () => {
+  it("passes a clean 6-digit code through unchanged", () => {
+    expect(normalizeVerificationCode("123456")).toBe("123456");
+  });
+
+  it("tolerates pasted formatting (spaces, dashes, dots)", () => {
+    expect(normalizeVerificationCode(" 123 456 ")).toBe("123456");
+    expect(normalizeVerificationCode("123-456")).toBe("123456");
+    expect(normalizeVerificationCode("123.456")).toBe("123456");
+  });
+
+  it("rejects non-digit garbage, wrong lengths, and empty input", () => {
+    expect(normalizeVerificationCode("12a456")).toBeNull();
+    expect(normalizeVerificationCode("12345")).toBeNull();
+    expect(normalizeVerificationCode("1234567")).toBeNull();
+    expect(normalizeVerificationCode("")).toBeNull();
+    expect(normalizeVerificationCode(null)).toBeNull();
+    expect(normalizeVerificationCode(undefined)).toBeNull();
   });
 });

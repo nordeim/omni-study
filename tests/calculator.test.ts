@@ -5,6 +5,7 @@ import {
   evaluate,
   formatCalcResult,
   gpaPoints,
+  mapPhysicalKey,
   type GpaRow,
 } from "@/lib/calculator";
 
@@ -128,5 +129,50 @@ describe("formatCalcResult", () => {
   it("uses exponential form for extreme magnitudes", () => {
     expect(formatCalcResult(1e15)).toMatch(/e\+/i);
     expect(formatCalcResult(1e-10)).toMatch(/e-/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// S15 — mapPhysicalKey: the physical-keyboard superset seam. The reference's
+// calculator is click-only (verified); the clone additionally maps real keys
+// onto the SAME press/submit pipeline the keypad buttons drive.
+// ---------------------------------------------------------------------------
+
+describe("mapPhysicalKey (S15 physical-keyboard superset)", () => {
+  it("maps digits, dot, parens, %, and ^ straight through", () => {
+    for (const d of ["0", "1", "5", "9"]) expect(mapPhysicalKey(d)).toBe(d);
+    expect(mapPhysicalKey(".")).toBe(".");
+    expect(mapPhysicalKey("(")).toBe("(");
+    expect(mapPhysicalKey(")")).toBe(")");
+    expect(mapPhysicalKey("%")).toBe("%");
+    expect(mapPhysicalKey("^")).toBe("^");
+  });
+
+  it("maps physical operators to the keypad glyphs (* → ×, / → ÷)", () => {
+    expect(mapPhysicalKey("*")).toBe("×");
+    expect(mapPhysicalKey("/")).toBe("÷");
+    expect(mapPhysicalKey("+")).toBe("+");
+    expect(mapPhysicalKey("-")).toBe("-");
+  });
+
+  it("maps Enter/= to equals, Backspace to ⌫, Escape to C — null otherwise", () => {
+    expect(mapPhysicalKey("Enter")).toBe("=");
+    expect(mapPhysicalKey("=")).toBe("=");
+    expect(mapPhysicalKey("Backspace")).toBe("⌫");
+    expect(mapPhysicalKey("Escape")).toBe("C");
+    expect(mapPhysicalKey("a")).toBeNull();
+    expect(mapPhysicalKey("Shift")).toBeNull();
+    expect(mapPhysicalKey("F5")).toBeNull();
+    expect(mapPhysicalKey("ArrowLeft")).toBeNull();
+    expect(mapPhysicalKey("×")).toBeNull(); // the glyph itself is keypad-only
+  });
+
+  it("round-trips with the engine: a physical-key expression evaluates", () => {
+    // Typing 1 2 * 3 on a physical keyboard builds the display string via
+    // the mapped tokens, then the tokenizer normalizes × back to *.
+    const typed = ["1", "2", "*", "3"].map((k) => mapPhysicalKey(k)!).join("");
+    expect(typed).toBe("12×3");
+    expect(evaluate(typed)).toBe(36);
+    expect(evaluate(mapPhysicalKey("5")! + mapPhysicalKey("/") + mapPhysicalKey("8")!)).toBe(0.625);
   });
 });

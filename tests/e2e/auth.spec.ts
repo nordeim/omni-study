@@ -77,8 +77,23 @@ test.describe("login route", () => {
     await page.getByLabel("Email", { exact: true }).fill(DEMO_EMAIL);
     await page.getByLabel("Password", { exact: true }).fill("WrongPassword99");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page.getByText("Invalid email or password.")).toBeVisible();
+    // S15-A1 — the reference renders auth errors INLINE (a role=alert block
+    // with the red wash) between the Password field and the Sign in button,
+    // with the reference's copy (no trailing period). The toast is gone.
+    // Scoped to the auth card: Next.js's __next-route-announcer__ ALSO
+    // carries role=alert (a strict-mode collision).
+    const alert = page.locator("div.shadow-2xl").getByRole("alert");
+    await expect(alert).toBeVisible();
+    await expect(alert).toContainText("Invalid email or password");
     await expect(page).toHaveURL(/\/login/);
+    // trap 10: unpinned palette classes serialize as lab() in Chromium —
+    // accept both serializations of red-50/70.
+    await expect(alert).toHaveCSS(
+      "background-color",
+      /rgba\(254, 242, 242, 0\.7\)|lab\([^)]* \/ 0\.7\)/,
+    );
+    await expect(alert).toHaveCSS("border-color", "rgb(254, 202, 202)"); // red-200
+    await expect(alert).toHaveCSS("border-radius", "12px");
   });
 
   test("valid credentials sign in and land on the dashboard", async ({ page }) => {

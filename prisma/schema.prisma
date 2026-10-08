@@ -25,35 +25,64 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String   @default("")
-  avatarEmoji  String   @default("🎓")
-  themeMode    String   @default("system") // light | dark | system
-  accentColor  String   @default("violet") // violet|blue|green|orange|pink|red|teal
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String   @default("")
+  avatarEmoji   String   @default("🎓")
+  themeMode     String   @default("system") // light | dark | system
+  accentColor   String   @default("violet") // violet|blue|green|orange|pink|red|teal
+  emailVerified Boolean  @default(false) // S15: the login gate (ADR-013)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
-  subjects        Subject[]
-  tasks           Task[]
-  taskLists       TaskList[]
-  assignments     Assignment[]
-  exams           Exam[]
-  events          Event[]
-  timetableClass  TimetableClass[]
-  notes           Note[]
-  notebooks       Notebook[]
-  decks           FlashcardDeck[]
-  practiceTests   PracticeTest[]
-  studyGroups     StudyGroup[]
-  grades          Grade[]
-  focusSessions   FocusSession[]
-  folders         FileFolder[]
-  files           FileItem[]
-  chatMessages    AiChatMessage[]
-  calcHistory     CalculatorHistoryEntry[]
-  holidays        Holiday[]
+  subjects             Subject[]
+  tasks                Task[]
+  taskLists            TaskList[]
+  assignments          Assignment[]
+  exams                Exam[]
+  events               Event[]
+  timetableClass       TimetableClass[]
+  notes                Note[]
+  notebooks            Notebook[]
+  decks                FlashcardDeck[]
+  practiceTests        PracticeTest[]
+  studyGroups          StudyGroup[]
+  grades               Grade[]
+  focusSessions        FocusSession[]
+  folders              FileFolder[]
+  files                FileItem[]
+  chatMessages         AiChatMessage[]
+  calcHistory          CalculatorHistoryEntry[]
+  holidays             Holiday[]
+  verificationTokens   VerificationToken[]
+  passwordResetTokens  PasswordResetToken[]
+}
+
+// S15 (ADR-013) — email verification + password reset. One-shot tokens:
+// used/expired rows are deleted by the consuming route. No SMTP exists in
+// this self-hosted app, so the routes surface the code/link to the actor
+// directly (the documented trade-off — see docs/remediation-plan-session15.md).
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String // 6-digit zero-padded
+  expiresAt DateTime // 15 minutes
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique // 48-hex
+  expiresAt DateTime // 30 minutes
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
 }
 
 model Subject {

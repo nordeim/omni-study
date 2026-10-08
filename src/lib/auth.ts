@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 
@@ -36,6 +36,32 @@ export function verifyPassword(password: string, stored: string): boolean {
   const expected = Buffer.from(expectedHex, "hex");
   const actual = scryptSync(password, salt, expected.length);
   return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+// ---- S15: email-verification + password-reset primitives -------------------
+// Pure seams so the auth routes stay thin shells. The reference's platform
+// emails a 6-digit code and a reset link; this self-hosted app has no SMTP,
+// so the routes surface them to the actor directly (ADR-013).
+
+/** Crypto-random 6-digit code, zero-padded (randomInt over [0, 1e6)). */
+export function generateVerificationCode(): string {
+  return String(randomInt(0, 1_000_000)).padStart(6, "0");
+}
+
+/** 24 random bytes as lowercase hex — the reset-link token (48 chars). */
+export function generateResetToken(): string {
+  return randomBytes(24).toString("hex");
+}
+
+/**
+ * Normalize a user-entered verification code: tolerate pasted formatting
+ * (spaces / dashes / dots) around and inside the digits, reject anything
+ * that isn't exactly six digits after cleaning.
+ */
+export function normalizeVerificationCode(input: string | null | undefined): string | null {
+  if (typeof input !== "string") return null;
+  const cleaned = input.replace(/[\s.\-]/g, "");
+  return /^\d{6}$/.test(cleaned) ? cleaned : null;
 }
 
 // ---- Session tokens ---------------------------------------------------------

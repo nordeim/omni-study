@@ -36,16 +36,25 @@ const hydrated = (page: Page) =>
   page.waitForFunction(() => document.documentElement.style.getPropertyValue("--sf-primary") !== "");
 
 /** Registers a throwaway user inside THIS test's context (fresh cookie jar,
- *  zero data). The shared storageState demo user is untouched. */
+ *  zero data). The shared storageState demo user is untouched.
+ *  S15: registration no longer auto-logs-in (ADR-013) — the helper completes
+ *  the verification step with the surfaced code (the no-SMTP self-hosted
+ *  delivery) to obtain the fresh user's session cookie. */
 async function registerFreshUser(page: Page, salt: string) {
+  const email = `s9-empty-${salt}-${Date.now()}@studyflow.app`;
   const res = await page.request.post("/api/auth/register", {
     data: {
-      email: `s9-empty-${salt}-${Date.now()}@studyflow.app`,
+      email,
       password: "Empty1234!",
       name: "Empty State Probe",
     },
   });
   expect(res.ok(), `register failed: ${res.status()}`).toBe(true);
+  const body = (await res.json()) as { code: string };
+  const verify = await page.request.post("/api/auth/verify-email", {
+    data: { email, code: body.code },
+  });
+  expect(verify.ok(), `verify failed: ${verify.status()}`).toBe(true);
 }
 
 test.describe("S9-A · Dashboard overdue alert banner", () => {

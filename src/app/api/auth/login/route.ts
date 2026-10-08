@@ -37,9 +37,22 @@ export async function POST(req: Request) {
 
   const user = await db.user.findUnique({ where: { email: parsed.data.email.toLowerCase() } });
   // Uniform error — no user-enumeration signal.
-  const invalid = NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+  const invalid = NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   if (!user) return invalid;
   if (!verifyPassword(parsed.data.password, user.passwordHash)) return invalid;
+
+  // S15 (ADR-013): the unverified gate — AFTER password verification, so
+  // the gate never becomes an enumeration oracle. Reference copy, measured:
+  // "Please verify your email before logging in. Check your email for the
+  // verification code." (rendered inline as a red Alert on the login card).
+  if (!user.emailVerified) {
+    return NextResponse.json(
+      {
+        error: "Please verify your email before logging in. Check your email for the verification code.",
+      },
+      { status: 403 },
+    );
+  }
 
   resetRateLimit(ip);
   const token = createSessionToken(user.id);

@@ -21,6 +21,15 @@ async function main() {
 
   if (existing) {
     console.log(`[seed] demo user ${demoEmail} already present — topping up subjects only`);
+    // S15: upgrade pre-S15 databases in place — the login gate would
+    // otherwise lock the demo account out of an existing db.
+    if (!existing.emailVerified) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { emailVerified: true },
+      });
+      console.log("[seed] demo user marked emailVerified (S15 gate upgrade)");
+    }
     const count = await prisma.subject.count({ where: { userId: existing.id } });
     if (count === 0) {
       await prisma.subject.createMany({
@@ -39,6 +48,9 @@ async function main() {
       email: demoEmail,
       passwordHash: hashPassword("Demo1234!"),
       name: "Demo Student",
+      // The seeded demo account is login-ready by construction (S15/ADR-013):
+      // no verification screen stands between it and the dashboard.
+      emailVerified: true,
       // Empty avatar = reference default state (initial "D" in the gradient
       // circle); pick an emoji in Settings → Appearance to demo the feature.
       avatarEmoji: "",

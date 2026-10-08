@@ -6,6 +6,15 @@ import { expect, test, type Page } from "@playwright/test";
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
+// Hydration gate (module scope — shared by the theme-system and S15
+// keyboard describes): the store stamps an inline --sf-primary var on
+// <html> the moment it applies the user's saved preferences, which only
+// happens post-hydration (see the original comment below).
+const hydrated = (page: Page) =>
+  page.waitForFunction(
+    () => document.documentElement.style.getPropertyValue("--sf-primary") !== "",
+  );
+
 test.describe("calculator suite", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/Calculator");
@@ -62,16 +71,8 @@ test.describe("calculator suite", () => {
 });
 
 test.describe("theme system", () => {
-  // Hydration gate: the accent buttons exist in the SSR HTML, but their
-  // onClick handlers attach only after React hydrates — clicking earlier
-  // silently no-ops and the spec flakes (order-dependent; observed when the
-  // standalone server was cold on the Settings route). The theme store
-  // stamps an inline --sf-primary var on <html> the moment it applies the
-  // user's saved preferences, which only happens post-hydration.
-  const hydrated = (page: Page) =>
-    page.waitForFunction(
-      () => document.documentElement.style.getPropertyValue("--sf-primary") !== "",
-    );
+  // Hydration gate: see the module-level hydrated helper (S15 hoist — the
+  // physical-keyboard describe needs the same gate).
 
   test("switching the accent recolors the active nav chip", async ({ page }) => {
     await page.goto("/Settings");
@@ -139,5 +140,61 @@ test.describe("theme system", () => {
     await expect(page.locator("html")).toHaveClass(/dark/);
     await page.getByRole("button", { name: "Light", exact: true }).click();
     await expect(page.locator("html")).not.toHaveClass(/dark/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// S15 — the physical-keyboard SUPERSET pins (the reference's calculator is
+// click-only, verified on the live reference; the clone additionally maps
+// physical keys onto the same press/submit pipeline — mapPhysicalKey is
+// unit-pinned in tests/calculator.test.ts).
+// ---------------------------------------------------------------------------
+
+test.describe("S15 physical keyboard (superset)", () => {
+  test("typing an expression on the physical keyboard evaluates it", async ({ page }) => {
+    await page.goto("/Calculator");
+    await hydrated(page);
+    await page.keyboard.type("12+3", { delay: 40 });
+    await expect(page.getByLabel("Calculator display")).toContainText("12+3");
+    await page.keyboard.press("Enter");
+    await expect(page.getByLabel("Calculator display")).toContainText("15");
+  });
+
+  test("physical * and / display as the keypad glyphs × and ÷", async ({ page }) => {
+    await page.goto("/Calculator");
+    await hydrated(page);
+    await page.keyboard.type("6*8", { delay: 40 });
+    await expect(page.getByLabel("Calculator display")).toContainText("6×8");
+    await page.keyboard.press("Enter");
+    await expect(page.getByLabel("Calculator display")).toContainText("48");
+    await page.keyboard.type("9/4", { delay: 40 });
+    await expect(page.getByLabel("Calculator display")).toContainText("9÷4");
+    await page.keyboard.press("Enter");
+    await expect(page.getByLabel("Calculator display")).toContainText("2.25");
+  });
+
+  test("Backspace deletes and Escape clears the display", async ({ page }) => {
+    await page.goto("/Calculator");
+    await hydrated(page);
+    await page.keyboard.type("123", { delay: 40 });
+    await page.keyboard.press("Backspace");
+    await expect(page.getByLabel("Calculator display")).toContainText("12");
+    await page.keyboard.press("Escape");
+    await expect(page.getByLabel("Calculator display")).toContainText("0");
+  });
+
+  test("form inputs keep their keystrokes (the listener never hijacks fields)", async ({ page }) => {
+    await page.goto("/Calculator");
+    await hydrated(page);
+    await page.getByRole("tab", { name: "GPA Calculator" }).click();
+    const grade = page.getByRole("textbox").first();
+    await grade.click();
+    await grade.fill(""); // the seeded GPA rows carry a default grade
+    await page.keyboard.type("A", { delay: 40 });
+    await expect(grade).toHaveValue("A");
+    // The calculator display never picked the keystroke up (the display
+    // unmounts on the GPA tab — flip back and assert it is untouched).
+    await page.getByRole("tab", { name: "Basic" }).click();
+    await expect(page.getByLabel("Calculator display")).toContainText("0");
   });
 });

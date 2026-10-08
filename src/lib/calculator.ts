@@ -328,3 +328,31 @@ export function formatCalcResult(n: number): string {
   if (abs >= 1e12 || abs < 1e-9) return n.toExponential(6);
   return String(Math.round(n * 1e10) / 1e10);
 }
+
+/**
+ * S15 — map a PHYSICAL keyboard key onto the calculator's press/submit
+ * pipeline (the superset: the reference's calculator is click-only, verified
+ * both ways — see docs/remediation-plan-session15.md C0).
+ *
+ * Operators map to the keypad GLYPHS (* → ×, / → ÷) so the display matches
+ * what clicking the same operation would show; the tokenizer normalizes
+ * both back to ASCII before parsing. Returns null for anything the keypad
+ * cannot express — the listener ignores those keys entirely.
+ */
+export function mapPhysicalKey(key: string): string | null {
+  switch (key) {
+    case "Enter":
+    case "=":
+      return "=";
+    case "Backspace":
+      return "⌫";
+    case "Escape":
+      return "C";
+    case "*":
+      return "×";
+    case "/":
+      return "÷";
+    default:
+      return /^[0-9.()%^+-]$/.test(key) ? key : null;
+  }
+}

@@ -21,6 +21,21 @@ export const registerSchema = z.object({
   name: bounded(80).default(""),
 });
 
+// S15 — the auth-flow depth schemas (see docs/remediation-plan-session15.md).
+export const verifyEmailSchema = z.object({
+  email: z.string().email().max(200),
+  code: z.string().regex(/^\d{6}$/, "The code is 6 digits"),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email().max(200),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().regex(/^[0-9a-f]{48}$/, "Malformed reset token"),
+  password: z.string().min(8).max(200),
+});
+
 export const subjectSchema = z.object({
   name: bounded(80).min(1),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#8b5cf6"),

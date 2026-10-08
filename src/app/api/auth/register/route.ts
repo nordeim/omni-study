@@ -1,13 +1,32 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
-  SESSION_COOKIE,
   checkRateLimit,
   clientIp,
-  createSessionToken,
+  generateVerificationCode,
   hashPassword,
 } from "@/lib/auth";
 import { registerSchema } from "@/lib/validation";
+
+// S15 (ADR-013) — registration no longer auto-logs-in: it creates an
+// UNVERIFIED account plus a 6-digit VerificationToken (15 min) and the
+// client advances to the "Verify your email" screen (the reference's
+// measured flow). No SMTP exists in this self-hosted app, so the code is
+// returned to the registrant directly — the code IS the email here.
+// Duplicate behavior mirrors the reference platform: an existing
+// UNVERIFIED account re-sends (same 201); a VERIFIED one keeps the 409.
+
+const CODE_TTL_MS = 15 * 60 * 1000;
+
+async function issueVerificationCode(userId: string): Promise<string> {
+  // One live code per user: supersede any earlier tokens.
+  await db.verificationToken.deleteMany({ where: { userId } });
+  const code = generateVerificationCode();
+  await db.verificationToken.create({
+    data: { userId, code, expiresAt: new Date(Date.now() + CODE_TTL_MS) },
+  });
+  return code;
+}
 
 export async function POST(req: Request) {
   const ip = clientIp(req);
@@ -36,11 +55,19 @@ export async function POST(req: Request) {
 
   const email = parsed.data.email.toLowerCase();
   const existing = await db.user.findUnique({ where: { email } });
-  if (existing) {
+
+  // Platform behavior: an unverified duplicate RE-SENDS and re-enters the
+  // verify screen; only a verified account reports the conflict.
+  if (existing?.emailVerified) {
     return NextResponse.json(
       { error: "An account with this email already exists. Try signing in." },
       { status: 409 },
     );
+  }
+
+  if (existing) {
+    const code = await issueVerificationCode(existing.id);
+    return NextResponse.json({ ok: true, email, code }, { status: 201 });
   }
 
   const user = await db.user.create({
@@ -57,24 +84,9 @@ export async function POST(req: Request) {
         ],
       },
     },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      avatarEmoji: true,
-      themeMode: true,
-      accentColor: true,
-    },
+    select: { id: true },
   });
 
-  const token = createSessionToken(user.id);
-  const res = NextResponse.json({ user }, { status: 201 });
-  res.cookies.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 30 * 24 * 60 * 60,
-  });
-  return res;
+  const code = await issueVerificationCode(user.id);
+  return NextResponse.json({ ok: true, email, code }, { status: 201 });
 }

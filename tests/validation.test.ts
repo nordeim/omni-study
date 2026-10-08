@@ -6,14 +6,17 @@ import {
   examSchema,
   flashcardDeckSchema,
   flashcardSchema,
+  forgotPasswordSchema,
   loginSchema,
   mathSolveSchema,
   practiceTestSchema,
   preferencesSchema,
+  resetPasswordSchema,
   studyGroupSchema,
   subjectSchema,
   taskSchema,
   timetableClassSchema,
+  verifyEmailSchema,
 } from "@/lib/validation";
 
 describe("loginSchema", () => {
@@ -314,5 +317,62 @@ describe("mathSolveSchema", () => {
       mathSolveSchema.safeParse({ problem: "x", image: "https://example.com/x.png" }).success,
     ).toBe(false);
     expect(mathSolveSchema.safeParse({ problem: "" }).success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// S15 — the auth-flow depth schemas: verify-email (6-digit OTP), forgot
+// password, reset password (48-hex token). registerSchema is UNCHANGED (the
+// signup form just stops sending a name; the default "" covers it).
+// ---------------------------------------------------------------------------
+
+describe("verifyEmailSchema (S15)", () => {
+  it("accepts a valid email + 6-digit code", () => {
+    expect(
+      verifyEmailSchema.safeParse({ email: "demo@studyflow.app", code: "012345" }).success,
+    ).toBe(true);
+    expect(
+      verifyEmailSchema.safeParse({ email: "a@b.co", code: "999999" }).success,
+    ).toBe(true);
+  });
+
+  it("rejects wrong-length, non-digit, and malformed codes", () => {
+    expect(verifyEmailSchema.safeParse({ email: "a@b.co", code: "12345" }).success).toBe(false);
+    expect(verifyEmailSchema.safeParse({ email: "a@b.co", code: "1234567" }).success).toBe(false);
+    expect(verifyEmailSchema.safeParse({ email: "a@b.co", code: "12a456" }).success).toBe(false);
+    expect(verifyEmailSchema.safeParse({ email: "a@b.co", code: 123456 }).success).toBe(false);
+    expect(verifyEmailSchema.safeParse({ email: "not-an-email", code: "123456" }).success).toBe(false);
+    expect(verifyEmailSchema.safeParse({ code: "123456" }).success).toBe(false);
+  });
+});
+
+describe("forgotPasswordSchema (S15)", () => {
+  it("accepts any well-formed email (the route answers uniformly)", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "demo@studyflow.app" }).success).toBe(true);
+    expect(forgotPasswordSchema.safeParse({ email: "stranger@example.com" }).success).toBe(true);
+  });
+
+  it("rejects malformed emails and missing bodies", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "nope" }).success).toBe(false);
+    expect(forgotPasswordSchema.safeParse({}).success).toBe(false);
+    // Unknown keys are stripped (the repo-wide Zod convention — strip mode).
+    expect(forgotPasswordSchema.safeParse({ email: "a@b.co", extra: 1 }).success).toBe(true);
+  });
+});
+
+describe("resetPasswordSchema (S15)", () => {
+  it("accepts a 48-hex token with a strong-enough password", () => {
+    const token = "a".repeat(48);
+    expect(
+      resetPasswordSchema.safeParse({ token, password: "NewPass1234!" }).success,
+    ).toBe(true);
+  });
+
+  it("rejects short/weak passwords and malformed tokens", () => {
+    const token = "a".repeat(48);
+    expect(resetPasswordSchema.safeParse({ token, password: "short" }).success).toBe(false);
+    expect(resetPasswordSchema.safeParse({ token: "XYZ!", password: "NewPass1234!" }).success).toBe(false);
+    expect(resetPasswordSchema.safeParse({ token: "a".repeat(47), password: "NewPass1234!" }).success).toBe(false);
+    expect(resetPasswordSchema.safeParse({ password: "NewPass1234!" }).success).toBe(false);
   });
 });
