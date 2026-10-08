@@ -197,6 +197,8 @@ export function FlashcardsView() {
         "POST",
         "/api/ai/generate-cards",
         { deckId: selected.id, count: 6 },
+        // S13-A2: same generous AI deadline as the assistant/solver.
+        { timeoutMs: 120_000 },
       );
       let order = deckCards.length;
       for (const c of res.cards) {

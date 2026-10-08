@@ -7,7 +7,7 @@ import { ViewHeader } from "./shared";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
-import { apiSend, ApiError } from "@/lib/api";
+import { apiSend, ApiError, isTimeoutError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 // AI Study Assistant — quick-action modes (the reference's six chips) plus a
@@ -29,6 +29,7 @@ export function AIAssistantView() {
   const messages = useDataStore((s) => s.data.chat);
   const load = useDataStore((s) => s.load);
   const appendChat = useDataStore((s) => s.appendChat);
+  const removeChatMessage = useDataStore((s) => s.removeChatMessage);
   const [input, setInput] = React.useState("");
   const [mode, setMode] = React.useState<(typeof MODES)[number]["id"] | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -48,8 +49,11 @@ export function AIAssistantView() {
     setBusy(true);
     setInput("");
     const usedMode = forcedMode ?? mode ?? "chat";
+    // S13-A1: the optimistic id must be captured before the try so the
+    // catch can address the row.
+    const localId = `local-${Date.now()}`;
     appendChat({
-      id: `local-${Date.now()}`,
+      id: localId,
       role: "user",
       content,
       createdAt: new Date().toISOString(),
@@ -59,10 +63,23 @@ export function AIAssistantView() {
         "POST",
         "/api/ai/chat",
         { messages: [{ role: "user", content }], mode: usedMode },
+        // S13-A2: a generous deadline — LLM completions legitimately run
+        // 30–60 s, but a hung backend must never disable the composer forever.
+        { timeoutMs: 120_000 },
       );
       appendChat(res.message);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "The assistant is unavailable right now.");
+      // S13-A1 rollback: remove the optimistic message and bounce the text
+      // back into the composer — a failed send must not leave an orphan that
+      // silently vanishes on the next reload. The restored text IS the retry
+      // affordance (press Enter again).
+      removeChatMessage(localId);
+      setInput(content);
+      if (isTimeoutError(err)) {
+        toast.error("The assistant took too long to respond. Please try again.");
+      } else {
+        toast.error(err instanceof ApiError ? err.message : "The assistant is unavailable right now.");
+      }
     } finally {
       setBusy(false);
     }

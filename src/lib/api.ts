@@ -33,14 +33,34 @@ async function parse<T>(res: Response): Promise<T> {
   return body as T;
 }
 
-export async function apiGet<T>(path: string): Promise<T> {
-  return parse<T>(await fetch(path, { credentials: "same-origin" }));
+export async function apiGet<T>(path: string, opts?: ApiOpts): Promise<T> {
+  return parse<T>(
+    await fetch(path, { credentials: "same-origin", signal: opts?.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined }),
+  );
+}
+
+/** S13-A2: optional request deadline for the AI surfaces (LLM completions
+ * legitimately run 30–60 s — call sites pass a generous 120 s so a hung
+ * backend can never disable a composer forever). */
+export interface ApiOpts {
+  timeoutMs?: number;
+}
+
+/** True when an error is the AbortSignal.timeout() deadline firing (or any
+ * abort) — lets call sites say "took too long" instead of "unavailable". */
+export function isTimeoutError(err: unknown): boolean {
+  return (
+    typeof DOMException !== "undefined" &&
+    err instanceof DOMException &&
+    (err.name === "TimeoutError" || err.name === "AbortError")
+  );
 }
 
 export async function apiSend<T>(
   method: "POST" | "PATCH" | "PUT" | "DELETE",
   path: string,
   body?: unknown,
+  opts?: ApiOpts,
 ): Promise<T> {
   return parse<T>(
     await fetch(path, {
@@ -48,6 +68,7 @@ export async function apiSend<T>(
       credentials: "same-origin",
       headers: body === undefined ? undefined : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: opts?.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined,
     }),
   );
 }

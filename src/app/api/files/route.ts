@@ -33,6 +33,12 @@ export const POST = withUser(async (userId, req) => {
   if (!(file instanceof File)) {
     return jsonOk({ error: "Missing 'file' field" }, { status: 400 });
   }
+  // S13-C2: reject nameless uploads — an empty filename creates an
+  // unlabeled row, and the Bun standalone's multipart parser surfaces an
+  // empty name as undefined (a 500 crash pre-fix; the dev runtime stored "").
+  if (!file.name || !file.name.trim()) {
+    return jsonOk({ error: "File name cannot be empty" }, { status: 400 });
+  }
   if (file.size > MAX_UPLOAD_BYTES) {
     return jsonOk(
       { error: "File is larger than the 2 MB limit. Add it as a link instead." },

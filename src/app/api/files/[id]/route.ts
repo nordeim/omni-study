@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { errorResponse } from "@/lib/server/http";
+import { buildContentDisposition, errorResponse } from "@/lib/server/http";
 
 // File item routes: GET downloads the blob (or redirects for link-files),
 // DELETE removes it. Ownership is enforced in the WHERE clause.
@@ -24,7 +24,8 @@ export async function GET(_req: Request, ctx: Ctx) {
     return new NextResponse(new Uint8Array(bytes), {
       headers: {
         "Content-Type": file.mimeType,
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(file.name)}"`,
+        // S13-C3: both dialects — ASCII-safe fallback + RFC 5987 extended form.
+        "Content-Disposition": buildContentDisposition(file.name),
         "Content-Length": String(bytes.length),
       },
     });

@@ -251,11 +251,17 @@ export function PracticeTestsView() {
     setGenerating(true);
     try {
       const subject = subjectId ? subjectMap.get(subjectId)?.name : undefined;
-      const res = await apiSend<{ questions: DialogQuestion[] }>("POST", "/api/ai/generate-questions", {
-        title: trimmed,
-        context: subject ? `Subject: ${subject}` : "",
-        count: 10,
-      });
+      const res = await apiSend<{ questions: DialogQuestion[] }>(
+        "POST",
+        "/api/ai/generate-questions",
+        {
+          title: trimmed,
+          context: subject ? `Subject: ${subject}` : "",
+          count: 10,
+        },
+        // S13-A2: same generous AI deadline as the assistant/solver.
+        { timeoutMs: 120_000 },
+      );
       setQuestions((list) => [...list, ...res.questions]);
       toast.success(`Generated ${res.questions.length} questions`);
     } catch (err) {

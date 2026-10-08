@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ViewHeader } from "./shared";
 import { Textarea } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
-import { apiSend, ApiError } from "@/lib/api";
+import { apiSend, ApiError, isTimeoutError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 // Math Solver — AI-powered step-by-step solutions; text problems and
@@ -32,13 +32,24 @@ export function MathSolverView() {
     setBusy(true);
     setSolution(null);
     try {
-      const res = await apiSend<{ solution: string }>("POST", "/api/math/solve", {
-        problem: problem.trim() || "(see image)",
-        ...(image ? { image } : {}),
-      });
+      const res = await apiSend<{ solution: string }>(
+        "POST",
+        "/api/math/solve",
+        {
+          problem: problem.trim() || "(see image)",
+          ...(image ? { image } : {}),
+        },
+        // S13-A2: vision completions run even slower than text ones — same
+        // generous 120 s deadline as the assistant.
+        { timeoutMs: 120_000 },
+      );
       setSolution(res.solution);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "The solver could not process that.");
+      if (isTimeoutError(err)) {
+        toast.error("The solver took too long to respond. Please try again.");
+      } else {
+        toast.error(err instanceof ApiError ? err.message : "The solver could not process that.");
+      }
     } finally {
       setBusy(false);
     }
@@ -47,8 +58,21 @@ export function MathSolverView() {
   function pickImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    // S13-A3: the <input accept="image/*"> filters the picker UI, not the
+    // OS dialog's "All files" view — guard the MIME type client-side so a
+    // non-image never reaches the server's data-URL regex.
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      e.target.value = "";
+      return;
+    }
+    // The 4 MB client cap is deliberately stricter than the server schema's
+    // 6 MB limit on the base64 STRING — base64 inflates ~33%, so a 4 MB file
+    // encodes to ~5.3 MB, safely under the server cap. Different units, not
+    // an inconsistency.
     if (file.size > 4 * 1024 * 1024) {
       toast.error("Image must be under 4 MB");
+      e.target.value = "";
       return;
     }
     const reader = new FileReader();

@@ -41,6 +41,24 @@ export class NotFoundError extends Error {
   }
 }
 
+/** S13-C3: build a download Content-Disposition that speaks BOTH filename
+ * dialects — an ASCII-safe quoted fallback (RFC 2183) AND the RFC 5987
+ * `filename*=UTF-8''<pct-encoded>` extended form every modern browser
+ * prefers for non-ASCII names. The pre-fix code percent-encoded the name
+ * INSIDE the quoted string, so browsers saved "%D1%84…" as the literal
+ * filename. Pure string logic — unit-pinned in tests/files.test.ts. */
+export function buildContentDisposition(name: string): string {
+  const source = name.trim() ? name : "download";
+  // RFC 5987: UTF-8 percent-encoding of the exact original name.
+  const extended = encodeURIComponent(source);
+  // RFC 2183 quoted-string: ASCII-printable only, no quotes/backslashes.
+  const fallback = source
+    .replace(/[^\x20-\x7e]/g, "_")
+    .replace(/["\\]/g, "_")
+    .trim();
+  return `attachment; filename="${fallback || "download"}"; filename*=UTF-8''${extended}`;
+}
+
 type Ctx = { params: Promise<Record<string, string>> };
 
 /** Wrap a route handler: auth + uniform error mapping. */

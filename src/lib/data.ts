@@ -317,6 +317,7 @@ interface DataState {
   refresh: (key: CollectionKey) => Promise<void>;
   setChat: (messages: AiChatMessage[]) => void;
   appendChat: (message: AiChatMessage) => void;
+  removeChatMessage: (id: string) => void;
   reset: () => void;
 }
 
@@ -351,6 +352,8 @@ export const useDataStore = create<DataState>((set, get) => ({
     set((s) => ({ data: { ...s.data, chat: messages }, status: { ...s.status, chat: "ready" } })),
   appendChat: (message) =>
     set((s) => ({ data: { ...s.data, chat: [...s.data.chat, message] } })),
+  removeChatMessage: (id) =>
+    set((s) => ({ data: { ...s.data, chat: s.data.chat.filter((m) => m.id !== id) } })),
   reset: () =>
     set({
       data: { ...EMPTY },
