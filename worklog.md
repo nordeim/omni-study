@@ -427,3 +427,28 @@ Work Log:
 
 Stage Summary:
 - Push (this commit) includes: the global offline banner (useSyncExternalStore, null-online byte-parity, role=status amber pill) + the human transport-failure message at the one doFetch seam + the per-user AI rate budgets (20/15 min, 429 + Retry-After) on all four AI routes + the download nosniff/private-no-store headers + the whitespace display-name guard + the aria-live transcript + solver live regions + 8 new unit pins + 7 new e2e pins + 5 committed audit tools + 4 evidence captures + the 14 stale pre-clone scripts removed + session-14 remediation plan with execution log + aligned docs (README/AGENTS/CLAUDE/PAD ADR-012/SKILL AP-56..58) + session_20.md narrative. 363 tests green (131 unit + 232 e2e). The clone's ambient states are now first-class: the network dropping is ANNOUNCED (banner + human messages), the expensive AI surface is budgeted, downloads are header-hardened, and screen readers hear the AI reply; visual parity in the default media is byte-identical (225 prior pins untouched).
+
+---
+Task ID: 22
+Agent: Super Z (main agent)
+Task: Session-21 briefing → execute the S15 audit iteration (login/registration UX depth, Files search parity, keyboard shortcuts, pre-1.0 sweep + the standing drawer check) with TDD, docs alignment, and the main-branch push.
+
+Work Log:
+- Workspace was RESET (the prior conversation's uncommitted S15 work was lost). Re-cloned at e1b8cec; re-read the five core docs + the S14 plan tail; rebuilt the env (bun install, .env, db:push, db:seed); baseline gates matched the documented S14 state (lint ✓ tsc ✓ 131 unit ✓).
+- Re-probed the reference auth ground truth from scratch: scripts/ref-auth-probe-s15.mjs (+ position/geometry/copy micro-probes) — the login inline-error alert (role=alert, bg-red-50/70 border-red-200 rounded-xl p-4, between Password and Sign in), the signup form (h2 24px/700, Back→h2 8px, 44px inputs, reference placeholders), the verify screen (64px slate-100 shield circle, 96px Back→h2 gap, six 40×44 OTP boxes @6px gaps, Resend row, 12px helper), the forgot 3-state flow + green check-email alert, the unverified gate copy, duplicate-register re-send. VLM hypotheses → DOM-verified (the standing discipline).
+- Pre-fix audits recorded (auth-flow-audit all-RED, keyboard-audit RED); remediation plan saved to docs/remediation-plan-session15.md and validated file-by-file.
+- TDD: 18 designed RED unit failures (8 auth seams + 4 mapPhysicalKey + 6 schemas) → GREEN seams (generateVerificationCode / generateResetToken / normalizeVerificationCode in auth.ts; verify/forgot/reset schemas; mapPhysicalKey with ×/÷ glyph parity) → 149 unit green. Prisma: User.emailVerified + VerificationToken (15-min 6-digit) + PasswordResetToken (30-min 48-hex); seed creates AND upgrades the demo user verified (pre-S15 dbs stay usable).
+- Six routes: register (no auto-login; unverified duplicates re-send; verified keep 409), verify-email (match→burn→sign in), resend-verification (uniform 200), login (403 gate AFTER password verification — never an enumeration oracle; copy parity), forgot-password (always-200 + resetUrl — the no-SMTP self-hosted delivery), reset-password (one-shot consume).
+- Login page → six-state client machine (signin/signup/verify/forgot/check-email/reset) with the measured sub-screen chrome + inline alerts; page.tsx became a SERVER component awaiting searchParams that seeds initialResetToken (SSR-rendered deep-link; lint-clean, hydration-clean). OTP boxes: auto-advance, backspace-to-prev, whole-code paste distribution.
+- Calculator superset: mapPhysicalKey + guarded window keydown (form-control + open-dialog guards). The audit caught the stale-closure bug (Enter evaluated the mount-time display) — fixed with the latest-ref indirection (AP-59).
+- E1 ("missing bracket" line 301) was a PHANTOM: tool outputs swallow the `[` after `const `; codepoint dump + git diff proved the file always correct (AP-61). No fix landed.
+- E2E: auth-flows.spec.ts (5), calculator keyboard pins (4), updated wrong-password pin (inline alert chrome; trap-10 dual serialization; red-200 = rgb(254,202,202)); registerFreshUser (session9 spec) now completes verification; three spec artifacts fixed (route-announcer role=alert collision, bare-h2 wait race, pre-filled GPA grade — AP-60).
+- Full gate: lint ✓ tsc ✓ 149 unit ✓ build ✓ 241 e2e ✓ (cold db, 3.8 min) = 390 tests green.
+- Verification: all three S15 audits GREEN; drawer-check-s14 GREEN (standing priority); pre15-preflight GREEN (31 runtime deps pinned by design, 1240 KB client static); 5 evidence captures VLM-verified 5/5; docs aligned (README/AGENTS/CLAUDE/PAD ADR-013/SKILL AP-59..61/plan execution log/session_22.md); .env.example unchanged (no new env vars).
+- 3-commit pattern to main + SSH wrapper push.
+
+Stage Summary:
+- S15 landed: the reference's full auth journey (inline errors, signup, 6-digit verification, unverified gate, forgot/reset) + the calculator physical-keyboard superset. 390 tests green (149 unit + 241 e2e).
+- Key decisions: ADR-013 (self-hosted token delivery — the code/reset URL surfaces to the actor; enumeration bounded by the register-409 + single-user threat model); the login route is now a server component (searchParams → prop, no effect setState).
+- New lessons: AP-59 (latest-ref for window listeners), AP-60 (route-announcer collision + heading-text waits), AP-61 (the phantom-bracket output artifact).
+- Non-gaps documented: Files search folder-scoped on both apps; reference calculator click-only (superset chosen); pre-1.0 sweep green.
