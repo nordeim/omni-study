@@ -478,6 +478,59 @@
   background-color: rgb(var(--sf-primary-soft-dark) / 0.3);
 }
 
+/* S11-2 — the ACTIVE nav item (sidebar + mobile drawer share NavItemLink).
+   Light values are the previous inline styles verbatim (violet-600 text,
+   violet-500 icon — the S8-A pins); dark follows the repo convention: the
+   300-level strong-dark tone (violet-600 on the dark glass measured 3.13:1).
+   The active gradient tint itself stays inline in nav-items.tsx (pinned by
+   NAV_ACTIVE_GRADIENT_STOPS). */
+.sf-nav-active {
+  color: rgb(var(--sf-primary-strong));
+}
+.dark .sf-nav-active {
+  color: rgb(var(--sf-primary-strong-dark));
+}
+.sf-nav-active-icon {
+  color: rgb(var(--sf-primary));
+}
+.dark .sf-nav-active-icon {
+  color: rgb(var(--sf-primary-strong-dark));
+}
+
+/* S11-5 — the Settings avatar emoji swatch, SELECTED (S5-F family). Light:
+   the 100-level soft tint (one step deeper than .sf-selected-tint's
+   softest — the measured swatch face); dark: the soft-dark wash. The accent
+   ring stays inline in settings-view.tsx (boxShadow). */
+.sf-swatch-selected {
+  background-color: rgb(var(--sf-primary-soft));
+}
+.dark .sf-swatch-selected {
+  background-color: rgb(var(--sf-primary-soft-dark) / 0.3);
+}
+
+/* S11-6 — minimal print styles (superset; the reference has none): hide the
+   app chrome (sidebar, mobile app bar, drawer, toaster), reset the canvas to
+   white, and let the content flow. Scope the display:none to the app shell
+   wrappers so nothing inside main is affected. */
+@media print {
+  aside,
+  header[role="banner"],
+  [role="dialog"],
+  [data-print-hidden] {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+  }
+  .sf-canvas {
+    background: #ffffff !important;
+  }
+  main {
+    padding-top: 0 !important;
+    margin-left: 0 !important;
+  }
+}
+
 /* Thin scrollbars for long lists (sidebar, notes list, chat). */
 .sf-scroll::-webkit-scrollbar {
   width: 6px;

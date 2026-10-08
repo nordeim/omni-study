@@ -76,7 +76,18 @@ test.describe("theme system", () => {
   test("switching the accent recolors the active nav chip", async ({ page }) => {
     await page.goto("/Settings");
     await hydrated(page);
-    await page.getByRole("button", { name: "Teal accent" }).click();
+    // S11 hardening (cold-db flake, observed after a fresh db/e2e.db): the
+    // swatch's savePreferences PATCH is fire-and-forget — asserting the
+    // persistence on a re-navigation can race the PATCH (goto's
+    // /api/auth/me returns the OLD user while the PATCH lands after). Await
+    // the PATCH response BEFORE the navigation, exactly like the restore
+    // below (the S4 lesson applied to the SET, not just the restore).
+    await Promise.all([
+      page.waitForResponse(
+        (r) => r.url().includes("/api/settings/preferences") && r.request().method() === "PATCH",
+      ),
+      page.getByRole("button", { name: "Teal accent" }).click(),
+    ]);
     // The token change is applied to <html> as an RGB triplet var. The var
     // lands on the NEXT React render after the click — an immediate evaluate
     // races it (observed as a fast-fail flake); poll for the final value.
@@ -85,6 +96,9 @@ test.describe("theme system", () => {
     );
     // It persists (saved to the user record).
     await page.goto("/Dashboard");
+    await page.waitForFunction(
+      () => document.documentElement.style.getPropertyValue("--sf-primary").trim() === "20 184 166",
+    );
     const after = await page.evaluate(
       () => getComputedStyle(document.documentElement).getPropertyValue("--sf-primary").trim(),
     );
@@ -107,6 +121,15 @@ test.describe("theme system", () => {
     await page.waitForFunction(
       () => document.documentElement.style.getPropertyValue("--sf-primary").trim() === "139 92 246",
     );
+  });
+
+  // S11 safety net: a failure ABOVE the in-test restore (e.g. the persistence
+  // assert) used to leak teal into every later violet-computed spec — the
+  // restore only ran at the END of the test body. The afterEach guarantees
+  // the shared user record is violet again even when a pin fails mid-test
+  // (the same per-hook pattern as dark-mode.spec.ts / theme-system.spec.ts).
+  test.afterEach(async ({ page }) => {
+    await page.request.patch("/api/settings/preferences", { data: { accentColor: "violet" } });
   });
 
   test("dark mode toggles the html class", async ({ page }) => {

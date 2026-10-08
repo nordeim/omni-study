@@ -160,6 +160,22 @@ await shot("dark-mobile-navigation-drawer", mobileTouch, "/Dashboard", async (pa
   await page.getByRole("button", { name: "Open navigation menu" }).tap();
   await page.waitForTimeout(700);
 });
+// 31 — session-11 dark-LOGIN capture: a FRESH visitor (no session cookie,
+// empty localStorage) on a dark-OS device — the pre-paint boot script themes
+// the login route via the prefers-color-scheme fallback.
+{
+  const ctx = await currentBrowser.newContext({
+    viewport: { width: 1280, height: 800 },
+    colorScheme: "dark",
+  });
+  const page = await ctx.newPage();
+  await page.goto(BASE + "/login", { waitUntil: "load" });
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${OUT}/dark-Login.png` });
+  console.log("captured dark-Login");
+  await ctx.close();
+}
 // Restore light for the demo user (the dev server's resting state).
 {
   const ctx = await currentBrowser.newContext();
@@ -175,4 +191,4 @@ await shot("dark-mobile-navigation-drawer", mobileTouch, "/Dashboard", async (pa
 }
 
 await currentBrowser.close();
-console.log("done — " + (VIEWS.length + 10) + " captures in " + OUT);
+console.log("done — " + (VIEWS.length + 11) + " captures in " + OUT);

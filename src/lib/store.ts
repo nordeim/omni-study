@@ -2,7 +2,15 @@
 
 import { create } from "zustand";
 import { NAV_ITEMS, pathForView, viewFromPath, type ViewId } from "@/lib/router";
-import { ACCENT_TOKENS, accentCssVars, resolveMode, type Accent, type ThemeMode } from "@/lib/theme";
+import {
+  ACCENT_TOKENS,
+  accentCssVars,
+  resolveMode,
+  THEME_CACHE_KEY,
+  themeCachePayload,
+  type Accent,
+  type ThemeMode,
+} from "@/lib/theme";
 
 // ---------------------------------------------------------------------------
 // App store — view routing (synced with location.pathname), sidebar collapse,
@@ -103,6 +111,21 @@ interface ThemeState {
   apply: () => void;
 }
 
+/** S11-1 — keep a plain (non-media) theme-color meta in sync with the
+ *  EFFECTIVE mode. Next's viewport export emits two prefers-color-scheme
+ *  metas; a user who explicitly picks Dark on a light OS would otherwise
+ *  keep a white mobile browser chrome. The plain meta is appended AFTER the
+ *  media-qualified ones — Chromium uses the LAST matching one. */
+function ensureThemeColorMeta(effective: "light" | "dark") {
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]:not([media])');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.appendChild(meta);
+  }
+  meta.content = effective === "dark" ? "#020617" : "#ffffff";
+}
+
 function applyToDocument(mode: ThemeMode, accent: Accent) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -116,7 +139,44 @@ function applyToDocument(mode: ThemeMode, accent: Accent) {
   for (const [k, v] of Object.entries(accentCssVars(accent))) {
     root.style.setProperty(k, v);
   }
+  // S11-1 — persist for the pre-paint boot script (layout.tsx <head>): a
+  // dark user must not see a light flash while /api/auth/me resolves, and
+  // the login route needs a theme source before any user is known. The
+  // payload format is unit-pinned (tests/theme-cache.test.ts).
+  try {
+    window.localStorage.setItem(THEME_CACHE_KEY, themeCachePayload(mode, accent));
+  } catch {
+    /* storage unavailable — the boot script falls back to the OS preference */
+  }
+  ensureThemeColorMeta(effective);
 }
+
+// S11-1 — System mode must track OS theme changes AT RUNTIME (measured: the
+// app used to stay stale until a manual reload). Registered once, client-side
+// only; re-applies only when the stored mode is "system" (explicit light/dark
+// choices are user intent and must NOT follow the OS). The reference's own
+// System option is the measured platform no-op — dynamic tracking is superset.
+let systemThemeTrackingInstalled = false;
+function installSystemThemeTracking() {
+  if (systemThemeTrackingInstalled || typeof window === "undefined") return;
+  systemThemeTrackingInstalled = true;
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const onChange = () => {
+    const { mode, accent } = useThemeStore.getState();
+    if (mode === "system") applyToDocument(mode, accent);
+  };
+  if (typeof mq.addEventListener === "function") {
+    mq.addEventListener("change", onChange);
+  } else {
+    // Legacy Safari (< 14) fallback.
+    const legacy = mq as MediaQueryListLegacy;
+    legacy.addListener?.(onChange);
+  }
+}
+type MediaQueryListLegacy = {
+  addListener?: (listener: (e: MediaQueryListEvent) => void) => void;
+  removeListener?: (listener: (e: MediaQueryListEvent) => void) => void;
+};
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
   mode: "system",
@@ -162,3 +222,8 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 
 /** Nav items for the sidebar/drawer (stable reference). */
 export const NAV = NAV_ITEMS;
+
+// S11-1 — install the System-mode runtime tracking once, on first client
+// import of this module (page.tsx, settings, and every view import the
+// store). Idempotent; no-op on the server.
+installSystemThemeTracking();

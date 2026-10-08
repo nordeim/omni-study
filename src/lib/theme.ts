@@ -244,3 +244,51 @@ export function resolveMode(mode: ThemeMode, prefersDark: boolean): "light" | "d
   if (mode === "system") return prefersDark ? "dark" : "light";
   return mode;
 }
+
+// ---------------------------------------------------------------------------
+// S11-1 — the theme-application cache contract.
+//
+// applyToDocument (src/lib/store.ts) persists { mode, accent } to
+// localStorage on EVERY apply; the boot script below reads it BEFORE first
+// paint (injected into <head> by the root layout) so dark users never see a
+// light flash while /api/auth/me resolves — and the login route themes at
+// all (fresh visitors fall back to the OS preference). The script is a
+// hand-maintained inline string (it must run before any module loads and
+// cannot import this file) — the unit tests in tests/theme-cache.test.ts pin
+// the PAYLOAD FORMAT so a format change here fails tests and forces the
+// script to be updated in the same change.
+// ---------------------------------------------------------------------------
+
+export const THEME_CACHE_KEY = "sf-theme";
+
+/** The JSON the boot script parses — compact by design (localStorage read
+ *  happens pre-paint on every hard load). */
+export function themeCachePayload(mode: ThemeMode, accent: Accent): string {
+  return JSON.stringify({ mode, accent });
+}
+
+/** Parse the cached payload (the boot script's reader, mirrored for tests
+ *  and any future app-side reader). Returns null for anything invalid. */
+export function parseThemeCache(raw: string | null): { mode: ThemeMode; accent: Accent } | null {
+  if (!raw) return null;
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (typeof value !== "object" || value === null) return null;
+    const { mode, accent } = value as { mode?: unknown; accent?: unknown };
+    if (typeof mode !== "string" || !isThemeMode(mode)) return null;
+    if (typeof accent !== "string" || !isAccent(accent)) return null;
+    return { mode, accent };
+  } catch {
+    return null;
+  }
+}
+
+/** The pre-paint boot script (S11-1). Self-contained on purpose: no imports,
+ *  no frameworks — it must execute synchronously in <head> before the first
+ *  paint. Resolves the cached mode (falling back to the OS preference when
+ *  the cache is absent — fresh visitors and post-sign-out) and applies the
+ *  dark class. The accent vars still land post-auth (pre-auth surfaces use
+ *  the violet :root defaults — the reference's own login is
+ *  platform-default-styled). Keep the localStorage key in sync with
+ *  THEME_CACHE_KEY (unit-pinned). */
+export const THEME_BOOT_SCRIPT = `(function(){try{var t=JSON.parse(localStorage.getItem("sf-theme")||"null");var m=t&&t.mode;var d=m==="dark"||(m!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;

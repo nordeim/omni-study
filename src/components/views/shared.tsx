@@ -121,7 +121,7 @@ export function ViewAllLink({ label = "View All", onClick }: { label?: string; o
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex h-8 items-center gap-0 rounded-md px-3 text-xs font-medium transition-colors text-sf-primary-strong hover:opacity-80 sf-focus"
+      className="inline-flex h-8 items-center gap-0 rounded-md px-3 text-xs font-medium transition-colors text-sf-primary-strong hover:opacity-80 sf-focus dark:text-sf-primary-strong-dark"
     >
       {label}
       {/* Reference (measured): lucide-arrow-right w-4 h-4 ml-1 — the

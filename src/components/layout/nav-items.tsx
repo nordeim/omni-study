@@ -84,7 +84,12 @@ export function NavItemLink({ id, collapsed = false }: { id: ViewId; collapsed?:
         className={cn(
           "flex items-center rounded-xl px-4 py-3 transition-all duration-200",
           collapsed && "justify-center px-0",
-          active ? "font-medium" : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60",
+          // S11-2 — the active text color lives in the .sf-nav-active class
+          // (globals.css): an inline color cannot re-theme in dark mode, and
+          // violet-600 on the dark glass measured 3.13:1 — dark follows the
+          // repo convention (the 300-level --sf-primary-strong-dark). Light
+          // values are byte-identical to the previous inline styles.
+          active ? "font-medium sf-nav-active" : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60",
         )}
         style={
           active
@@ -93,7 +98,6 @@ export function NavItemLink({ id, collapsed = false }: { id: ViewId; collapsed?:
                 // primary → indigo-500 (avatarTo) at 10% — pinned by
                 // NAV_ACTIVE_GRADIENT_STOPS + the S8 e2e spec.
                 backgroundImage: `linear-gradient(to right, rgb(var(--sf-primary) / ${NAV_ACTIVE_GRADIENT_STOPS.alpha}), rgb(var(--sf-primary-${NAV_ACTIVE_GRADIENT_STOPS.toCssVar}) / ${NAV_ACTIVE_GRADIENT_STOPS.alpha}))`,
-                color: "rgb(var(--sf-primary-strong))",
               }
             : undefined
         }
@@ -102,9 +106,10 @@ export function NavItemLink({ id, collapsed = false }: { id: ViewId; collapsed?:
           className={cn(
             "h-5 w-5 shrink-0 transition-colors",
             !active && "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200",
+            // S11-2 — same re-theme rationale as the label text.
+            active && "sf-nav-active-icon",
           )}
           strokeWidth={2}
-          style={active ? { color: "rgb(var(--sf-primary))" } : undefined}
         />
         {!collapsed && <span className="ml-3 truncate">{item.label}</span>}
         {!collapsed && active && (

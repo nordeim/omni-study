@@ -260,7 +260,7 @@ export function TimetableView() {
                     className={cn(
                       "flex h-10 w-10 flex-col items-center justify-center rounded-xl",
                       colToIso(col) === todayIso
-                        ? "bg-sf-primary-soft text-sf-primary-strong"
+                        ? "bg-sf-primary-soft text-sf-primary-strong dark:bg-sf-primary-soft-dark dark:text-sf-primary-strong-dark"
                         : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
                     )}
                   >

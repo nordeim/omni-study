@@ -5,7 +5,7 @@ import { Bell, BookOpen as BookOpenIcon, Calendar as CalendarIcon, LogOut, Monit
 import { useDataStore, mutations } from "@/lib/data";
 import { ViewHeader } from "./shared";
 import { useThemeStore } from "@/lib/store";
-import { ACCENTS, ACCENT_TOKENS, AVATAR_EMOJIS, type ThemeMode } from "@/lib/theme";
+import { ACCENTS, ACCENT_TOKENS, AVATAR_EMOJIS, THEME_CACHE_KEY, type ThemeMode } from "@/lib/theme";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -89,6 +89,14 @@ export function SettingsView() {
   async function logout() {
     try {
       await apiSend("POST", "/api/auth/logout");
+      // S11-1 — drop the cached theme so the login route falls back to the
+      // fresh-visitor state (OS preference + default violet accent) instead
+      // of the previous user's theme.
+      try {
+        window.localStorage.removeItem(THEME_CACHE_KEY);
+      } catch {
+        /* storage unavailable — nothing to clear */
+      }
       window.location.replace("/login");
     } catch {
       toast.error("Could not log out");
@@ -214,13 +222,12 @@ export function SettingsView() {
                       className={cn(
                         "flex h-12 w-12 items-center justify-center rounded-xl text-2xl transition-all sf-focus",
                         selected
-                          ? "scale-110 ring-2"
+                          ? "scale-110 ring-2 sf-swatch-selected"
                           : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700",
                       )}
                       style={
                         selected
                           ? {
-                              backgroundColor: "rgb(var(--sf-primary-soft))",
                               boxShadow: "0 0 0 2px rgb(var(--sf-primary))",
                             }
                           : undefined
