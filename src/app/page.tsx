@@ -7,6 +7,7 @@ import type { PublicUserShape } from "@/lib/app-context";
 import { apiGet } from "@/lib/api";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileChrome } from "@/components/layout/mobile-chrome";
+import { ConnectivityBanner } from "@/components/layout/connectivity-banner";
 import { DashboardView } from "@/components/views/dashboard-view";
 import { MyDayView } from "@/components/views/myday-view";
 import { TasksView } from "@/components/views/tasks-view";
@@ -117,6 +118,9 @@ export default function StudyFlowApp() {
       </a>
       <Sidebar />
       <MobileChrome />
+      {/* S14-A0: the global offline indicator — renders null while online
+          (byte-identical online DOM; the pill is pure superset). */}
+      <ConnectivityBanner />
       {/* pt-20 (80px) offsets the FIXED mobile app bar: 64px of bar + the
           16px the reference's content keeps below it (its main is pt-16 and
           an inner p-4 wrapper adds the rest — measured: first heading at

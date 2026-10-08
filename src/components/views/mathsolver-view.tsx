@@ -167,8 +167,10 @@ export function MathSolverView() {
         </div>
       </div>
 
-        {/* Solution — S8-L: sits BELOW the input card in the single column. */}
-        <div aria-label="Math solution" className="sf-card flex min-h-[320px] flex-col overflow-hidden">
+        {/* Solution — S8-L: sits BELOW the input card in the single column.
+            S14-D3: a POLITE live region — the solver's output (and the
+            busy → answer transition) announces for screen readers. */}
+        <div aria-label="Math solution" aria-live="polite" aria-busy={busy} className="sf-card flex min-h-[320px] flex-col overflow-hidden">
           <header className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
             <h3 className="text-[18px] font-semibold text-slate-800 dark:text-slate-100">Solution</h3>
           </header>

@@ -92,3 +92,47 @@ describe("login rate limiting", () => {
     expect(checkRateLimit(ip).ok).toBe(true);
   });
 });
+
+// S14-C1: the AI routes get a per-user budget. The limiter generalizes to
+// checkRateLimit(key, max = MAX_ATTEMPTS) — login/register keep the default
+// 10/15 min; the AI routes pass 20. Pinned: the custom max, key isolation,
+// and the unchanged default.
+describe("checkRateLimit custom budget (S14-C1)", () => {
+  const aiKey = "ai:test-user-s14";
+  const otherKey = "ai:other-user-s14";
+  const loginKey = "login-ip-s14";
+
+  it("honors a custom max (20 requests, the 21st blocked)", () => {
+    resetRateLimit(aiKey);
+    for (let i = 0; i < 20; i++) {
+      expect(checkRateLimit(aiKey, 20).ok).toBe(true);
+    }
+    const blocked = checkRateLimit(aiKey, 20);
+    expect(blocked.ok).toBe(false);
+    expect(blocked.retryAfterSec).toBeGreaterThan(0);
+    expect(blocked.retryAfterSec).toBeLessThanOrEqual(900);
+    resetRateLimit(aiKey);
+  });
+
+  it("keys are isolated (an exhausted AI budget does not touch another user or login)", () => {
+    resetRateLimit(aiKey);
+    resetRateLimit(otherKey);
+    resetRateLimit(loginKey);
+    for (let i = 0; i < 20; i++) checkRateLimit(aiKey, 20);
+    expect(checkRateLimit(aiKey, 20).ok).toBe(false);
+    expect(checkRateLimit(otherKey, 20).ok).toBe(true);
+    expect(checkRateLimit(loginKey).ok).toBe(true);
+    resetRateLimit(aiKey);
+    resetRateLimit(otherKey);
+    resetRateLimit(loginKey);
+  });
+
+  it("the default budget is unchanged when no max is passed (11th blocked)", () => {
+    resetRateLimit(loginKey);
+    for (let i = 0; i < 10; i++) {
+      expect(checkRateLimit(loginKey).ok).toBe(true);
+    }
+    expect(checkRateLimit(loginKey).ok).toBe(false);
+    resetRateLimit(loginKey);
+  });
+});

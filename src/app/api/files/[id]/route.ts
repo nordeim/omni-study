@@ -27,6 +27,11 @@ export async function GET(_req: Request, ctx: Ctx) {
         // S13-C3: both dialects — ASCII-safe fallback + RFC 5987 extended form.
         "Content-Disposition": buildContentDisposition(file.name),
         "Content-Length": String(bytes.length),
+        // S14-C3: the stored Content-Type is client-supplied — kill MIME
+        // sniffing and keep the private payload out of intermediary caches
+        // (defense-in-depth alongside the attachment disposition).
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "private, no-store",
       },
     });
   } catch (err) {

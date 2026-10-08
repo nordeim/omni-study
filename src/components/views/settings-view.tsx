@@ -275,8 +275,15 @@ export function SettingsView() {
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={() => {
-                  useThemeStore.setState({ userName: nameDraft });
-                  void savePreferences({ name: nameDraft });
+                  // S14-B3: trim client-side too — the store, the PATCH body,
+                  // and the input all agree on the trimmed value.
+                  const trimmed = nameDraft.trim();
+                  if (!trimmed) {
+                    toast.error("Display name cannot be empty");
+                    return;
+                  }
+                  useThemeStore.setState({ userName: trimmed });
+                  void savePreferences({ name: trimmed });
                 }}
                 disabled={busy}
               >

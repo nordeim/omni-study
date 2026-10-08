@@ -33,12 +33,6 @@ async function parse<T>(res: Response): Promise<T> {
   return body as T;
 }
 
-export async function apiGet<T>(path: string, opts?: ApiOpts): Promise<T> {
-  return parse<T>(
-    await fetch(path, { credentials: "same-origin", signal: opts?.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined }),
-  );
-}
-
 /** S13-A2: optional request deadline for the AI surfaces (LLM completions
  * legitimately run 30–60 s — call sites pass a generous 120 s so a hung
  * backend can never disable a composer forever). */
@@ -56,6 +50,31 @@ export function isTimeoutError(err: unknown): boolean {
   );
 }
 
+/** S14-A0b: a real transport failure (offline / DNS / connection refused)
+ * surfaces as fetch rejecting with a TypeError ("Failed to fetch") — raw
+ * browser text that views would otherwise toast verbatim. doFetch maps it
+ * to a human message at the ONE seam every helper rides. The S13 timeout
+ * classification keeps precedence (checked FIRST, propagated untouched). */
+const OFFLINE_MESSAGE = "You appear to be offline. Check your connection and try again.";
+
+async function doFetch(path: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(path, init);
+  } catch (err) {
+    if (isTimeoutError(err)) throw err;
+    if (err instanceof TypeError) {
+      throw new ApiError(0, OFFLINE_MESSAGE);
+    }
+    throw err;
+  }
+}
+
+export async function apiGet<T>(path: string, opts?: ApiOpts): Promise<T> {
+  return parse<T>(
+    await doFetch(path, { credentials: "same-origin", signal: opts?.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined }),
+  );
+}
+
 export async function apiSend<T>(
   method: "POST" | "PATCH" | "PUT" | "DELETE",
   path: string,
@@ -63,7 +82,7 @@ export async function apiSend<T>(
   opts?: ApiOpts,
 ): Promise<T> {
   return parse<T>(
-    await fetch(path, {
+    await doFetch(path, {
       method,
       credentials: "same-origin",
       headers: body === undefined ? undefined : { "Content-Type": "application/json" },
@@ -78,5 +97,5 @@ export async function apiUpload<T>(path: string, file: File, folderId?: string |
   const form = new FormData();
   form.append("file", file);
   if (folderId) form.append("folderId", folderId);
-  return parse<T>(await fetch(path, { method: "POST", credentials: "same-origin", body: form }));
+  return parse<T>(await doFetch(path, { method: "POST", credentials: "same-origin", body: form }));
 }

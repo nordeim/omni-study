@@ -122,7 +122,13 @@ export function AIAssistantView() {
           min-h-[500px], message pane p-6, composer border-t p-4 with a 60px
           textarea + 60px gradient send button and the hint line. */}
       <div className="flex min-h-[500px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div className="sf-scroll flex-1 overflow-y-auto p-6">
+        {/* S14-D1/D2: the transcript is a POLITE live region — assistant
+            replies land announced for screen readers (WCAG 4.1.3), and
+            aria-busy suppresses churn while the request is in flight (the
+            completed reply announces when busy flips back to false — the
+            classic chat pattern; the visible "Thinking…" row stays for
+            sighted users). */}
+        <div aria-live="polite" aria-busy={busy} className="sf-scroll flex-1 overflow-y-auto p-6">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 py-10 text-center">
               <Sparkles className="h-10 w-10 text-slate-200 dark:text-slate-700" strokeWidth={1.5} />

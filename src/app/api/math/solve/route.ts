@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { checkRateLimit, requireUser } from "@/lib/auth";
 import { errorResponse, parseWith, readJson } from "@/lib/server/http";
 import { z } from "zod";
 
@@ -23,7 +23,17 @@ const MATH_SYSTEM =
 
 export async function POST(req: Request) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    // S14-C1: per-USER budget for the app's only per-request cost surface
+    // (each call triggers an LLM completion). Keyed by the authenticated
+    // user, not the IP; 20/15 min is ~3x the heaviest realistic burst.
+    const limit = checkRateLimit(`ai:${user.id}`, 20);
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: `Too many AI requests. Try again in ${limit.retryAfterSec}s.` },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfterSec) } },
+      );
+    }
     const body = await readJson(req);
     const data = parseWith(solveSchema, body as Record<string, unknown>);
 

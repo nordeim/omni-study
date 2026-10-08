@@ -114,24 +114,29 @@ export class UnauthorizedError extends Error {
   }
 }
 
-// ---- Login rate limiting (in-memory, per-IP) -------------------------------
+// ---- Rate limiting (in-memory, per-key) -----------------------------------
 // Mirrors the reference app's limiter shape: 10 attempts per IP per 15 min
-// window. Single-process in-memory store — documented limitation for
-// multi-instance deployments (see Project_Architecture_Document.md).
+// window for login (and register, under a separate `register:` prefix).
+// Single-process in-memory store — documented limitation for multi-instance
+// deployments (see Project_Architecture_Document.md).
+// S14-C1: the budget generalizes — checkRateLimit(key, max) lets the AI
+// routes pass a per-USER budget (20/15 min) while login/register keep the
+// default 10. The four AI call sites are the app's only per-request COST
+// surface (each triggers an LLM completion).
 
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 10;
 
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
-export function checkRateLimit(ip: string): { ok: boolean; retryAfterSec: number } {
+export function checkRateLimit(key: string, max: number = MAX_ATTEMPTS): { ok: boolean; retryAfterSec: number } {
   const now = Date.now();
-  const entry = attempts.get(ip);
+  const entry = attempts.get(key);
   if (!entry || entry.resetAt < now) {
-    attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    attempts.set(key, { count: 1, resetAt: now + WINDOW_MS });
     return { ok: true, retryAfterSec: 0 };
   }
-  if (entry.count >= MAX_ATTEMPTS) {
+  if (entry.count >= max) {
     return { ok: false, retryAfterSec: Math.ceil((entry.resetAt - now) / 1000) };
   }
   entry.count += 1;

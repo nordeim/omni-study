@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { checkRateLimit, requireUser } from "@/lib/auth";
 import { errorResponse, parseWith, readJson } from "@/lib/server/http";
 import { aiChatSchema } from "@/lib/validation";
 
@@ -39,6 +39,16 @@ const SYSTEM_PROMPTS: Record<string, string> = {
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
+    // S14-C1: per-USER budget for the app's only per-request cost surface
+    // (each call triggers an LLM completion). Keyed by the authenticated
+    // user, not the IP; 20/15 min is ~3x the heaviest realistic burst.
+    const limit = checkRateLimit(`ai:${user.id}`, 20);
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: `Too many AI requests. Try again in ${limit.retryAfterSec}s.` },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfterSec) } },
+      );
+    }
     const body = await readJson(req);
     const data = parseWith(aiChatSchema, body as Record<string, unknown>);
 
