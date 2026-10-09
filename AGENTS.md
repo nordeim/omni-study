@@ -9,9 +9,9 @@ High-signal instructions for coding agents working in this repo. Everything here
 | `bun install` | Install deps (Bun ≥ 1.3) |
 | `bun run dev` | Dev server on :3000 (Turbopack), logs tee'd to `dev.log` |
 | `bun run lint` / `bun run typecheck` | ESLint / `tsc --noEmit` — both must be clean |
-| `bun run test` | Vitest unit layer (201 tests; `*.test.ts` only — never picks up e2e specs) |
+| `bun run test` | Vitest unit layer (215 tests; `*.test.ts` only — never picks up e2e specs) |
 | `bun run build` | Production build → `.next/standalone` (**required before e2e**) |
-| `bun run test:e2e` | Playwright vs the standalone build on :3100 with `db/e2e.db` (267 specs) |
+| `bun run test:e2e` | Playwright vs the standalone build on :3100 with `db/e2e.db` (269 specs) |
 | `node scripts/capture-studyflow.mjs` | Refresh all 31 `docs/screenshots/` captures from the dev server (24 light + 7 dark) |
 | `node scripts/dark-sweep.mjs` | Dark-mode contrast audit over all 20 views (flashbulb/unreadable detector) |
 | `node scripts/accent-dark-sweep.mjs` | Accent × dark-mode audit: all 7 accents × 20 desktop views + 6 mobile views + the drawer (FAIL <2.2, WARN <3.2 for accent text) |
@@ -44,6 +44,8 @@ High-signal instructions for coding agents working in this repo. Everything here
 | `node scripts/capture-s19-evidence.mjs` | The S19 diagnostics-panel captures (the `/rum` surface — desktop light + dark + mobile 390px) |
 | `node scripts/capture-s20-evidence.mjs` | The S20 v3 captures (the `/rum` panel with the sparklines + the Export CSV action + the exported CSV head — posts a deterministic trend-rich probe) |
 | `node scripts/capture-s21-evidence.mjs` | The S21 portability captures (the `/export` page — desktop light + dark + mobile 390px + the downloaded JSON envelope head) |
+| `node scripts/capture-s22-evidence.mjs` | The S22 boot-guard captures (the dev-server dashboard + `/export` + mobile 390px screenshots + the boot-guard evidence JSON: the negative spawn exit + the positive-control health + the dev-boot warn line) |
+| `node scripts/vlm-verify-s22.mjs` | VLM spot-checks of the S22 captures |
 | `node scripts/capture-s15-evidence.mjs` | The S15 evidence captures (5 auth-flow + keyboard screenshots) |
 | `node scripts/capture-s14-evidence.mjs` | The S14 hardening evidence captures (offline banner, rate-limit toast, display-name guard, Thinking live region) |
 | `bun run db:push` / `db:seed` | Create schema + demo data at `db/custom.db` |
@@ -65,6 +67,8 @@ Also: **Next.js dev (Turbopack) pre-resolves** relative `file:` DATABASE_URLs ag
 The e2e suite isolates its own `db/e2e.db` via the same shell-env mechanism (see `tests/e2e/global-setup.ts`).
 
 The **`NEXT_PUBLIC_SITE_URL` contract** (session-10 fix — previously documented but never wired): `src/lib/site.ts` is the single resolution point (`siteUrl()` — whitespace + trailing-slash trimmed, `http://localhost:3000` default, unit-pinned by `tests/site.test.ts`); `src/app/sitemap.ts` (root + the 20 NAV_ITEMS paths + `/login` = 22 URLs), `src/app/robots.ts`, and the `metadataBase` in `layout.tsx` all consume it. The exact-match SPA rewrites never touch `/sitemap.xml` / `/robots.txt` (verified prerendered in the build).
+
+The **`AUTH_SECRET` boot-guard contract** (session-22, ADR-020): `src/instrumentation.ts`'s `register()` runs once per server boot (dev / next start / the standalone build — never during `next build`) and asks the PURE seam `src/lib/env-check.ts` (`authSecretBootStatus(nodeEnv, authSecret)` — unit-pinned, explicit args, zero imports) what to do. In production: a missing/empty/whitespace-only secret, or one equal to the public `DEV_FALLBACK_SECRET` (whose single source is the seam — auth.ts imports it from there), is **FATAL — `console.error` + `process.exit(1)`** (a plain `throw` is CAUGHT by Next and leaves a degraded 500-everything server; the explicit exit is the validated fail-fast mechanism). A present-but-short (< 32 chars) secret boots with a warn. Outside production: no secret → one warn line (the documented dev fallback — dev NEVER blocks). The e2e pins live in `tests/e2e/s22-boot-guard.spec.ts`: the negative spawn (the standalone server WITHOUT the secret exits non-zero with the `openssl rand -hex 32` remedy) + the positive control (the suite's own boot answers `/api/health`). The e2e webServer's secret is a 64-hex value (models the production shape, keeps the weak-secret warn silent).
 
 ## Architecture facts you cannot guess from filenames
 

@@ -1,0 +1,19 @@
+{
+  "negativeSpawn": {
+    "exited": true,
+    "exitCode": 1,
+    "guardMessageLines": [
+      "[boot] AUTH_SECRET is required in production: without it, session cookies are signed with a public fallback constant — anyone could forge sessions. Generate one with \"openssl rand -hex 32\" and set it in the environment (see DEPLOYMENT.md §4)."
+    ],
+    "refusedAfterExit": true
+  },
+  "positiveControl": {
+    "status": 200,
+    "body": {
+      "status": "ok",
+      "db": "up",
+      "app": "studyflow"
+    }
+  },
+  "devBootWarnLine": "[boot] AUTH_SECRET is not set — using the insecure dev-only fallback. Set a real secret (openssl rand -hex 32) before deploying (DEPLOYMENT.md §4)."
+}

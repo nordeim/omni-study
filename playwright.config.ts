@@ -62,7 +62,11 @@ export default defineConfig({
       PORT: String(PORT),
       NODE_ENV: "production",
       DATABASE_URL: E2E_DATABASE_URL,
-      AUTH_SECRET: "playwright-e2e-session-secret",
+      // S22: 64-hex shape (the documented production form — openssl rand
+      // -hex 32) so the boot guard's weak-secret warn stays silent in the
+      // suite's own boot. The setup project re-signs-in each run, so the
+      // value change invalidates nothing.
+      AUTH_SECRET: "5f3a9c1e7b2d4f6a8c0e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f",
     } as Record<string, string>,
   },
 });

@@ -33,7 +33,7 @@ attributes derive the right scheme.
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `DATABASE_URL` | Yes | SQLite connection string. See §4. |
-| `AUTH_SECRET` | **Yes in production** | HMAC secret for session cookies. Generate with `openssl rand -hex 32`. An insecure dev constant is used when unset — never ship that. |
+| `AUTH_SECRET` | **Yes in production — enforced at boot** | HMAC secret for session cookies. Generate with `openssl rand -hex 32`. **The session-22 boot guard refuses to start the production server without a real secret** (missing/empty/the public dev constant → the process exits with the remedy message; dev/test keep the zero-config fallback with a one-line boot warning). |
 | `NEXT_PUBLIC_SITE_URL` | Recommended | Canonical public origin, used for metadata URLs and `sitemap.xml` (e.g. `https://orbital.example.com`). |
 
 ## 4. Database location (§4 — the `.env.example` reference)
@@ -99,6 +99,7 @@ bun run test:e2e                              # Playwright suite (local)
 |---------|-------|-----|
 | `Error code 14: Unable to open the database file` | Server started from a directory that has no `prisma/schema.prisma` and no absolute `DATABASE_URL` | Start via `bun run start`, or set an absolute `file:` URL (§4) |
 | Logins loop back to `/login` | `AUTH_SECRET` changed between restarts | Keep the secret stable across restarts |
+| The server exits at boot: `AUTH_SECRET is required in production` | The session-22 boot guard fired — the server refuses to sign sessions with the public dev constant | Generate a real secret (`openssl rand -hex 32`), export `AUTH_SECRET`, restart (this section + §4) |
 | Rate-limited logins (429) | 10 attempts/IP/15 min fixed window | Wait for `Retry-After`, or restart to clear the in-memory buckets (single-node) |
 
 ## 8. Docker (one-command containerized deployment)

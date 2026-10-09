@@ -1,6 +1,7 @@
 import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import { DEV_FALLBACK_SECRET } from "@/lib/env-check";
 
 // ---------------------------------------------------------------------------
 // Auth — email/password with scrypt hashing and HMAC-signed stateless
@@ -15,7 +16,8 @@ import { db } from "@/lib/db";
 
 export const SESSION_COOKIE = "sf_session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-const DEV_FALLBACK_SECRET = "dev-only-insecure-session-secret";
+// The fallback constant's single source is the S22 boot-guard seam
+// (src/lib/env-check.ts) — the guard flags a pasted copy as FATAL.
 
 function secret(): string {
   return process.env.AUTH_SECRET?.trim() || DEV_FALLBACK_SECRET;
