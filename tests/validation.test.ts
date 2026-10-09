@@ -3,6 +3,7 @@ import {
   assignmentSchema,
   aiChatSchema,
   changePasswordSchema,
+  deleteAccountSchema,
   eventSchema,
   examSchema,
   flashcardDeckSchema,
@@ -553,5 +554,40 @@ describe("rumBatchSchema (S18 — the beacon POST body)", () => {
     expect(
       rumBatchSchema.safeParse({ sessionId: "abc", events: [{ ...event, metric: "NOPE" }] }).success,
     ).toBe(false);
+  });
+});
+
+describe("deleteAccountSchema (S25 — the ownership exit)", () => {
+  it("accepts a valid password + typed DELETE confirmation", () => {
+    expect(deleteAccountSchema.safeParse({ password: "Demo1234!", confirmation: "DELETE" }).success).toBe(true);
+  });
+
+  it("applies the register family's password policy (min 8 / max 200)", () => {
+    expect(deleteAccountSchema.safeParse({ password: "short", confirmation: "DELETE" }).success).toBe(false);
+    expect(deleteAccountSchema.safeParse({ password: "a".repeat(201), confirmation: "DELETE" }).success).toBe(false);
+    expect(deleteAccountSchema.safeParse({ confirmation: "DELETE" }).success).toBe(false);
+    expect(deleteAccountSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("rejects a wrong confirmation word with the actionable copy (the refine rule — case-exact)", () => {
+    for (const bad of ["delete", "REMOVE", "", "DELETE ", "confirm"]) {
+      const r = deleteAccountSchema.safeParse({ password: "Demo1234!", confirmation: bad });
+      expect(r.success, `confirmation "${bad}" should fail`).toBe(false);
+      if (!r.success) {
+        expect(r.error.issues[0].message).toBe("Type DELETE to confirm.");
+      }
+    }
+  });
+
+  it("strips unknown keys (the repo-wide Zod convention — strip mode)", () => {
+    const r = deleteAccountSchema.safeParse({
+      password: "Demo1234!",
+      confirmation: "DELETE",
+      email: "attacker@evil.test",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data).not.toHaveProperty("email");
+    }
   });
 });

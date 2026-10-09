@@ -1,0 +1,108 @@
+{
+  "guardFamily": {
+    "wrongPassword": {
+      "status": 400,
+      "body": {
+        "error": "Your password is incorrect."
+      }
+    },
+    "wrongConfirmation": {
+      "status": 400,
+      "body": {
+        "error": "Type DELETE to confirm."
+      }
+    },
+    "shortPassword": {
+      "status": 400,
+      "body": {
+        "error": "Enter your password and type DELETE to confirm."
+      }
+    }
+  },
+  "demoStillSignsIn": true,
+  "anonGate": {
+    "status": 401,
+    "body": {
+      "error": "Authentication required"
+    }
+  },
+  "freshUserDeletion": {
+    "registered": 201,
+    "verifiedLogin": 200,
+    "contentBefore": {
+      "subjects": 1,
+      "tasks": 1,
+      "notebooks": 1
+    },
+    "delete": {
+      "status": 200,
+      "body": {
+        "ok": true
+      },
+      "cookieCleared": true
+    },
+    "cascadeAfter": {
+      "userGone": true,
+      "subjects": 0,
+      "tasks": 0,
+      "notebooks": 0
+    },
+    "oldLogin": {
+      "status": 401,
+      "body": {
+        "error": "Invalid email or password"
+      }
+    },
+    "meWithOldCookie": 401
+  },
+  "screenshots": {
+    "light": {
+      "chrome": {
+        "pinnedHeader": true,
+        "schoolInput": true,
+        "saveProfileButton": true,
+        "changePasswordCard": true,
+        "dangerZoneCard": true,
+        "warningCopy": true,
+        "revealButton": true,
+        "formHiddenByDefault": true
+      }
+    },
+    "dark": {
+      "htmlClass": "dark",
+      "chrome": {
+        "pinnedHeader": true,
+        "schoolInput": true,
+        "saveProfileButton": true,
+        "changePasswordCard": true,
+        "dangerZoneCard": true,
+        "warningCopy": true,
+        "revealButton": true,
+        "formHiddenByDefault": true
+      }
+    },
+    "revealed": {
+      "chrome": {
+        "passwordField": true,
+        "confirmationField": true,
+        "destructiveButton": true,
+        "cancelButton": true
+      },
+      "cancelledFormHidden": true,
+      "demoIntactLogin": 200
+    },
+    "mobile": {
+      "overflow": false,
+      "chrome": {
+        "pinnedHeader": true,
+        "schoolInput": true,
+        "saveProfileButton": true,
+        "changePasswordCard": true,
+        "dangerZoneCard": true,
+        "warningCopy": true,
+        "revealButton": true,
+        "formHiddenByDefault": true
+      }
+    }
+  }
+}

@@ -50,6 +50,21 @@ export const changePasswordSchema = z
     message: "The new password must be different from your current password.",
   });
 
+// S25 (ADR-023) — the ownership-exit schema. The password proof applies the
+// register family's policy (min 8 / max 200 — ONE policy, no drift), and
+// the typed-confirmation rule rides the object's refine so the route's
+// safeParse failure message IS the actionable copy — the word is CASE-EXACT
+// by design (a deliberate, unambiguous gesture before an irreversible
+// cascade write).
+export const deleteAccountSchema = z
+  .object({
+    password: z.string().min(8).max(200),
+    confirmation: z.string(),
+  })
+  .refine((v) => v.confirmation === "DELETE", {
+    message: "Type DELETE to confirm.",
+  });
+
 export const subjectSchema = z.object({
   name: bounded(80).min(1),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#8b5cf6"),

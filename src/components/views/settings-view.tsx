@@ -67,6 +67,15 @@ export function SettingsView() {
   const [pwBusy, setPwBusy] = React.useState(false);
   const [pwError, setPwError] = React.useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = React.useState<string | null>(null);
+  // S25 (ADR-023) — the Danger zone card's state (the ownership exit, the
+  // additive-below pattern under the S24 card). The confirmation form is
+  // HIDDEN until "Delete account…" reveals it (the two-step reveal — an
+  // accidental Enter on a visible delete form must never fire).
+  const [delOpen, setDelOpen] = React.useState(false);
+  const [delPassword, setDelPassword] = React.useState("");
+  const [delConfirmation, setDelConfirmation] = React.useState("");
+  const [delBusy, setDelBusy] = React.useState(false);
+  const [delError, setDelError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     void loadAll(["subjects", "holidays"]);
@@ -163,6 +172,45 @@ export function SettingsView() {
       }
     } finally {
       setPwBusy(false);
+    }
+  }
+
+  // S25 (ADR-023) — the ownership exit. On success there is NO success note:
+  // the client clears the theme cache (the logout pattern — the login route
+  // falls back to the fresh-visitor state) and redirects to /login; the
+  // redirect IS the feedback. Errors render inline (role="alert" — the S15
+  // auth convention: auth errors never render as toasts).
+  async function deleteAccount() {
+    setDelError(null);
+    if (!delPassword || !delConfirmation) {
+      setDelError("Enter your password and type DELETE to confirm.");
+      return;
+    }
+    if (delConfirmation !== "DELETE") {
+      setDelError("Type DELETE to confirm.");
+      return;
+    }
+    setDelBusy(true);
+    try {
+      await apiSend("POST", "/api/auth/delete-account", {
+        password: delPassword,
+        confirmation: delConfirmation,
+      });
+      // The account is gone — leave the shell exactly as logout does.
+      try {
+        window.localStorage.removeItem(THEME_CACHE_KEY);
+      } catch {
+        /* storage unavailable — nothing to clear */
+      }
+      window.location.replace("/login");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setDelError(err.message);
+      } else {
+        setDelError("Could not delete the account — try again.");
+      }
+    } finally {
+      setDelBusy(false);
     }
   }
 
@@ -535,6 +583,91 @@ export function SettingsView() {
                 Update Password
               </Button>
             </div>
+          </section>
+
+          {/* S25 (ADR-023) — the Danger zone card: a purely additive sf-card
+              BELOW the S24 Change password card (the reference has NO
+              account-deletion surface; this is the clone's own ownership-exit
+              superset — the right-to-erasure). The two-step reveal: the
+              confirmation form is HIDDEN until "Delete account…" is clicked
+              (an accidental Enter on a visible delete form must never fire);
+              the typed word DELETE + the password proof are the guardrails;
+              success never renders a note — the redirect to /login IS the
+              feedback (the logout pattern). */}
+          <section aria-label="Danger zone" className="sf-card flex max-w-lg flex-col gap-4 p-6">
+            <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">
+              Danger zone
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Permanently delete your account and all your data — subjects, tasks, notes, flashcards, grades, files.
+              This cannot be undone. To keep a copy, download your data from the Export page first.
+            </p>
+            {!delOpen ? (
+              <div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDelError(null);
+                    setDelOpen(true);
+                  }}
+                  className="gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40"
+                >
+                  Delete account…
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="delete-password">Password</Label>
+                  <Input
+                    id="delete-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={delPassword}
+                    onChange={(e) => setDelPassword(e.target.value)}
+                    maxLength={200}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="delete-confirmation">Confirmation</Label>
+                  <Input
+                    id="delete-confirmation"
+                    placeholder="Type DELETE"
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={delConfirmation}
+                    onChange={(e) => setDelConfirmation(e.target.value)}
+                    maxLength={50}
+                  />
+                </div>
+                {delError && (
+                  <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+                    {delError}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="destructive"
+                    onClick={() => void deleteAccount()}
+                    disabled={delBusy || !delPassword || !delConfirmation}
+                  >
+                    Permanently delete my account
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDelOpen(false);
+                      setDelPassword("");
+                      setDelConfirmation("");
+                      setDelError(null);
+                    }}
+                    disabled={delBusy}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </section>
         </TabsContent>
 

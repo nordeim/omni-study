@@ -218,3 +218,24 @@ them, rotate `AUTH_SECRET` and restart (all sessions re-validate
 against the new secret). No email is sent on change (no SMTP by
 design, §3) — the on-screen "Password updated." note is the
 acknowledgment.
+
+### 8.4 After deployment: delete an account (session-25)
+
+A signed-in owner permanently deletes their own account from
+**Settings → Profile** — the **Danger zone** card below the Change
+password card. The flow is deliberately two-step: click **Delete
+account…** to reveal the confirmation form, then enter the account
+password and type the word `DELETE` (case-exact) before the
+**Permanently delete my account** button fires. The route
+(`POST /api/auth/delete-account`) verifies the password FIRST (a
+wrong password is rejected with 400 and changes nothing), is
+rate-limited to 10 attempts per 15 minutes per account, then performs
+ONE cascade write: every owned row goes — subjects, tasks, notes,
+flashcards, grades, files, chat history, telemetry, and the account
+record itself. The session cookie is cleared with the account and the
+browser lands on `/login`. There is no soft-delete and no undo: to keep
+a copy, download your data from the `/export` page FIRST (§8.2) — the
+card's warning copy points there. Deleting a household member's
+account is the same flow signed in as them (there is deliberately no
+admin-deletes-others surface); for bulk/manual removal the SQLite file
+remains the operator's escape hatch.
