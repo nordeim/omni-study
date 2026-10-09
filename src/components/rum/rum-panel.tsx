@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   buildPanelRows,
+  buildSparklinePoints,
   RUM_METRIC_LABELS,
   type CwvRating,
   type RumGetAggregate,
@@ -53,7 +54,15 @@ function formatWhen(iso: string): string {
   });
 }
 
+// S20 (v3): the sparkline viewport — a non-uniformly scaled viewBox
+// (preserveAspectRatio="none") whose stroke stays uniform via
+// vectorEffect="non-scaling-stroke". The geometry comes from the pure
+// seam (buildSparklinePoints — unit-pinned, edge cases first-class).
+const SPARK_WIDTH = 100;
+const SPARK_HEIGHT = 28;
+
 function MetricCard({ card }: { card: RumPanelCard }) {
+  const spark = buildSparklinePoints(card.points, SPARK_WIDTH, SPARK_HEIGHT);
   return (
     <div className="sf-card flex flex-col gap-2 p-4">
       <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{card.label}</p>
@@ -67,6 +76,26 @@ function MetricCard({ card }: { card: RumPanelCard }) {
           </Badge>
         ) : null}
       </div>
+      {spark.length > 0 ? (
+        // Decorative trend line (aria-hidden): the accent token themes it
+        // across the 7 accents + dark mode with no new CSS.
+        <svg
+          aria-hidden="true"
+          viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
+          preserveAspectRatio="none"
+          className="h-7 w-full"
+        >
+          <polyline
+            fill="none"
+            stroke="rgb(var(--sf-primary))"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            points={spark.map((p) => `${p.x},${p.y}`).join(" ")}
+          />
+        </svg>
+      ) : null}
       <p className="text-[11px] leading-4 text-slate-400 dark:text-slate-500">
         {card.metric}
         {card.sampled ? " · p75" : " · no samples yet"}
@@ -148,6 +177,14 @@ export function RumPanel() {
             >
               Back to app
             </a>
+            {/* S20: a real navigation link — the session cookie rides it; the
+                browser downloads the CSV. Authed like every API route. */}
+            <a
+              href="/api/rum/export"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground dark:text-slate-200 dark:hover:text-slate-50"
+            >
+              Export CSV
+            </a>
             <Button variant="outline" size="sm" onClick={() => void loadAggregate()} disabled={refreshing || state === "loading"}>
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} strokeWidth={1.75} />
               Refresh
@@ -227,7 +264,9 @@ export function RumPanel() {
 
             <footer className="text-xs leading-5 text-slate-400 dark:text-slate-500">
               Good bounds — TTFB ≤ 800 ms · FCP ≤ 1800 ms · LCP ≤ 2500 ms · CLS ≤ 0.10 · INP ≤ 200 ms. The p75 window
-              covers your most recent 200 events; unsampled metrics simply have no visits reporting them yet.
+              covers your most recent 200 events; unsampled metrics simply have no visits reporting them yet. Each
+              card's trend line shows that metric's 20 most recent samples (oldest → newest); Export CSV downloads
+              your most recent 2000 events.
             </footer>
           </>
         ) : null}

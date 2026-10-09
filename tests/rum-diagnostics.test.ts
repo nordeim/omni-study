@@ -12,8 +12,10 @@ import {
   RUM_METRIC_LABELS,
   RUM_METRIC_ORDER,
   buildPanelRows,
+  buildSparklinePoints,
   classifyP75,
   formatMetricValue,
+  toRumCsv,
 } from "../src/lib/rum-diagnostics";
 
 describe("CWV_THRESHOLDS + RUM_METRIC_ORDER (S19 seam shape)", () => {
@@ -148,5 +150,134 @@ describe("buildPanelRows (the display model)", () => {
   it("passes the recent samples through untouched (the caller formats times)", () => {
     const rows = buildPanelRows(full);
     expect(rows.recent).toEqual(full.recent);
+  });
+});
+
+// S20 — the v3 seam extensions (docs/remediation-plan-session20.md):
+// the sparkline geometry (per-card trend lines from the GET's new
+// `trends` field) and the CSV export body builder (RFC-4180 escaping,
+// raw analysis-grade values).
+
+describe("buildSparklinePoints (the card trend geometry — S20)", () => {
+  it("returns [] for an empty series (the caller renders no SVG)", () => {
+    expect(buildSparklinePoints([], 100, 28)).toEqual([]);
+  });
+
+  it("renders a single value as a VISIBLE flat line: two centered points spanning the width", () => {
+    // A one-point polyline is invisible — the seam must promote it.
+    expect(buildSparklinePoints([123], 100, 28)).toEqual([
+      { x: 0, y: 14 },
+      { x: 100, y: 14 },
+    ]);
+  });
+
+  it("guards a flat series (min === max): all points at the vertical center", () => {
+    const points = buildSparklinePoints([5, 5, 5, 5], 100, 28);
+    expect(points).toHaveLength(4);
+    for (const p of points) expect(p.y).toBe(14);
+    expect(points.map((p) => p.x)).toEqual([0, 100 / 3, (2 * 100) / 3, 100]);
+  });
+
+  it("normalizes a known 4-value series to EXACT coordinates (worked example)", () => {
+    // values 100..400 over width 100 / height 28 / PAD 2:
+    //   y = 2 + (1 - (v - min)/range) * (28 - 4)  →  26, 18, 10, 2
+    //   x evenly spaced: 0, 100/3, 200/3, 100
+    const points = buildSparklinePoints([100, 200, 300, 400], 100, 28);
+    expect(points.map((p) => p.x)).toEqual([0, 100 / 3, (2 * 100) / 3, 100]);
+    expect(points.map((p) => p.y)).toEqual([26, 18, 10, 2]);
+  });
+
+  it("inverts y (larger value → smaller y) and respects the PAD inset + width", () => {
+    const points = buildSparklinePoints([1, 9, 5, 7], 80, 30);
+    expect(points).toHaveLength(4);
+    for (const p of points) {
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.x).toBeLessThanOrEqual(80);
+      expect(p.y).toBeGreaterThanOrEqual(2);
+      expect(p.y).toBeLessThanOrEqual(30 - 2);
+    }
+    // value 9 (index 1) is the max → the smallest y; value 1 (index 0) → the largest.
+    expect(points[1]!.y).toBeLessThan(points[0]!.y);
+    expect(points[0]!.y).toBeGreaterThan(points[2]!.y);
+  });
+});
+
+describe("toRumCsv (the export body — S20)", () => {
+  const event = {
+    metric: "LCP",
+    value: 2345,
+    rating: "good",
+    navigationType: "navigate",
+    path: "/",
+    sessionId: "s1",
+    createdAt: "2026-10-09T02:00:00.000Z",
+  };
+
+  it("renders the header line only for an empty input", () => {
+    expect(toRumCsv([])).toBe("metric,value,rating,navigationType,path,sessionId,createdAt\n");
+  });
+
+  it("renders a known event as one RAW row under the header (no display formatting)", () => {
+    expect(toRumCsv([event])).toBe(
+      "metric,value,rating,navigationType,path,sessionId,createdAt\n" +
+        "LCP,2345,good,navigate,/,s1,2026-10-09T02:00:00.000Z\n",
+    );
+  });
+
+  it("keeps CLS values raw (unitless, no 'ms', no rounding)", () => {
+    const cls = { ...event, metric: "CLS", value: 0.03456 };
+    const csv = toRumCsv([cls]);
+    expect(csv.split("\n")[1]).toContain(",0.03456,");
+  });
+
+  it("escapes RFC-4180 style: comma/quote-bearing fields are quoted with doubled inner quotes", () => {
+    const tricky = { ...event, path: '/lab, "alpha"' };
+    const csv = toRumCsv([tricky]);
+    expect(csv.split("\n")[1]).toContain(',"/lab, ""alpha""",');
+  });
+
+  it("preserves the caller's ordering (rows in input order)", () => {
+    const a = { ...event, sessionId: "a" };
+    const b = { ...event, sessionId: "b", metric: "TTFB" };
+    const csv = toRumCsv([a, b]);
+    const rows = csv.trim().split("\n");
+    expect(rows).toHaveLength(3); // header + 2
+    expect(rows[1]).toContain(",a,");
+    expect(rows[2]).toContain(",b,");
+  });
+});
+
+describe("buildPanelRows + trends (the v3 display model — S20)", () => {
+  it("carries each metric's trend values (oldest → newest) onto its card", () => {
+    const rows = buildPanelRows({
+      p75: { LCP: 2345 },
+      samples: 3,
+      total: 3,
+      recent: [],
+      trends: { LCP: [100, 200, 300] },
+    });
+    const lcp = rows.cards.find((c) => c.metric === "LCP")!;
+    expect(lcp.points).toEqual([100, 200, 300]);
+    // metrics without trend data carry an empty series
+    for (const card of rows.cards.filter((c) => c.metric !== "LCP")) {
+      expect(card.points).toEqual([]);
+    }
+  });
+
+  it("omitting trends entirely keeps every card's points [] (backward compat)", () => {
+    const rows = buildPanelRows({ p75: { TTFB: 120 }, samples: 1, total: 1, recent: [] });
+    expect(rows.cards.every((c) => c.points.length === 0)).toBe(true);
+  });
+
+  it("filters non-finite trend values out of the card's series", () => {
+    const rows = buildPanelRows({
+      p75: {},
+      samples: 0,
+      total: 0,
+      recent: [],
+      trends: { LCP: [100, Number.NaN, 300, Number.POSITIVE_INFINITY] },
+    });
+    const lcp = rows.cards.find((c) => c.metric === "LCP")!;
+    expect(lcp.points).toEqual([100, 300]);
   });
 });

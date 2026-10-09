@@ -1,0 +1,13 @@
+metric,value,rating,navigationType,path,sessionId,createdAt
+TTFB,4749.4,poor,navigate,/Dashboard,77e3f30e-e1c3-41be-a787-663105612282,2026-10-09T02:17:26.743Z
+FCP,5036,poor,navigate,/Dashboard,77e3f30e-e1c3-41be-a787-663105612282,2026-10-09T02:17:26.764Z
+TTFB,284.5,good,navigate,/Dashboard,04f72828-f95d-45ed-9755-12c9ca051895,2026-10-09T02:17:33.516Z
+FCP,584,good,navigate,/Dashboard,04f72828-f95d-45ed-9755-12c9ca051895,2026-10-09T02:17:33.530Z
+TTFB,73.3,good,navigate,/Dashboard,d41578aa-3753-4c4b-93b5-dcedb5664e11,2026-10-09T03:00:34.453Z
+FCP,256,good,navigate,/Dashboard,d41578aa-3753-4c4b-93b5-dcedb5664e11,2026-10-09T03:00:34.469Z
+LCP,256,good,navigate,/Dashboard,d41578aa-3753-4c4b-93b5-dcedb5664e11,2026-10-09T03:00:36.973Z
+TTFB,91.1,good,navigate,/Dashboard,af65d24f-1090-4f53-b3cf-07cea060fe6a,2026-10-09T03:20:36.250Z
+FCP,384,good,navigate,/Dashboard,af65d24f-1090-4f53-b3cf-07cea060fe6a,2026-10-09T03:20:36.271Z
+LCP,384,good,navigate,/Settings,af65d24f-1090-4f53-b3cf-07cea060fe6a,2026-10-09T03:20:38.394Z
+TTFB,46.9,good,navigate,/Dashboard,fe84f332-1c53-4bb0-b106-9e29a0230048,2026-10-09T03:21:43.333Z
+…

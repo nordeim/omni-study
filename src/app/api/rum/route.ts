@@ -64,9 +64,12 @@ export async function POST(req: Request) {
 // user's most recent 200 events (all metrics, most-recent-first), then
 // filtered per metric: a single-user-scale approximation of per-metric
 // windows (the CWV convention: field data is reported at p75), plus the
-// total sample count and the 10 most recent events. The visible surface
-// is the /rum diagnostics panel (S19); this endpoint remains the
-// scriptable contract (curl).
+// total sample count, the 10 most recent events, and (S20 v3) the
+// per-metric `trends` — the ≤ 20 most recent values in chronological
+// order (oldest → newest), the sparkline source for the /rum panel's
+// cards. The visible surface is the /rum diagnostics panel (S19/S20);
+// this endpoint remains the scriptable contract (curl) and the bulk dump
+// lives at GET /api/rum/export.
 export async function GET() {
   try {
     const user = await requireUser();
@@ -86,6 +89,7 @@ export async function GET() {
     });
 
     const p75: Record<string, number> = {};
+    const trends: Record<string, number[]> = {};
     for (const metric of ["LCP", "INP", "CLS", "FCP", "TTFB"] as const) {
       const values = events.filter((e) => e.metric === metric).map((e) => e.value);
       if (values.length > 0) {
@@ -93,11 +97,14 @@ export async function GET() {
         // Nearest-rank p75: ceil(0.75 * n) - 1 (the CWV reporting rule).
         const rank = Math.max(0, Math.ceil(0.75 * sorted.length) - 1);
         p75[metric] = sorted[rank]!;
+        // S20: the sparkline series — the 20 most recent values of this
+        // metric (values is desc), reversed to chronological order.
+        trends[metric] = values.slice(0, 20).reverse();
       }
     }
 
     const total = await db.rumEvent.count({ where: { userId: user.id } });
-    return NextResponse.json({ p75, samples: events.length, total, recent: events.slice(0, 10) });
+    return NextResponse.json({ p75, samples: events.length, total, recent: events.slice(0, 10), trends });
   } catch (err) {
     return errorResponse(err);
   }
