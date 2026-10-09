@@ -1,0 +1,222 @@
+{
+  "envelopeShape": "1 subject + 2 tasks (one with a dangling optional subjectId)",
+  "firstImport": {
+    "status": 200,
+    "body": {
+      "imported": {
+        "subjects": {
+          "created": 1,
+          "updated": 0
+        },
+        "taskLists": {
+          "created": 0,
+          "updated": 0
+        },
+        "tasks": {
+          "created": 2,
+          "updated": 0
+        },
+        "assignments": {
+          "created": 0,
+          "updated": 0
+        },
+        "exams": {
+          "created": 0,
+          "updated": 0
+        },
+        "events": {
+          "created": 0,
+          "updated": 0
+        },
+        "timetableClasses": {
+          "created": 0,
+          "updated": 0
+        },
+        "notebooks": {
+          "created": 0,
+          "updated": 0
+        },
+        "notes": {
+          "created": 0,
+          "updated": 0
+        },
+        "decks": {
+          "created": 0,
+          "updated": 0
+        },
+        "cards": {
+          "created": 0,
+          "updated": 0
+        },
+        "practiceTests": {
+          "created": 0,
+          "updated": 0
+        },
+        "studyGroups": {
+          "created": 0,
+          "updated": 0
+        },
+        "grades": {
+          "created": 0,
+          "updated": 0
+        },
+        "focusSessions": {
+          "created": 0,
+          "updated": 0
+        },
+        "folders": {
+          "created": 0,
+          "updated": 0
+        },
+        "files": {
+          "created": 0,
+          "updated": 0
+        },
+        "chatMessages": {
+          "created": 0,
+          "updated": 0
+        },
+        "calcHistory": {
+          "created": 0,
+          "updated": 0
+        },
+        "holidays": {
+          "created": 0,
+          "updated": 0
+        }
+      },
+      "created": 3,
+      "updated": 0,
+      "total": 3
+    }
+  },
+  "idempotentReImport": {
+    "status": 200,
+    "body": {
+      "imported": {
+        "subjects": {
+          "created": 0,
+          "updated": 1
+        },
+        "taskLists": {
+          "created": 0,
+          "updated": 0
+        },
+        "tasks": {
+          "created": 0,
+          "updated": 2
+        },
+        "assignments": {
+          "created": 0,
+          "updated": 0
+        },
+        "exams": {
+          "created": 0,
+          "updated": 0
+        },
+        "events": {
+          "created": 0,
+          "updated": 0
+        },
+        "timetableClasses": {
+          "created": 0,
+          "updated": 0
+        },
+        "notebooks": {
+          "created": 0,
+          "updated": 0
+        },
+        "notes": {
+          "created": 0,
+          "updated": 0
+        },
+        "decks": {
+          "created": 0,
+          "updated": 0
+        },
+        "cards": {
+          "created": 0,
+          "updated": 0
+        },
+        "practiceTests": {
+          "created": 0,
+          "updated": 0
+        },
+        "studyGroups": {
+          "created": 0,
+          "updated": 0
+        },
+        "grades": {
+          "created": 0,
+          "updated": 0
+        },
+        "focusSessions": {
+          "created": 0,
+          "updated": 0
+        },
+        "folders": {
+          "created": 0,
+          "updated": 0
+        },
+        "files": {
+          "created": 0,
+          "updated": 0
+        },
+        "chatMessages": {
+          "created": 0,
+          "updated": 0
+        },
+        "calcHistory": {
+          "created": 0,
+          "updated": 0
+        },
+        "holidays": {
+          "created": 0,
+          "updated": 0
+        }
+      },
+      "created": 0,
+      "updated": 3,
+      "total": 3
+    }
+  },
+  "validationErrors": {
+    "futureVersion": {
+      "status": 400,
+      "body": {
+        "error": "This export was written by a newer version (version 2; this app reads version 1). Update the app, then import again."
+      }
+    },
+    "danglingRequired": {
+      "status": 400,
+      "body": {
+        "error": "Row \"s23-bad-card\" in \"cards\" references a missing deckId (\"no-such-deck\") — the deck it belongs to is not in this export. Re-export from the account that owns the deck."
+      }
+    },
+    "duplicate": {
+      "status": 400,
+      "body": {
+        "error": "Duplicate id \"s23-dup\" within \"subjects\" — the export file is corrupt (each row must have a unique id)."
+      }
+    }
+  },
+  "rollbackGuard": {
+    "tasksAfterImports": 8,
+    "tasksAfterValidationFamily": 8,
+    "unchanged": true
+  },
+  "probeCleanup": [
+    {
+      "id": "s23-capture-task",
+      "status": 200
+    },
+    {
+      "id": "s23-capture-dangling",
+      "status": 200
+    },
+    {
+      "id": "s23-capture-subject",
+      "status": 200
+    }
+  ]
+}

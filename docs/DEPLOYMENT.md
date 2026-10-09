@@ -187,3 +187,17 @@ RUM telemetry are excluded by design (the RUM CSV on `/rum` is the
 telemetry dump). The export is a point-in-time download, not a sync —
 re-download after meaningful changes; the SQLite volume (§4) remains
 the full-fidelity backup.
+
+**Restoring (session-23):** the same file imports back — the
+**Restore from a backup** card on the `/export` page takes a downloaded
+`studyflow-data-*.json` (up to 10 MiB) and restores it into the signed-in
+account. Rows match by id: existing rows update to the file's values,
+new ones are created, nothing is ever deleted, and the whole import
+either completes or rolls back completely (a failed import changes
+nothing). Your account identity, password, and sign-in are never
+touched — an import restores content only. Because the envelope carries
+no user ids, it imports into ANY account: the data-loss recovery story
+is register fresh → sign in → import (`POST /api/import/data` is the
+scriptable form — same auth, a 10-import/15-minute budget). For a full
+reset-to-snapshot restore, stop the server, wipe the SQLite volume (or
+`bun run db:reset` locally), re-create the account, then import.
