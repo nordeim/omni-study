@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { Bell, BookOpen as BookOpenIcon, Calendar as CalendarIcon, LogOut, Monitor, Moon, Palette, Plus, Settings as SettingsIcon, Sun, Trash2, User as UserIcon } from "lucide-react";
+import * as SliderPrimitive from "@radix-ui/react-slider";
+import { Bell, BookOpen as BookOpenIcon, Calendar as CalendarIcon, GraduationCap, LogOut, Monitor, Moon, Palette, Plus, Settings as SettingsIcon, Sun, Trash2, User as UserIcon } from "lucide-react";
 import { useDataStore, mutations } from "@/lib/data";
+import { GRADE_LEVEL_OPTIONS } from "@/lib/validation";
 import { ViewHeader } from "./shared";
 import { useThemeStore } from "@/lib/store";
 import { ACCENTS, ACCENT_TOKENS, AVATAR_EMOJIS, THEME_CACHE_KEY, type ThemeMode } from "@/lib/theme";
@@ -10,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/primitives";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { apiSend } from "@/lib/api";
@@ -33,12 +36,24 @@ export function SettingsView() {
   const avatar = useThemeStore((s) => s.avatar);
   const userName = useThemeStore((s) => s.userName);
   const email = useThemeStore((s) => s.email);
+  // S17-A: the reference's Profile-tab fields (Settings → Profile).
+  const schoolName = useThemeStore((s) => s.schoolName);
+  const gradeLevel = useThemeStore((s) => s.gradeLevel);
+  const studyGoalHours = useThemeStore((s) => s.studyGoalHours);
+  const notificationsEnabled = useThemeStore((s) => s.notificationsEnabled);
+  const accountCreatedAt = useThemeStore((s) => s.accountCreatedAt);
 
   const subjects = useDataStore((s) => s.data.subjects);
   const holidays = useDataStore((s) => s.data.holidays);
   const loadAll = useDataStore((s) => s.loadAll);
 
   const [nameDraft, setNameDraft] = React.useState(userName);
+  // S17-A drafts (the reference's Profile tab: school / grade / goal).
+  const [schoolDraft, setSchoolDraft] = React.useState(schoolName);
+  const [gradeDraft, setGradeDraft] = React.useState(gradeLevel);
+  const [goalDraft, setGoalDraft] = React.useState(studyGoalHours);
+  // S17-B draft — the Notifications master toggle.
+  const [notifyMaster, setNotifyMaster] = React.useState(notificationsEnabled);
   const [newSubject, setNewSubject] = React.useState("");
   const [newSubjectColor, setNewSubjectColor] = React.useState("#8b5cf6");
   const [newHolidayName, setNewHolidayName] = React.useState("");
@@ -53,6 +68,59 @@ export function SettingsView() {
     setBusy(true);
     try {
       await mutations.savePreferences(patch);
+      toast.success("Preferences saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save preferences");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // S17-A — the reference's "Save Profile": persists the study-profile
+  // fields + the display name in ONE request, then syncs the theme store's
+  // user slice from the returned record (so a reload AND an immediate
+  // re-render agree with the server).
+  async function saveProfile() {
+    const trimmed = nameDraft.trim();
+    if (!trimmed) {
+      toast.error("Display name cannot be empty");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { user } = await mutations.savePreferences({
+        name: trimmed,
+        ...(schoolDraft.trim() !== schoolName ? { schoolName: schoolDraft.trim() } : {}),
+        ...(gradeDraft !== gradeLevel ? { gradeLevel: gradeDraft } : {}),
+        ...(goalDraft !== studyGoalHours ? { studyGoalHours: goalDraft } : {}),
+      });
+      useThemeStore.setState({
+        userName: (user?.name as string) ?? trimmed,
+        schoolName: (user?.schoolName as string) ?? schoolDraft.trim(),
+        gradeLevel: (user?.gradeLevel as string) ?? gradeDraft,
+        studyGoalHours: typeof user?.studyGoalHours === "number" ? user.studyGoalHours : goalDraft,
+      });
+      setNameDraft((user?.name as string) ?? trimmed);
+      setSchoolDraft((user?.schoolName as string) ?? schoolDraft.trim());
+      setGradeDraft((user?.gradeLevel as string) ?? gradeDraft);
+      setGoalDraft(typeof user?.studyGoalHours === "number" ? user.studyGoalHours : goalDraft);
+      toast.success("Profile saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save profile");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // S17-B — the reference's Notifications master toggle: persisted as
+  // notifications_enabled on the user record (its own PUT body).
+  async function saveNotificationMaster() {
+    setBusy(true);
+    try {
+      const { user } = await mutations.savePreferences({ notificationsEnabled: notifyMaster });
+      const next = typeof user?.notificationsEnabled === "boolean" ? user.notificationsEnabled : notifyMaster;
+      useThemeStore.setState({ notificationsEnabled: next });
+      setNotifyMaster(next);
       toast.success("Preferences saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save preferences");
@@ -143,6 +211,9 @@ export function SettingsView() {
             accent ring + scale-110). */}
         <TabsContent value="appearance">
           <div className="sf-card flex flex-col gap-8 p-6">
+            {/* S17-C (measured): the reference's Appearance tab opens with
+                this line above the Theme section. */}
+            <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">Customize how StudyFlow looks</h3>
             <div>
               <h3 className="mb-3 text-[15px] font-semibold text-slate-800 dark:text-slate-100">Theme</h3>
               <div className="flex gap-3">
@@ -254,6 +325,11 @@ export function SettingsView() {
         {/* Profile */}
         <TabsContent value="profile">
           <div className="sf-card flex max-w-lg flex-col gap-6 p-6">
+            {/* S17-A (measured): the reference's Profile tab opens with this
+                line above the identity block. */}
+            <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">
+              Your account and study information
+            </h3>
             <div className="flex items-center gap-4">
               <UserAvatar size="lg" />
               <div>
@@ -272,33 +348,86 @@ export function SettingsView() {
                 maxLength={80}
               />
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => {
-                  // S14-B3: trim client-side too — the store, the PATCH body,
-                  // and the input all agree on the trimmed value.
-                  const trimmed = nameDraft.trim();
-                  if (!trimmed) {
-                    toast.error("Display name cannot be empty");
-                    return;
-                  }
-                  useThemeStore.setState({ userName: trimmed });
-                  void savePreferences({ name: trimmed });
-                }}
-                disabled={busy}
+            {/* S17-A (measured): the reference's study-profile fields —
+                School Name (free text), Grade Level (12-option select),
+                Daily Study Goal (1–12 hour slider with a live-hours label),
+                all persisted on the user record by its own PUT body. The
+                display-name input above is the clone's S14 superset. */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="school-name">School Name</Label>
+              <Input
+                id="school-name"
+                value={schoolDraft}
+                onChange={(e) => setSchoolDraft(e.target.value)}
+                placeholder="Your school..."
+                maxLength={120}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Grade Level</Label>
+              <Select value={gradeDraft} onValueChange={setGradeDraft}>
+                <SelectTrigger aria-label="Grade Level" className="w-full">
+                  <SelectValue placeholder="Select grade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GRADE_LEVEL_OPTIONS.map((g) => (
+                    <SelectItem key={g} value={g}>
+                      {g}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="study-goal" className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                Daily Study Goal: {goalDraft} {goalDraft === 1 ? "hour" : "hours"}
+              </Label>
+              <SliderPrimitive.Root
+                value={[goalDraft]}
+                onValueChange={(v) => setGoalDraft(v[0] ?? goalDraft)}
+                min={1}
+                max={12}
+                step={1}
+                aria-label="Daily Study Goal"
+                className="relative flex w-full touch-none select-none items-center"
               >
-                Save profile
+                <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                  <SliderPrimitive.Range className="absolute h-full" style={{ backgroundColor: "rgb(var(--sf-primary))" }} />
+                </SliderPrimitive.Track>
+                <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 bg-white shadow transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none dark:bg-slate-50" style={{ borderColor: "rgb(var(--sf-primary))" }} />
+              </SliderPrimitive.Root>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="gradient" onClick={() => void saveProfile()} disabled={busy}>
+                Save Profile
               </Button>
               <Button variant="outline" onClick={logout} className="gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40">
                 <LogOut className="h-4 w-4" /> Sign out
               </Button>
             </div>
+            {/* S17-A (measured): the reference renders the account-creation
+                line under the save button (M/D/YYYY from the user record). */}
+            {accountCreatedAt && (
+              <p className="text-sm text-slate-400">
+                Account created:{" "}
+                {new Date(accountCreatedAt).toLocaleDateString("en-US", {
+                  month: "numeric",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+            )}
           </div>
         </TabsContent>
 
         {/* Subjects */}
         <TabsContent value="subjects">
           <div className="sf-card flex max-w-2xl flex-col gap-5 p-6">
+            {/* S17-C (measured): the reference's per-tab headers + its
+                zero-subjects empty state. */}
+            <div>
+              <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">Manage your subjects and classes</h3>
+            </div>
             <form onSubmit={addSubject} className="flex flex-wrap items-end gap-3">
               <div className="flex min-w-[200px] flex-1 flex-col gap-1.5">
                 <Label htmlFor="subject-name">New subject</Label>
@@ -361,7 +490,9 @@ export function SettingsView() {
                 </li>
               ))}
               {subjects.length === 0 && (
-                <li className="py-6 text-center text-sm text-slate-400">No subjects yet</li>
+                <li className="py-6 text-center text-sm text-slate-400">
+                  No subjects yet. Add your first subject to get started!
+                </li>
               )}
             </ul>
           </div>
@@ -370,6 +501,11 @@ export function SettingsView() {
         {/* Holidays */}
         <TabsContent value="holidays">
           <div className="sf-card flex max-w-2xl flex-col gap-5 p-6">
+            {/* S17-C (measured): the reference's Holidays headers. */}
+            <div>
+              <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">Holidays &amp; Breaks</h3>
+              <p className="mt-0.5 text-sm text-slate-400">Set your school holidays and breaks</p>
+            </div>
             <form onSubmit={addHoliday} className="flex flex-wrap items-end gap-3">
               <div className="flex min-w-[180px] flex-1 flex-col gap-1.5">
                 <Label htmlFor="holiday-name">Holiday name</Label>
@@ -418,7 +554,7 @@ export function SettingsView() {
               ))}
               {holidays.length === 0 && (
                 <li className="py-6 text-center text-sm text-slate-400">
-                  No holidays yet — add term breaks and public holidays.
+                  No holidays set. Add your school holidays!
                 </li>
               )}
             </ul>
@@ -428,19 +564,48 @@ export function SettingsView() {
         {/* Notifications */}
         <TabsContent value="notifications">
           <div className="sf-card flex max-w-xl flex-col gap-5 p-6">
-            {(
-              [
-                { id: "dueSoon", label: "Assignment due reminders", hint: "Notify me 2 days before a due date", default: true },
-                { id: "exams", label: "Exam countdowns", hint: "Notify me a week before every exam", default: true },
-                { id: "focusStreak", label: "Focus streak nudge", hint: "A gentle nudge when I skip focus sessions", default: false },
-                { id: "weeklyDigest", label: "Weekly study digest", hint: "A Sunday summary of my week", default: false },
-              ] as const
-            ).map((row) => (
-              <NotificationRow key={row.id} label={row.label} hint={row.hint} defaultOn={row.default} />
-            ))}
-            <p className="text-xs text-slate-400">
-              Notification delivery requires a configured push/email channel — preferences are stored locally for now.
-            </p>
+            {/* S17-B (measured): the reference's Notifications tab — a header,
+               an "Enable Notifications" MASTER toggle (persisted as
+               notifications_enabled on the user record — its own PUT body),
+               the hint line, and a Save Preferences button. The four detail
+               rows below are the clone's documented superset (locally stored). */}
+            <div>
+              <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">Manage your notification preferences</h3>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Enable Notifications</p>
+                <p className="mt-0.5 text-xs text-slate-400">Receive reminders for tasks and assignments</p>
+              </div>
+              <Switch
+                checked={notifyMaster}
+                onCheckedChange={setNotifyMaster}
+                aria-label="Enable Notifications"
+              />
+            </div>
+            <Button
+              variant="gradient"
+              onClick={() => void saveNotificationMaster()}
+              disabled={busy}
+              className="self-start"
+            >
+              Save Preferences
+            </Button>
+            <div className="flex flex-col gap-4 border-t border-slate-100 pt-5 dark:border-slate-800">
+              {( 
+                [
+                  { id: "dueSoon", label: "Assignment due reminders", hint: "Notify me 2 days before a due date", default: true },
+                  { id: "exams", label: "Exam countdowns", hint: "Notify me a week before every exam", default: true },
+                  { id: "focusStreak", label: "Focus streak nudge", hint: "A gentle nudge when I skip focus sessions", default: false },
+                  { id: "weeklyDigest", label: "Weekly study digest", hint: "A Sunday summary of my week", default: false },
+                ] as const
+              ).map((row) => (
+                <NotificationRow key={row.id} label={row.label} hint={row.hint} defaultOn={row.default} />
+              ))}
+              <p className="text-xs text-slate-400">
+                Notification delivery requires a configured push/email channel — preferences are stored locally for now.
+              </p>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

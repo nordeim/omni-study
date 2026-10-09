@@ -326,12 +326,28 @@ export const holidaySchema = z.object({
   date: isoDate,
 });
 
+// S17-A — the reference's Profile tab persists four study-profile fields on
+// its User entity (captured from the reference's own PUT body; see
+// docs/remediation-plan-session17.md). The Grade Level enum is the
+// reference-measured 12-option list; the study goal mirrors the reference's
+// 1–12 hour slider; notificationsEnabled is the Notifications master toggle.
+const GRADE_LEVELS = [
+  "6th Grade", "7th Grade", "8th Grade", "9th Grade", "10th Grade", "11th Grade", "12th Grade",
+  "College Freshman", "College Sophomore", "College Junior", "College Senior", "Graduate",
+] as const;
+
 export const preferencesSchema = z.object({
   themeMode: z.enum(["light", "dark", "system"]).optional(),
   accentColor: z.enum(["violet", "blue", "green", "orange", "pink", "red", "teal"]).optional(),
   avatarEmoji: z.string().max(8).optional(),
   name: bounded(80).optional(),
+  schoolName: bounded(120).optional(),
+  gradeLevel: z.enum(GRADE_LEVELS).optional(),
+  studyGoalHours: z.number().int().min(1).max(12).optional(),
+  notificationsEnabled: z.boolean().optional(),
 });
+
+export const GRADE_LEVEL_OPTIONS = GRADE_LEVELS;
 
 export const aiChatSchema = z.object({
   messages: z

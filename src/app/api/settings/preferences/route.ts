@@ -2,7 +2,9 @@ import { db } from "@/lib/db";
 import { NotFoundError, jsonOk, withUser, parseWith } from "@/lib/server/http";
 import { preferencesSchema } from "@/lib/validation";
 
-// Preferences: PATCH persists theme mode / accent / avatar / display name.
+// Preferences: PATCH persists theme mode / accent / avatar / display name
+// + the S17 study-profile fields (school / grade / study goal / the
+// notifications master toggle — the reference's own User-entity fields).
 export const PATCH = withUser(async (userId, req) => {
   const body = await req.json().catch(() => ({}));
   const data = parseWith(preferencesSchema, body as Record<string, unknown>);
@@ -20,6 +22,10 @@ export const PATCH = withUser(async (userId, req) => {
       ...(data.accentColor !== undefined ? { accentColor: data.accentColor } : {}),
       ...(data.avatarEmoji !== undefined ? { avatarEmoji: data.avatarEmoji } : {}),
       ...(data.name !== undefined ? { name: data.name.trim() } : {}),
+      ...(data.schoolName !== undefined ? { schoolName: data.schoolName } : {}),
+      ...(data.gradeLevel !== undefined ? { gradeLevel: data.gradeLevel } : {}),
+      ...(data.studyGoalHours !== undefined ? { studyGoalHours: data.studyGoalHours } : {}),
+      ...(data.notificationsEnabled !== undefined ? { notificationsEnabled: data.notificationsEnabled } : {}),
     },
     select: {
       id: true,
@@ -28,6 +34,11 @@ export const PATCH = withUser(async (userId, req) => {
       avatarEmoji: true,
       themeMode: true,
       accentColor: true,
+      schoolName: true,
+      gradeLevel: true,
+      studyGoalHours: true,
+      notificationsEnabled: true,
+      createdAt: true,
     },
   });
   return jsonOk({ user });

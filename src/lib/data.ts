@@ -571,7 +571,9 @@ export const mutations = {
     await useDataStore.getState().refresh("holidays");
   },
   savePreferences: async (input: Record<string, unknown>) => {
-    await apiSend("PATCH", "/api/settings/preferences", input);
+    // S17-A: the route returns the persisted user record — the caller can
+    // sync the theme store's user slice without a second fetch.
+    return apiSend<{ user: Record<string, unknown> }>("PATCH", "/api/settings/preferences", input);
   },
   saveCalcHistory: async (input: Record<string, unknown>) => {
     await apiSend("POST", "/api/calculator/history", input);

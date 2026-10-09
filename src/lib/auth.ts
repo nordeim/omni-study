@@ -119,6 +119,11 @@ export async function getCurrentUser() {
       themeMode: true,
       accentColor: true,
       createdAt: true,
+      // S17-A: the study-profile fields ride the same record
+      schoolName: true,
+      gradeLevel: true,
+      studyGoalHours: true,
+      notificationsEnabled: true,
     },
   });
   return user;

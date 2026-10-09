@@ -347,6 +347,7 @@ export function TasksView() {
             <EmptyState
               icon={ListChecks}
               title="No tasks yet"
+              hint="Create your first task to get started"
               action={<Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">Create Task</Button>}
             />
           </div>

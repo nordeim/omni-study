@@ -5,7 +5,6 @@ import {
   Award,
   ChartColumn,
   ClipboardList,
-  GraduationCap,
   LineChart,
   PieChart,
   Plus,
@@ -232,15 +231,6 @@ export function GradeTrackerView() {
 
       {loadStatus === "idle" || loadStatus === "loading" ? (
         <LoadingCards />
-      ) : grades.length === 0 ? (
-        <div className="sf-card">
-          <EmptyState
-            icon={GraduationCap}
-            title="No grades yet"
-            hint="Add your first assessment score to start tracking performance."
-            action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={openCreate}>Add Grade</Button>}
-          />
-        </div>
       ) : (
         <>
           {/* Stat cards — S7-E: measured icons (award on the gradient card
@@ -263,6 +253,13 @@ export function GradeTrackerView() {
               <p className="mt-2 text-4xl font-bold text-slate-800 dark:text-slate-100">{subjectStats.length}</p>
             </div>
           </div>
+
+          {/* S17-E (measured on the reference's fresh account): at ZERO
+              grades the reference renders the stat cards ONLY — no By
+              Subject / GPA / trend sections. The sections below therefore
+              gate on grades existing. */}
+          {grades.length > 0 && (
+            <>
 
           {/* Per-subject breakdown */}
           <SectionCard title="By Subject" icon={PieChart} action={subjectStats.length > 0 ? <span className="text-xs text-slate-400">{summaryLine}</span> : undefined}>
@@ -424,6 +421,8 @@ export function GradeTrackerView() {
               </div>
             )}
           </SectionCard>
+            </>
+          )}
         </>
       )}
 

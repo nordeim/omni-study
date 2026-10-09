@@ -395,7 +395,7 @@ export function FilesView() {
             hint={
               currentFolderId
                 ? "This folder is empty — upload a file or create a subfolder."
-                : "Upload a file, add a link, or create a folder to get started."
+                : "Upload your first file to get started"
             }
           />
         </div>

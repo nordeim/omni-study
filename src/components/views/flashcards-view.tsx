@@ -536,7 +536,7 @@ function SimpleSidebarEmpty({ onCreate }: { onCreate: () => void }) {
     <div className="flex flex-1 flex-col items-center justify-center rounded-xl bg-slate-50 px-4 py-10 text-center dark:bg-slate-800/60">
       <Layers className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" strokeWidth={2} aria-hidden="true" />
       <h3 className="mb-1 font-semibold text-slate-700 dark:text-slate-200">No decks yet</h3>
-      <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">Create your first flashcard deck.</p>
+      <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">Create your first flashcard deck</p>
       <Button variant="gradient" size="sm" className="sf-gradient-shadow-lg" onClick={onCreate}>
         Create Deck
       </Button>

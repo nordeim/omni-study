@@ -33,6 +33,15 @@ model User {
   themeMode     String   @default("system") // light | dark | system
   accentColor   String   @default("violet") // violet|blue|green|orange|pink|red|teal
   emailVerified Boolean  @default(false) // S15: the login gate (ADR-013)
+  // S17-A: the reference's Profile tab persists four study-profile fields on
+  // its User entity (captured from the reference's own PUT body:
+  // school_name / grade_level / study_goal_hours / notifications_enabled —
+  // defaults match the reference's own defaults: empty school, empty grade,
+  // 4h goal, notifications on). See docs/remediation-plan-session17.md.
+  schoolName           String   @default("")
+  gradeLevel           String   @default("") // "" | 6th–12th Grade | College Freshman…Senior | Graduate
+  studyGoalHours       Int      @default(4)
+  notificationsEnabled Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 

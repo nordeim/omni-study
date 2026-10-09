@@ -96,6 +96,14 @@ interface ThemeState {
   avatar: string;
   userName: string;
   email: string;
+  /** S17-A: the reference's study-profile fields (Settings → Profile) +
+   * the account-creation line. They ride the theme store's user slice so
+   * the Profile tab renders them without a second fetch. */
+  schoolName: string;
+  gradeLevel: string;
+  studyGoalHours: number;
+  notificationsEnabled: boolean;
+  accountCreatedAt: string;
   applied: boolean;
   setTheme: (mode: ThemeMode, accent?: Accent) => void;
   setMode: (mode: ThemeMode) => void;
@@ -107,6 +115,11 @@ interface ThemeState {
     avatarEmoji?: string;
     name?: string;
     email?: string;
+    schoolName?: string;
+    gradeLevel?: string;
+    studyGoalHours?: number;
+    notificationsEnabled?: boolean;
+    createdAt?: string;
   }) => void;
   apply: () => void;
 }
@@ -187,6 +200,13 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   avatar: "",
   userName: "",
   email: "",
+  // S17-A defaults mirror the schema's defaults (the reference's own:
+  // empty school/grade, a 4h goal, notifications on).
+  schoolName: "",
+  gradeLevel: "",
+  studyGoalHours: 4,
+  notificationsEnabled: true,
+  accountCreatedAt: "",
   applied: false,
   setTheme: (mode, accent) => {
     set({ mode, accent: accent ?? get().accent });
@@ -210,6 +230,11 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
       avatar: user.avatarEmoji || "",
       userName: user.name || "",
       email: user.email || "",
+      schoolName: user.schoolName ?? "",
+      gradeLevel: user.gradeLevel ?? "",
+      studyGoalHours: typeof user.studyGoalHours === "number" ? user.studyGoalHours : 4,
+      notificationsEnabled: user.notificationsEnabled ?? true,
+      accountCreatedAt: user.createdAt ?? "",
       applied: true,
     });
     applyToDocument(mode, accent);

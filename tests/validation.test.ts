@@ -236,6 +236,48 @@ describe("preferencesSchema", () => {
     expect(preferencesSchema.safeParse({ avatarEmoji: "🎓" }).success).toBe(true);
     expect(preferencesSchema.safeParse({ avatarEmoji: "🎓".repeat(9) }).success).toBe(false); // 9 code points > 8 (zod v4 counts code points)
   });
+
+  // S17-A — the reference's Profile tab persists four study-profile fields
+  // on its User entity (captured from the reference's own PUT body):
+  // school_name / grade_level / study_goal_hours / notifications_enabled.
+  it("accepts the S17 study-profile fields (school, grade, goal, notifications)", () => {
+    expect(
+      preferencesSchema.safeParse({
+        schoolName: "Lincoln High",
+        gradeLevel: "9th Grade",
+        studyGoalHours: 4,
+        notificationsEnabled: false,
+      }).success,
+    ).toBe(true);
+    // all optional — a partial PATCH still parses
+    expect(preferencesSchema.safeParse({ schoolName: "" }).success).toBe(true);
+    expect(preferencesSchema.safeParse({ notificationsEnabled: true }).success).toBe(true);
+  });
+
+  it("accepts every reference-measured Grade Level option (12 total)", () => {
+    const grades = [
+      "6th Grade", "7th Grade", "8th Grade", "9th Grade", "10th Grade", "11th Grade", "12th Grade",
+      "College Freshman", "College Sophomore", "College Junior", "College Senior", "Graduate",
+    ];
+    for (const g of grades) {
+      expect(preferencesSchema.safeParse({ gradeLevel: g }).success).toBe(true);
+    }
+    expect(preferencesSchema.safeParse({ gradeLevel: "13th Grade" }).success).toBe(false);
+    expect(preferencesSchema.safeParse({ gradeLevel: "Kindergarten" }).success).toBe(false);
+  });
+
+  it("bounds the study goal to the reference's 1–12 hour slider range", () => {
+    expect(preferencesSchema.safeParse({ studyGoalHours: 1 }).success).toBe(true);
+    expect(preferencesSchema.safeParse({ studyGoalHours: 12 }).success).toBe(true);
+    expect(preferencesSchema.safeParse({ studyGoalHours: 0 }).success).toBe(false);
+    expect(preferencesSchema.safeParse({ studyGoalHours: 13 }).success).toBe(false);
+    expect(preferencesSchema.safeParse({ studyGoalHours: 2.5 }).success).toBe(false);
+  });
+
+  it("bounds the school name length", () => {
+    expect(preferencesSchema.safeParse({ schoolName: "x".repeat(120) }).success).toBe(true);
+    expect(preferencesSchema.safeParse({ schoolName: "x".repeat(121) }).success).toBe(false);
+  });
 });
 
 describe("flashcardDeckSchema", () => {

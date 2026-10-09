@@ -326,7 +326,7 @@ export function PracticeTestsView() {
           <EmptyState
             icon={ClipboardList}
             title="No practice tests yet"
-            hint="Create your first practice test to check what you really know."
+            hint="Create your first practice test"
             action={
               <Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">
                 Create Test

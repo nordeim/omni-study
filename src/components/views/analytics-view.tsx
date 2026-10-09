@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { BarChart3, BookOpen, ChartColumn, Clock, Flame, GraduationCap, SquareCheckBig, Target, TrendingUp } from "lucide-react";
+import { BookOpen, ChartColumn, Clock, Flame, GraduationCap, SquareCheckBig, Target, TrendingUp } from "lucide-react";
 import { useDataStore } from "@/lib/data";
-import { EmptyState, useSubjectMap, ViewHeader } from "./shared";
+import { useSubjectMap, ViewHeader } from "./shared";
 import { formatMinutes, startOfDay } from "@/lib/date";
 
 // Analytics — S7-D aligns the stat cards + chart cards with the measured
@@ -454,9 +454,6 @@ export function AnalyticsView() {
       .slice(0, 6);
   }, [tasks, subjectMap]);
 
-  const hasAnyData =
-    tasks.length + focusSessions.length + grades.length + assignments.length + exams.length > 0;
-
   // S8-I (measured): the reference's "Assignment Status" donut — the only
   // populated sector on the audit account was Not Started #94a3b8 (1
   // assignment); In Progress / Completed colors follow the app conventions
@@ -493,16 +490,12 @@ export function AnalyticsView() {
     <div className="flex flex-col gap-6">
       <ViewHeader title="Analytics" subtitle="Track your study progress and productivity" icon={ChartColumn} />
 
-      {!hasAnyData ? (
-        <div className="sf-card">
-          <EmptyState
-            icon={BarChart3}
-            title="No data yet"
-            hint="Complete tasks, log focus sessions and record grades — your analytics appear here."
-          />
-        </div>
-      ) : (
-        <>
+      {/* S17-D (measured): the reference renders its stat cards at ZERO data
+          too (0/0 · "0% completion rate" … — its fresh-account state), so the
+          cards are unconditional; the charts below carry their own
+          "No subject data yet" empty text. The old "No data yet" EmptyState
+          block never existed on the reference. */}
+      <>
           {/* S7-D — measured stat cards: r12 border-0 + 48px tinted icon
               blocks. S8-I: the reference's grid is grid-cols-2 lg:grid-cols-4. */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Analytics stats">
@@ -620,7 +613,6 @@ export function AnalyticsView() {
             </section>
           </div>
         </>
-      )}
     </div>
   );
 }

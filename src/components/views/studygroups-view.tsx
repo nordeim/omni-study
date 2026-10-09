@@ -475,11 +475,18 @@ export function StudyGroupsView() {
           className="h-9"
         />
         {studyGroups.length === 0 ? (
+          // S17-G (measured at 390px on the reference): its mobile Study
+          // Groups squeezes the desktop two-pane (left pane flex-shrinks to
+          // ~222px, right pane clips to ~112px) — the reference's own
+          // non-responsive layout. The clone's stacked fallback is the
+          // documented S8-H superset; the empty-state COPY is the reference's
+          // measured copy ("Create a group to collaborate" — the old "plan
+          // meetings" hint was invented, never measured).
           <div className="sf-card">
             <EmptyState
               icon={Users}
               title="No study groups"
-              hint="Create a group to plan meetings and keep everyone on track."
+              hint="Create a group to collaborate"
               action={
                 <Button onClick={openCreate} variant="gradient" className="sf-gradient-shadow-lg">
                   Create Group

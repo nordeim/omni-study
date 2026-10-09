@@ -298,7 +298,7 @@ export function ExamsView() {
                 title={exams.length === 0 ? "No exams found" : "No matching exams"}
                 hint={
                   exams.length === 0
-                    ? "Add your first exam to start preparing in good time."
+                    ? "Add your exams to start tracking"
                     : "Try adjusting the search or filter."
                 }
                 action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={openCreate}>Add Exam</Button>}

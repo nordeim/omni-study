@@ -10,6 +10,12 @@ export interface PublicUserShape {
   avatarEmoji: string;
   themeMode: ThemeMode;
   accentColor: Accent;
+  /** S17-A: the reference's study-profile fields ride the user record. */
+  schoolName?: string;
+  gradeLevel?: string;
+  studyGoalHours?: number;
+  notificationsEnabled?: boolean;
+  createdAt?: string;
 }
 
 export type { PublicUserShape as MeUser };

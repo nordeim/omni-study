@@ -166,7 +166,7 @@ export function NotesView() {
           </div>
           <div className="sf-scroll flex-1 space-y-4 overflow-y-auto pb-4" aria-label="Notes list">
             {visible.length === 0 ? (
-              <EmptyState icon={BookOpen} title="No notes yet" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
+              <EmptyState icon={BookOpen} title="No notes yet" hint="Create your first note" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
             ) : (
               visible.map((n) => (
                 <NoteListItem
@@ -220,7 +220,7 @@ export function NotesView() {
         </div>
         {visible.length === 0 ? (
           <div className="sf-card">
-            <EmptyState icon={BookOpen} title="No notes yet" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
+            <EmptyState icon={BookOpen} title="No notes yet" hint="Create your first note" action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={createNote}>New Note</Button>} />
           </div>
         ) : (
           <ul className="sf-card divide-y divide-slate-100 dark:divide-slate-800">

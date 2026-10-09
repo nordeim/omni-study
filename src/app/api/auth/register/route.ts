@@ -75,14 +75,12 @@ export async function POST(req: Request) {
       email,
       passwordHash: hashPassword(parsed.data.password),
       name: parsed.data.name || email.split("@")[0]!,
-      // Sensible starter subjects so a fresh account isn't empty.
-      subjects: {
-        create: [
-          { name: "Mathematics", color: "#8b5cf6" },
-          { name: "Physics", color: "#3b82f6" },
-          { name: "Literature", color: "#ec4899" },
-        ],
-      },
+      // S17 (measured on the reference's fresh account): registrations start
+      // with ZERO subjects — its Settings/Subjects tab renders the
+      // "No subjects yet. Add your first subject to get started!" empty
+      // state and its Timetable the "No subjects added yet" hint. The old
+      // three starter subjects were invented chrome the reference never
+      // creates; the seeded DEMO account keeps its showcase subjects.
     },
     select: { id: true },
   });

@@ -307,7 +307,7 @@ export function AssignmentsView() {
                 title={assignments.length === 0 ? "No assignments yet" : "No matching assignments"}
                 hint={
                   assignments.length === 0
-                    ? "Add your first assignment to start tracking coursework."
+                    ? "Add your first assignment to start tracking"
                     : "Try adjusting the search or filters."
                 }
                 action={<Button variant="gradient" className="sf-gradient-shadow-lg" onClick={openCreate}>Add Assignment</Button>}
