@@ -163,3 +163,10 @@ deliberately linked from nowhere — the app shell's parity is
 byte-preserved) and themes with your account's dark mode + accent. The
 scriptable contract remains `GET /api/rum` (same auth, JSON) for
 curl/monitoring use.
+
+Session-20 (v3) additions: each sampled card carries a **sparkline**
+(the metric's 20 most recent samples, oldest → newest — the trend at a
+glance: "is my LCP drifting?"), and the panel's **Export CSV** action
+downloads your most recent 2000 events as a spreadsheet-ready CSV
+(`GET /api/rum/export` — same auth, `text/csv`, RFC-4180 escaping, raw
+values) for offline analysis.

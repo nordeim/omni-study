@@ -202,6 +202,14 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 - **Consequences:** the display logic is unit-pinned at the seam (14 pins: boundary-exact classifications per metric, the formatting split, the full/empty/partial display models); 4 e2e pins (the anon redirect, the posted-data rendering incl. the metadata title, the refresh re-fetch, the zero-nav-linkage guard); `GET /api/rum`'s comment corrected (the last-200-events window is all-metrics, then filtered per metric — the single-user-scale approximation, previously overstated as "per metric"); total 437 tests (179 unit + 258 e2e).
 - **Alternatives Rejected:** a 21st nav item or a Settings sixth tab (parity-pinned surfaces — the drawer's 20 links and the five-tab structure are byte-guarded); a client-side-only gate (a flash of panel chrome before the auth check — the server gate renders nothing for anonymous visitors); SQL percentile aggregation (single-user scale — fetch + JS); auto-refresh polling (owner-direct tooling; a manual Refresh keeps the network quiet); linking the panel from the shell (the zero-nav-linkage guard exists precisely to keep the superset invisible to the parity surfaces).
 
+**ADR-018: The RUM panel v3 — per-metric trend sparklines + the CSV export (session-20)**
+
+- **Context:** ADR-017 shipped the owner-facing `/rum` surface; the session-33 narrative documented "optional v3 panel polish (sparklines, CSV export)" as the next surface. With both backlogs empty again on arrival (the reference re-swept UNCHANGED since S19 — zero-data account, all five Settings tabs matching, 20 nav views, stable branding; the S19 code audited line-by-line CLEAN; the standing drawer check GREEN; the 20-view copy sweep showing only the documented data-state non-gaps), the documented v3 option governed.
+- **Decision:** (1) Two new PURE seams in `src/lib/rum-diagnostics.ts`: `buildSparklinePoints(values, width, height)` (the card trend geometry — x evenly spaced over `[0, width]`, y inverted-normalized into `[PAD=2, height−PAD]`; the empty series → `[]`, the single value and the flat min===max series → a visible CENTERED line, a one-point polyline being invisible) and `toRumCsv(events)` (the export body — the 7-column header, RAW analysis-grade values, RFC-4180 comma/quote/newline escaping with doubled inner quotes, the caller's ordering). (2) `GET /api/rum` grows the ADDITIVE `trends` field: per metric, the ≤ 20 most recent values in chronological order (oldest → newest) from the same 200-event window — OPTIONAL on the `RumGetAggregate` type so the S19 contract stays backward-compatible. (3) `GET /api/rum/export` (`src/app/api/rum/export/route.ts`): the user's most recent 2000 events, reversed to chronological, serialized through `toRumCsv`, answered as `text/csv; charset=utf-8` with the S13 `buildContentDisposition` attachment (a dated ASCII filename + the RFC 5987 extended form) and the S14 `nosniff` + `private, no-store` headers; 401 JSON for anonymous callers (the API-route convention). (4) The panel: each sampled card renders the sparkline (an `aria-hidden` SVG, `viewBox 0 0 100 28`, `preserveAspectRatio="none"` + `vectorEffect="non-scaling-stroke"`, the accent token `rgb(var(--sf-primary))` — standard utilities only, NO new CSS) and the header gains the Export CSV anchor (a real navigation link FROM `/rum` — the shell's zero-nav-linkage guard is unaffected).
+- **Rationale:** Both additions are pure functional supersets on the owner-facing diagnostics surface (the reference has no diagnostics surface at all) — trend context ("is my LCP drifting?") and offline analysis (the spreadsheet dump) complete the observability story without touching a single parity-pinned byte. The trend data reuses the GET's existing 200-event query (no extra read); the CSV reuses the S13/S14 download-header seams (no new header surface).
+- **Consequences:** 13 new unit pins (5 sparkline geometry incl. the exact worked example, 5 CSV builder incl. escaping, 3 buildPanelRows trends pass-through incl. backward compat) + 4 new e2e pins in `tests/e2e/s20-rum-export.spec.ts` (the export round-trip incl. the header contract + the probe row, the 401 anon gate via the AP-67 empty-storageState lesson, the GET `trends` field, the panel sparklines + Export CSV action); total 454 tests (192 unit + 262 e2e). The capture probe lesson recorded as AP-68: a trend-rich evidence probe must post each value under a DISTINCT sessionId (the (sessionId, metric) upsert collapses same-session reposts to one row) and in ≤ 10-event batches (the S18 batch cap).
+- **Alternatives Rejected:** a chart library for the sparklines (a polyline per card is ~10 lines of inline SVG — a dependency for five lines is not justified; standard utilities keep the zero-Tailwind-v4-surface-risk contract); client-side CSV assembly from the 10-row `recent` slice (the owner wants the FULL history — the export is a server dump over 2000 rows); a JSON export (the CSV is the spreadsheet-ready interchange; the GET aggregate already IS the JSON surface); paginating the export (single-user scale — the data-volume convention: measured bounds over speculative pagination); a rate limit on the export (a read endpoint, auth-gated — the same posture as the GET aggregate).
+
 ---
 
 ## 2. High-Level System Topology
@@ -522,19 +530,19 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 
 | Category | Files | Tests | Location | Framework |
 |----------|-------|-------|----------|-----------|
-| Unit — pure seams | 14 | 179 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
+| Unit — pure seams | 14 | 192 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
 | E2E — auth | 1 | 6 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
-| E2E — mobile navigation | 1 | 11 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
-| E2E — desktop nav + views + parity pins | 1 | 41 | `tests/e2e/navigation.spec.ts` | Playwright |
+| E2E — mobile navigation | 1 | 10 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
+| E2E — desktop nav + views + parity pins | 1 | 42 | `tests/e2e/navigation.spec.ts` | Playwright |
 | E2E — task CRUD golden path | 1 | 6 | `tests/e2e/tasks.spec.ts` | Playwright |
-| E2E — calculator + theme + physical keyboard | 1 | 12 | `tests/e2e/calculator.spec.ts` | Playwright |
+| E2E — calculator + theme + physical keyboard | 1 | 11 | `tests/e2e/calculator.spec.ts` | Playwright |
 | E2E — session-5 interactive-chrome parity pins | 1 | 19 | `tests/e2e/parity-session5.spec.ts` | Playwright |
 | E2E — session-6 populated-state parity pins | 1 | 15 | `tests/e2e/parity-session6.spec.ts` | Playwright |
 | E2E — session-7 lightly-probed-views parity pins | 1 | 17 | `tests/e2e/parity-session7.spec.ts` | Playwright |
 | E2E — session-8 deep-chrome/layout parity pins | 1 | 36 | `tests/e2e/parity-session8.spec.ts` | Playwright |
 | E2E — session-9 data-state/chart-axes parity pins | 1 | 25 | `tests/e2e/parity-session9.spec.ts` | Playwright |
 | E2E — session-10 dark-mode consistency pins | 1 | 10 | `tests/e2e/dark-mode.spec.ts` | Playwright |
-| E2E — session-11 theme-system pins (boot script, System tracking, meta, accent re-themes, print) | 1 | 12 | `tests/e2e/theme-system.spec.ts` | Playwright |
+| E2E — session-11 theme-system pins (boot script, System tracking, meta, accent re-themes, print) | 1 | 11 | `tests/e2e/theme-system.spec.ts` | Playwright |
 | E2E — session-12 accessibility pins (forced-colors state, skip link, print pipeline, reduced-motion) | 1 | 15 | `tests/e2e/accessibility.spec.ts` | Playwright |
 | E2E — session-13 resilience pins (AI failure rollback + recovery, solver MIME guard, upload edges, RFC 5987) | 1 | 5 | `tests/e2e/resilience.spec.ts` | Playwright |
 | E2E — session-14 hardening pins (offline banner + byte-parity guard, offline toast, display-name guard, AI rate limit, download headers, live regions) | 1 | 7 | `tests/e2e/s14-hardening.spec.ts` | Playwright |
@@ -543,7 +551,9 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 | E2E — session-17 fresh-user pins (zero-data stat cards, the seven reference-measured empty hints, Settings headers/zero states, the Profile save round-trip, the Notifications master, the mobile StudyGroups copy) | 1 | 5 | `tests/e2e/s17-fresh-user.spec.ts` | Playwright |
 | E2E — session-18 RUM pins (the beacon journey, the POST upsert contract, the 400, the 401 gate, the zero-DOM chrome guard) | 1 | 5 | `tests/e2e/s18-rum.spec.ts` | Playwright |
 | E2E — session-19 diagnostics-panel pins (the anon redirect, the posted-data rendering + metadata title, the refresh re-fetch, the zero-nav-linkage guard) | 1 | 4 | `tests/e2e/s19-rum-panel.spec.ts` | Playwright |
-| **Total** | **32** | **438** | `tests/` (179 unit + 259 e2e incl. 1 setup) | Vitest + Playwright |
+| E2E — session-20 export + trends pins (the CSV export round-trip + download-header contract, the 401 anon gate, the GET trends field, the panel sparklines + Export CSV action) | 1 | 4 | `tests/e2e/s20-rum-export.spec.ts` | Playwright |
+| E2E — the shared-sign-in setup project (one login, the storageState the whole suite rides) | 1 | 1 | `tests/e2e/auth.setup.ts` | Playwright |
+| **Total** | **34** | **454** | `tests/` (192 unit + 262 e2e = 261 chromium specs + the 1 setup; per-file counts re-measured via `playwright test --list` this session — the prior table's four stale rows corrected) | Vitest + Playwright |
 
 ### 8.2 Test Patterns
 
