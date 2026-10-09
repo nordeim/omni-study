@@ -531,3 +531,27 @@ Stage Summary:
 - Key decisions: ADR-016 (the RUM observability contract — zero-DOM beacon, upsert-on-(sessionId,metric), 1000/15-min budget sized for the suite's own beacon traffic, the login route deliberately un-instrumented; the Docker layout with no database bytes in the image).
 - New lessons: AP-66 (web-vitals v6 void callbacks; the output tracer's stale db snapshot inside .next/standalone; the cp-vs-COPY nesting divergence — simulate Docker layouts with src/. semantics).
 - Non-gaps documented: no RUM UI panel in v1 (the GET endpoint is the inspection surface); the reference unchanged (verification-only parity work this session).
+
+---
+Task ID: S19 (session-19 iteration, executed in session 31)
+Agent: Super Z (main agent)
+Task: The RUM diagnostics panel — the S18 v2 option, TDD fixes, docs, commit, push.
+
+Work Log:
+- Git pull to b3b8a0b (the S18 push + the session-30 transcript). Review docs read (session_29, remediation-plan-session18, worklog, session_30); the S18 seams verified (RumEvent, /api/rum, the beacon, Docker, the test configs, DATABASE_URL="file:../db/custom.db"); baseline gates GREEN (lint/tsc/165 unit).
+- Standing checks FIRST, all GREEN: the mobile-drawer check (backdrop oklab+blur(4px), 288px panel, 20 links, no footer, Escape-close superset — the brief's priority item); the reference re-sweep UNCHANGED since S18 (zero-data account, all five Settings tabs matching, 20 nav views, stable branding — the committed ref-dash-sweep-s29.mjs probe); the clone Settings sweep parity ✓.
+- The S18 code audit (the recent changes): the RUM route, the beacon, the validation seam, the Docker artifacts — CLEAN; one comment nit (the GET "per metric" wording — the window is the last 200 events all-metrics, then filtered per metric).
+- Governing decision: both backlogs empty → executed the session-28 narrative's documented next surface: the RUM diagnostics panel (the S18 "v2 option"; the GET endpoint was v1's curl-only inspection surface).
+- Plan saved: docs/remediation-plan-session19.md — validated file-by-file (next.config.ts rewrites only map the 20 PascalCase paths; the sitemap enumerates NAV_ITEMS only — /rum cannot leak in).
+- TDD: RED (14 unit failures + 3 e2e failures observed as designed; the zero-nav-linkage guard passed on arrival) → GREEN: the pure seam src/lib/rum-diagnostics.ts (the public CWV thresholds, classifyP75, formatMetricValue, buildPanelRows) → the client panel src/components/rum/rum-panel.tsx (parallel /api/auth/me [theme via loadFromUser] + GET /api/rum; five p75 cards with rating badges; the samples line; the recent-events table; Refresh; the empty state; no new CSS) → the server-gated route src/app/rum/page.tsx (getCurrentUser + redirect + metadata + noindex) + the GET comment correction.
+- Two honest test iterations (AP-67): browser.newContext() inside a test INHERITS the file-level storageState (the "anon" context carried the session cookie — force an explicit empty storageState); repeated labels strict-mode-collide across structures (scope to the region/cell; the p75 exactness is unit-pinned, the e2e window is shared with the suite's own beacon rows).
+- Gates: lint ✓ tsc ✓ 179 unit ✓ (165+14) build ✓ 258 e2e ✓ (cold db/e2e.db, 4.3 min) = 437 tests green — the 254 prior pins untouched; the s16 CLS pins green (the panel is a separate route — zero shell impact).
+- Evidence: 3 captures via the committed scripts/capture-s19-evidence.mjs (the /rum panel — desktop light + DARK [themed through the production loadFromUser path] + mobile 390×844). VLM-verified (all PASS).
+- Docs aligned: README (badge 437, the diagnostics feature row, counts 179/258, the plan row, the captures line), AGENTS (the panel contract + the capture command + counts), CLAUDE (the contract + the S19 seam + counts), PAD (ADR-017 + the test table to 438), SKILL (AP-67 + the 437 badge), DEPLOYMENT.md §8.1 (the post-deploy "visit /rum" step). .env.example audited — unchanged (no new env vars).
+- Probe hygiene: the working sweep committed (ref-dash-sweep-s29.mjs); the throwaway anon-debug script deleted.
+
+Stage Summary:
+- Push (this commit) includes: the RUM diagnostics panel (the auth-gated /rum route — server-side redirect, the pure unit-pinned display seam, the themed responsive panel with the five CWV at p75 + the recent-events table, linked from nowhere) + 14 unit pins + 4 e2e pins + 3 VLM-verified captures + the session-19 remediation plan with execution log + aligned docs (README/AGENTS/CLAUDE/PAD ADR-017/SKILL AP-67/DEPLOYMENT §8.1) + session_31 narrative + session_32 transcript. 437 tests green (179 unit + 258 e2e).
+- Key decisions: ADR-017 (the diagnostics panel contract — URL-direct, zero nav linkage, server-gated, the p75 ratings re-derived from the public CWV bounds); the e2e p75 exactness delegated to the unit layer (the shared window is not deterministic).
+- New lessons: AP-67 (browser.newContext() inherits the file-level storageState; scope repeated-text assertions to their semantic region).
+- Remaining open: the first real docker compose --profile init up on the owner's Docker host; optional v3 panel polish (sparklines, CSV export).

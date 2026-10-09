@@ -150,3 +150,16 @@ Notes:
 - **PostgreSQL** (§4 form-3) works in containers too: set the
   `DATABASE_URL` service environment to the postgres URL and leave the
   volume unmounted.
+
+### 8.1 After deployment: see your field data
+
+Once the app is up and you (or your users) have visited it, the RUM
+beacon has been collecting real Core Web Vitals. The visible inspection
+surface is the auth-gated **diagnostics panel at `/rum`** (session-19) —
+sign in, then navigate to `https://your-host/rum`: the five metrics at
+p75 with rating badges derived from the public CWV bounds, the samples
+line, and the ten most recent events. The panel is URL-direct (it is
+deliberately linked from nowhere — the app shell's parity is
+byte-preserved) and themes with your account's dark mode + accent. The
+scriptable contract remains `GET /api/rum` (same auth, JSON) for
+curl/monitoring use.
