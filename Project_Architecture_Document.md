@@ -210,6 +210,14 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 - **Consequences:** 13 new unit pins (5 sparkline geometry incl. the exact worked example, 5 CSV builder incl. escaping, 3 buildPanelRows trends pass-through incl. backward compat) + 4 new e2e pins in `tests/e2e/s20-rum-export.spec.ts` (the export round-trip incl. the header contract + the probe row, the 401 anon gate via the AP-67 empty-storageState lesson, the GET `trends` field, the panel sparklines + Export CSV action); total 454 tests (192 unit + 262 e2e). The capture probe lesson recorded as AP-68: a trend-rich evidence probe must post each value under a DISTINCT sessionId (the (sessionId, metric) upsert collapses same-session reposts to one row) and in ≤ 10-event batches (the S18 batch cap).
 - **Alternatives Rejected:** a chart library for the sparklines (a polyline per card is ~10 lines of inline SVG — a dependency for five lines is not justified; standard utilities keep the zero-Tailwind-v4-surface-risk contract); client-side CSV assembly from the 10-row `recent` slice (the owner wants the FULL history — the export is a server dump over 2000 rows); a JSON export (the CSV is the spreadsheet-ready interchange; the GET aggregate already IS the JSON surface); paginating the export (single-user scale — the data-volume convention: measured bounds over speculative pagination); a rate limit on the export (a read endpoint, auth-gated — the same posture as the GET aggregate).
 
+**ADR-019: The full-data export — data portability (session-21)**
+
+- **Context:** The S18→S20 observability arc closed (beacon → aggregate → panel → trends/export), leaving only the owner's Docker step (no daemon in the sandbox). With both backlogs empty on arrival again (the reference re-swept UNCHANGED since S19/S20 — zero-data account, all five Settings tabs matching, 20 nav views, stable branding; the S20 code audited line-by-line CLEAN; the standing drawer check GREEN), the brief's superset goal + open-questions clause governed. The README's core promise — "your database, your AI keys, your deployment … a codebase you fully own" — had a missing exit: no way to get the user's own data OUT of the app except raw SQLite-file access.
+- **Decision:** (1) A new PURE seam `src/lib/data-export.ts`: `EXPORT_COLLECTIONS` (the stable 20-collection manifest — every key ALWAYS present in the envelope), `serializeExportRow` (the row normalizer: `userId` dropped, `Date` → ISO, ids/FKs passed through), `buildDataExport` (the versioned envelope: `format: "studyflow-data-export"`, `version: 1`, `exportedAt`, the hashless `user`, `counts` + `data`), and the SECRET GUARD (a `passwordHash` fed into the seam is stripped — belt-and-braces with the route's explicit select). (2) `GET /api/export/data` (`src/app/api/export/data/route.ts`): the 20 content collections read in PARALLEL (userId-scoped, chronological; Flashcards scoped through their decks; FileItem payloads included — full-fidelity backup), answered `application/json` with the S13/S14 download-header contract (buildContentDisposition attachment + nosniff + private/no-store), 401 JSON for anonymous callers. (3) The server-gated `/export` page (the ADR-017 `/rum` pattern): server-side count snapshot as props, the client panel (themed through the production path) rendering the count grid + the **Download JSON** anchor + the format documentation. (4) EXCLUDED by decision: VerificationToken/PasswordResetToken (secrets), RumEvent (re-collectable telemetry — the `/api/rum/export` CSV is the full RUM dump), and the password hash. Zero nav linkage (an e2e guard pins the shell `/export`-link-free; the sidebar/drawer stay exactly 20 links).
+- **Rationale:** Pure functional superset (the reference has no data-portability surface) that completes the self-ownership story with ZERO chrome on any parity-pinned surface — the ADR-017 owner-surface pattern (URL-direct, server-gated, README + DEPLOYMENT documented) applied to the app's own value proposition. The manifest + normalizer + envelope are pure and unit-pinned; the route reuses the S13/S14 download-header seams (no new header surface).
+- **Consequences:** 9 new unit pins (the manifest incl. the excluded-families pin, the normalizer incl. FK/null passthrough, the envelope incl. every-key-present + counts, the secret guard) + 5 new e2e pins in `tests/e2e/s21-data-export.spec.ts` (the JSON download round-trip incl. the versioned envelope + seeded content + header contract + the no-secret/no-excluded-family guards, the 401 anon API gate, the page rendering incl. the metadata title, the anon page redirect, the zero-nav-linkage guard); total 468 tests (201 unit + 267 e2e = 266 chromium + the 1 setup). The `/export` page's server-side counts add ~20 cheap COUNT queries on a single-user SQLite file (the S13 data-volume posture).
+- **Alternatives Rejected:** a restore/import feature (conflict resolution — what happens to rows created after the export? — idempotency, and partial-failure semantics make it a project of its own; the export fulfils portability, and `db:push` + the SQLite file remain the documented restore story); a CSV or zipped multi-file format for the full export (JSON with ids/FKs cross-references exactly like the database — one file, one parse; the RUM CSV covers the tabular case); per-collection export endpoints (one versioned envelope is the atomic unit of a backup); email delivery of the export (no SMTP exists — the S15 trade-off); a rate limit on the export (a read endpoint, auth-gated, single-user scale — the same posture as the RUM GET/export routes).
+
 ---
 
 ## 2. High-Level System Topology
@@ -530,7 +538,7 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 
 | Category | Files | Tests | Location | Framework |
 |----------|-------|-------|----------|-----------|
-| Unit — pure seams | 14 | 192 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
+| Unit — pure seams | 15 | 201 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
 | E2E — auth | 1 | 6 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
 | E2E — mobile navigation | 1 | 10 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
 | E2E — desktop nav + views + parity pins | 1 | 42 | `tests/e2e/navigation.spec.ts` | Playwright |
@@ -552,8 +560,9 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 | E2E — session-18 RUM pins (the beacon journey, the POST upsert contract, the 400, the 401 gate, the zero-DOM chrome guard) | 1 | 5 | `tests/e2e/s18-rum.spec.ts` | Playwright |
 | E2E — session-19 diagnostics-panel pins (the anon redirect, the posted-data rendering + metadata title, the refresh re-fetch, the zero-nav-linkage guard) | 1 | 4 | `tests/e2e/s19-rum-panel.spec.ts` | Playwright |
 | E2E — session-20 export + trends pins (the CSV export round-trip + download-header contract, the 401 anon gate, the GET trends field, the panel sparklines + Export CSV action) | 1 | 4 | `tests/e2e/s20-rum-export.spec.ts` | Playwright |
+| E2E — session-21 data-export pins (the JSON download round-trip + versioned envelope + download-header contract + the no-secret/no-excluded-family guards, the 401 anon API gate, the /export page rendering, the anon page redirect, the zero-nav-linkage guard) | 1 | 5 | `tests/e2e/s21-data-export.spec.ts` | Playwright |
 | E2E — the shared-sign-in setup project (one login, the storageState the whole suite rides) | 1 | 1 | `tests/e2e/auth.setup.ts` | Playwright |
-| **Total** | **34** | **454** | `tests/` (192 unit + 262 e2e = 261 chromium specs + the 1 setup; per-file counts re-measured via `playwright test --list` this session — the prior table's four stale rows corrected) | Vitest + Playwright |
+| **Total** | **35** | **468** | `tests/` (201 unit + 267 e2e = 266 chromium specs + the 1 setup; per-file counts re-measured via `playwright test --list` this session) | Vitest + Playwright |
 
 ### 8.2 Test Patterns
 
@@ -570,9 +579,9 @@ No numeric coverage gate is configured; the standard is "every pure seam has a t
 
 - [ ] `bun run lint` clean
 - [ ] `bun run typecheck` clean
-- [ ] `bun run test` green (87+)
+- [ ] `bun run test` green (201+)
 - [ ] `bun run build` succeeds
-- [ ] `bun run test:e2e` green (60+; rebuild first if components changed)
+- [ ] `bun run test:e2e` green (267+; rebuild first if components changed)
 - [ ] No secrets / db files staged (`git status`)
 - [ ] Docs touched if behavior/setup changed
 

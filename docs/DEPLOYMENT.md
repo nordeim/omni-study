@@ -170,3 +170,19 @@ glance: "is my LCP drifting?"), and the panel's **Export CSV** action
 downloads your most recent 2000 events as a spreadsheet-ready CSV
 (`GET /api/rum/export` — same auth, `text/csv`, RFC-4180 escaping, raw
 values) for offline analysis.
+
+### 8.2 After deployment: take your data with you
+
+The full-data export (session-21) is the "own your data" exit: the
+auth-gated **export page at `/export`** — sign in, then navigate to
+`https://your-host/export` — previews the 20 content collections as a
+count grid and documents the format. The **Download JSON** action (or
+the scriptable `GET /api/export/data` — same auth, `application/json`)
+returns the complete versioned envelope: every collection in
+chronological order with ids and foreign keys intact, your profile
+(without the password hash), uploaded files with their payloads, and a
+per-collection count summary. VerificationToken/PasswordResetToken and
+RUM telemetry are excluded by design (the RUM CSV on `/rum` is the
+telemetry dump). The export is a point-in-time download, not a sync —
+re-download after meaningful changes; the SQLite volume (§4) remains
+the full-fidelity backup.
