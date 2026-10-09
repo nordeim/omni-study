@@ -3,7 +3,7 @@
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Documents:** `README.md` (user-facing), `AGENTS.md` (agent quick-reference), `CLAUDE.md` (agent operating conventions), `docs/Tailwind-V4-Validation-Report.md` (parity trap log)
-**Last Updated:** 2026-10-07
+**Last Updated:** 2026-10-09
 **Audience:** Senior Engineers, Tech Leads, DevOps, Onboarding Engineers, and AI Coding Agents
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
@@ -176,6 +176,15 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 - **Rationale:** The performance-skill discipline (measure → fix → verify → guard): the only CWV-red metric was CLS; LCP was already GOOD everywhere (the clone's mobile login LCP ~640 ms vs the reference's 7.6–8.0 s — a 12× advantage that code-splitting 20 views would risk 241 passing pins to improve marginally). The pre-warm mirrors the reference's own gating while REMOVING its LCP cost by parallelism (the data fetch shares the auth round-trip window; measured mobile LCP moved 2308→2428 ms, still GOOD).
 - **Consequences:** New views MUST declare their initial collections in the seam (the unit completeness pin fails otherwise — that is the guard); e2e CLS is pinned at ≤ 0.02 on the cold dashboard load (`tests/e2e/s16-perf-parity.spec.ts`); the audit matrix runs against a standalone build on :3200 (never :3100 — the Playwright webServer's port); adjacent-sibling margin collapse is now a documented trap (spacing rhythms decompose onto ONE element).
 - **Alternatives Rejected:** skeleton rows matching final content heights (data-dependent — cannot be exact, still shifts); holding the Splash on a timeout race (compromise shape — either waits too long or ships the shift); per-view code-splitting (an eager 283 KB app already beats the reference's 634–1087 KB on every axis; the flash-on-first-switch + pin risk buys nothing measurable).
+
+
+**ADR-015: The fresh-user journey — zero-data stat cards + the Settings study-profile depth (session-17)**
+
+- **Context:** The reference's account was re-provisioned empty (2026-09-28), making its ZERO-DATA surfaces measurable for the first time (S6 measured populated states). The S17 dual-app sweep (fresh registrations on the clone, the emptied reference account, leftover probe rows deleted via the reference's own UI) found: the reference renders its Analytics and Grade Tracker stat cards at zero data (0/0 · "0% completion rate" … / 0% · 0 · 0) with NO empty-state blocks; seven views' empty-state hints carry exact copy the clone had drifted from; the reference's Settings tab CONTENT was never previously audited (S5/S8/S9 pinned the Appearance cards, tab-list chrome and tab icons) — its Profile tab persists School Name / Grade Level (12 options) / a 1–12h Daily Study Goal / the Account-created line on its User entity (captured from its own PUT body), and its Notifications tab carries a persisted Enable Notifications master toggle; its registrations create ZERO subjects.
+- **Decision:** (1) `User` += `schoolName`/`gradeLevel`/`studyGoalHours`/`notificationsEnabled` (additive, defaulted — the reference's own defaults: 4h goal, notifications on); the preferences schema/route validate + persist them; `/api/auth/me` carries them through the theme store's user slice. (2) The Settings five-tab content follows the reference (per-tab headers, the Profile study fields + Save Profile, the Notifications master toggle + Save Preferences, the Subjects/Holidays zero-empty states) while the clone's display-name editing, Sign out and the four notification detail rows stay as the documented superset. (3) Analytics/GradeTracker render their stat cards unconditionally; the "No data yet"/"No grades yet" EmptyState branches are deleted. (4) The seven-view empty-state hint table lands verbatim; registrations create zero subjects.
+- **Rationale:** The measured reference is ground truth; its own mobile two-pane views squeeze rather than stack (the clone's stacked fallbacks remain the S8-H superset — copy parity, not quirk parity). The register budget (10/IP/15min) forces the one-registration-journey e2e convention (3 fresh accounts per run).
+- **Consequences:** New User fields flow through `getCurrentUser`'s select + `PublicUserShape` + `loadFromUser` (keep the three in sync); fresh-user e2e specs must not exceed the register budget; the dev server needs a RESTART after `db:generate` (Turbopack does not reload the generated client — a stale client 500s `/api/auth/me` on the new select fields, the live lesson this session).
+- **Alternatives Rejected:** matching the reference's squeezed mobile two-pane layout (broken-ish UX — 112px clipped pane; the clone's stacked fallback is the documented superset); a "there" greeting fallback (the reference's pre-load flash is a Base44 async-entity artifact; the clone's pre-warmed first paint renders the final name with zero CLS); pre-seeding starter subjects on register (invented nicety the reference never ships).
 
 ---
 
@@ -496,7 +505,7 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 
 | Category | Files | Tests | Location | Framework |
 |----------|-------|-------|----------|-----------|
-| Unit — pure seams | 13 | 154 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
+| Unit — pure seams | 13 | 158 | `tests/*.test.ts` | Vitest 5 (node env, `@` alias) |
 | E2E — auth | 1 | 6 | `tests/e2e/auth.spec.ts` | Playwright 1.63 |
 | E2E — mobile navigation | 1 | 11 | `tests/e2e/mobile-navigation.spec.ts` | Playwright |
 | E2E — desktop nav + views + parity pins | 1 | 41 | `tests/e2e/navigation.spec.ts` | Playwright |
@@ -514,7 +523,8 @@ Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, ex
 | E2E — session-14 hardening pins (offline banner + byte-parity guard, offline toast, display-name guard, AI rate limit, download headers, live regions) | 1 | 7 | `tests/e2e/s14-hardening.spec.ts` | Playwright |
 | E2E — session-15 auth-flow pins (inline login error chrome, signup form shape, register→verify→in, unverified gate, forgot→check-email→reset journey, sign-in parity guard) | 1 | 5 | `tests/e2e/auth-flows.spec.ts` | Playwright |
 | E2E — session-16 perf/mobile-geometry pins (auth sub-screens at 390×844: 44px Sign in, 20px h2s, 76px verify / 28px forgot rhythms; the dashboard CLS ≤ 0.02 guard) | 1 | 3 | `tests/e2e/s16-perf-parity.spec.ts` | Playwright |
-| **Total** | **28** | **398** | `tests/` (154 unit + 244 e2e incl. 1 setup) | Vitest + Playwright |
+| E2E — session-17 fresh-user pins (zero-data stat cards, the seven reference-measured empty hints, Settings headers/zero states, the Profile save round-trip, the Notifications master, the mobile StudyGroups copy) | 1 | 5 | `tests/e2e/s17-fresh-user.spec.ts` | Playwright |
+| **Total** | **29** | **407** | `tests/` (158 unit + 249 e2e incl. 1 setup) | Vitest + Playwright |
 
 ### 8.2 Test Patterns
 
