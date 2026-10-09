@@ -61,11 +61,12 @@ export async function POST(req: Request) {
 }
 
 // GET /api/rum: the owner's inspection surface — p75 per metric over the
-// user's most recent 200 events per metric (the CWV convention: field
-// data is reported at p75), the total sample count, and the 10 most
-// recent events. Single-user scale: fetch + JS aggregation, no SQL
-// percentiles. No UI surface in v1 (visual parity is preserved
-// byte-for-byte; curl this endpoint or wire a future diagnostics panel).
+// user's most recent 200 events (all metrics, most-recent-first), then
+// filtered per metric: a single-user-scale approximation of per-metric
+// windows (the CWV convention: field data is reported at p75), plus the
+// total sample count and the 10 most recent events. The visible surface
+// is the /rum diagnostics panel (S19); this endpoint remains the
+// scriptable contract (curl).
 export async function GET() {
   try {
     const user = await requireUser();
