@@ -36,6 +36,20 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(8).max(200),
 });
 
+// S24 (ADR-022) — the account-security rotation schema. The register
+// family's policy applies to BOTH fields (min 8 / max 200 — ONE policy, no
+// drift), and the same-password rejection rides the object's refine so the
+// route's safeParse failure message IS the actionable copy (the caller is
+// the authenticated account owner — no enumeration surface).
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(8).max(200),
+    newPassword: z.string().min(8).max(200),
+  })
+  .refine((v) => v.currentPassword !== v.newPassword, {
+    message: "The new password must be different from your current password.",
+  });
+
 export const subjectSchema = z.object({
   name: bounded(80).min(1),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#8b5cf6"),

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assignmentSchema,
   aiChatSchema,
+  changePasswordSchema,
   eventSchema,
   examSchema,
   flashcardDeckSchema,
@@ -474,6 +475,53 @@ describe("rumEventSchema (S18 — the RUM hook)", () => {
     // The sessionId is bounded on the BATCH schema (one per POST body).
     expect(rumBatchSchema.safeParse({ sessionId: "s".repeat(101), events: [{ ...base }] }).success).toBe(false);
     expect(rumBatchSchema.safeParse({ sessionId: "s".repeat(100), events: [{ ...base }] }).success).toBe(true);
+  });
+});
+
+describe("changePasswordSchema (S24 — the account-security rotation)", () => {
+  it("accepts a valid differing pair", () => {
+    expect(
+      changePasswordSchema.safeParse({ currentPassword: "Demo1234!", newPassword: "NewPass5678!" }).success,
+    ).toBe(true);
+  });
+
+  it("applies the register family's policy to BOTH fields (min 8 / max 200)", () => {
+    expect(
+      changePasswordSchema.safeParse({ currentPassword: "short", newPassword: "NewPass5678!" }).success,
+    ).toBe(false);
+    expect(
+      changePasswordSchema.safeParse({ currentPassword: "Demo1234!", newPassword: "short" }).success,
+    ).toBe(false);
+    expect(
+      changePasswordSchema.safeParse({ currentPassword: "a".repeat(201), newPassword: "NewPass5678!" }).success,
+    ).toBe(false);
+    expect(
+      changePasswordSchema.safeParse({ currentPassword: "Demo1234!", newPassword: "a".repeat(201) }).success,
+    ).toBe(false);
+    expect(changePasswordSchema.safeParse({ currentPassword: "Demo1234!" }).success).toBe(false);
+    expect(changePasswordSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("rejects the same-password pair with the actionable copy (the refine rule)", () => {
+    const r = changePasswordSchema.safeParse({ currentPassword: "Demo1234!", newPassword: "Demo1234!" });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues[0].message).toBe(
+        "The new password must be different from your current password.",
+      );
+    }
+  });
+
+  it("strips unknown keys (the repo-wide Zod convention — strip mode)", () => {
+    const r = changePasswordSchema.safeParse({
+      currentPassword: "Demo1234!",
+      newPassword: "NewPass5678!",
+      email: "attacker@evil.test",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data).not.toHaveProperty("email");
+    }
   });
 });
 

@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/primitives";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/layout/user-avatar";
-import { apiSend } from "@/lib/api";
+import { apiSend, ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 // Settings — Appearance (mode/accent/avatar), Profile, Subjects, Holidays,
@@ -59,6 +59,14 @@ export function SettingsView() {
   const [newHolidayName, setNewHolidayName] = React.useState("");
   const [newHolidayDate, setNewHolidayDate] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  // S24 (ADR-022) — the change-password card's state (the Profile tab
+  // extension, the S23 additive-below pattern).
+  const [pwCurrent, setPwCurrent] = React.useState("");
+  const [pwNew, setPwNew] = React.useState("");
+  const [pwConfirm, setPwConfirm] = React.useState("");
+  const [pwBusy, setPwBusy] = React.useState(false);
+  const [pwError, setPwError] = React.useState<string | null>(null);
+  const [pwSuccess, setPwSuccess] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     void loadAll(["subjects", "holidays"]);
@@ -109,6 +117,52 @@ export function SettingsView() {
       toast.error(err instanceof Error ? err.message : "Could not save profile");
     } finally {
       setBusy(false);
+    }
+  }
+
+  // S24 (ADR-022) — the change-password submission. The client-side
+  // pre-checks (the S23 size-pre-check pattern — the early inline error,
+  // no request): all three fields filled, the register policy's min-8, the
+  // confirm match, and the same-password rule. Errors render INLINE
+  // (role="alert" — the S15 auth convention: auth errors never render as
+  // toasts); success renders as role="status" and clears the fields.
+  async function changePassword() {
+    setPwError(null);
+    setPwSuccess(null);
+    if (!pwCurrent || !pwNew || !pwConfirm) {
+      setPwError("Fill in all three password fields.");
+      return;
+    }
+    if (pwNew.length < 8) {
+      setPwError("The new password must be at least 8 characters.");
+      return;
+    }
+    if (pwNew !== pwConfirm) {
+      setPwError("The new password and its confirmation do not match.");
+      return;
+    }
+    if (pwNew === pwCurrent) {
+      setPwError("The new password must be different from your current password.");
+      return;
+    }
+    setPwBusy(true);
+    try {
+      await apiSend("POST", "/api/auth/change-password", {
+        currentPassword: pwCurrent,
+        newPassword: pwNew,
+      });
+      setPwSuccess("Password updated.");
+      setPwCurrent("");
+      setPwNew("");
+      setPwConfirm("");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setPwError(err.message);
+      } else {
+        setPwError("Could not change the password — try again.");
+      }
+    } finally {
+      setPwBusy(false);
     }
   }
 
@@ -418,6 +472,70 @@ export function SettingsView() {
               </p>
             )}
           </div>
+
+          {/* S24 (ADR-022) — the change-password card: a purely additive
+              sf-card BELOW the pinned Profile surfaces (the S23
+              Restore-card pattern — the reference has NO password surface;
+              this is the clone's own account-security superset). Errors
+              render inline (role="alert" — the S15 auth convention); the
+              success note clears the fields. */}
+          <section aria-label="Change password" className="sf-card flex max-w-lg flex-col gap-4 p-6">
+            <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">
+              Change password
+            </h3>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="current-password">Current password</Label>
+              <Input
+                id="current-password"
+                type="password"
+                autoComplete="current-password"
+                value={pwCurrent}
+                onChange={(e) => setPwCurrent(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="new-password">New password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                value={pwNew}
+                onChange={(e) => setPwNew(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="confirm-new-password">Confirm new password</Label>
+              <Input
+                id="confirm-new-password"
+                type="password"
+                autoComplete="new-password"
+                value={pwConfirm}
+                onChange={(e) => setPwConfirm(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+            {pwError && (
+              <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+                {pwError}
+              </p>
+            )}
+            {pwSuccess && (
+              <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">
+                {pwSuccess}
+              </p>
+            )}
+            <div>
+              <Button
+                variant="gradient"
+                onClick={() => void changePassword()}
+                disabled={pwBusy || !pwCurrent || !pwNew || !pwConfirm}
+              >
+                Update Password
+              </Button>
+            </div>
+          </section>
         </TabsContent>
 
         {/* Subjects */}

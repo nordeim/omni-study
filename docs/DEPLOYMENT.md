@@ -201,3 +201,20 @@ is register fresh → sign in → import (`POST /api/import/data` is the
 scriptable form — same auth, a 10-import/15-minute budget). For a full
 reset-to-snapshot restore, stop the server, wipe the SQLite volume (or
 `bun run db:reset` locally), re-create the account, then import.
+
+### 8.3 After deployment: rotate your password (session-24)
+
+A signed-in owner rotates their own password from **Settings → Profile**
+— the **Change password** card below the profile fields: current
+password, new password, confirm. The route (`POST /api/auth/change-password`)
+verifies the current password FIRST (a wrong current password is
+rejected with 400 and changes nothing), applies the same policy as
+registration (8–200 characters), and rejects a new password identical
+to the current one. Rate-limited to 10 changes per 15 minutes per
+account. Your session stays signed in across your own rotation (the
+cookie is signed with `AUTH_SECRET`, not the password) — other already
+issued sessions also remain valid; if you ever need to invalidate
+them, rotate `AUTH_SECRET` and restart (all sessions re-validate
+against the new secret). No email is sent on change (no SMTP by
+design, §3) — the on-screen "Password updated." note is the
+acknowledgment.
