@@ -384,6 +384,41 @@ export const aiGenerateQuestionsSchema = z.object({
   count: z.number().int().min(1).max(20).default(10),
 });
 
+// S18 (ADR-016) — the RUM hook's inbound shapes. One event per
+// (sessionId, metric) report the authed beacon POSTs; the route UPSERTS
+// on that pair so web-vitals' final-value-wins semantics update in place.
+// The enums mirror the web-vitals v6 Metric type exactly (name/rating/
+// navigationType unions). Bounds keep the store tidy; unknown keys are
+// stripped per the repo-wide Zod convention.
+export const RUM_METRICS = ["TTFB", "FCP", "LCP", "CLS", "INP"] as const;
+export const RUM_RATINGS = ["good", "needs-improvement", "poor"] as const;
+export const RUM_NAVIGATION_TYPES = [
+  "navigate",
+  "reload",
+  "back-forward",
+  "back-forward-cache",
+  "prerender",
+  "restore",
+  "soft-navigation",
+] as const;
+
+export const rumEventSchema = z.object({
+  metric: z.enum(RUM_METRICS),
+  value: z.number().min(0),
+  rating: z.enum(RUM_RATINGS),
+  navigationType: z.enum(RUM_NAVIGATION_TYPES).default("navigate"),
+  path: z.string().max(200).default(""),
+  userAgent: z.string().max(300).default(""),
+});
+
+export const rumBatchSchema = z.object({
+  sessionId: z.string().min(1).max(100),
+  events: z.array(rumEventSchema).min(1).max(10),
+});
+
+export type RumEventInput = z.infer<typeof rumEventSchema>;
+export type RumBatchInput = z.infer<typeof rumBatchSchema>;
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type TaskInput = z.infer<typeof taskSchema>;
 export type AssignmentInput = z.infer<typeof assignmentSchema>;

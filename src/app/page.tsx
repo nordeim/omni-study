@@ -8,6 +8,7 @@ import { apiGet } from "@/lib/api";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileChrome } from "@/components/layout/mobile-chrome";
 import { ConnectivityBanner } from "@/components/layout/connectivity-banner";
+import { RumBeacon } from "@/components/layout/rum-beacon";
 import { DashboardView } from "@/components/views/dashboard-view";
 import { MyDayView } from "@/components/views/myday-view";
 import { TasksView } from "@/components/views/tasks-view";
@@ -145,6 +146,13 @@ export default function StudyFlowApp() {
       {/* S14-A0: the global offline indicator — renders null while online
           (byte-identical online DOM; the pill is pure superset). */}
       <ConnectivityBanner />
+      {/* S18 (ADR-016) — the RUM beacon: web-vitals reported to the in-app
+          /api/rum endpoint. Renders null — zero DOM, zero CLS impact —
+          and only mounts in the AUTHED shell (an unauthenticated metrics
+          endpoint is an abuse surface; the login CWV is pinned by
+          s16-perf-parity.spec.ts). Pure superset — the reference has no
+          field telemetry at all. */}
+      <RumBeacon />
       {/* pt-20 (80px) offsets the FIXED mobile app bar: 64px of bar + the
           16px the reference's content keeps below it (its main is pt-16 and
           an inner p-4 wrapper adds the rest — measured: first heading at

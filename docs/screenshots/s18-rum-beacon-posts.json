@@ -1,0 +1,32 @@
+[
+  {
+    "url": "http://localhost:3000/api/rum",
+    "body": {
+      "sessionId": "77e3f30e-e1c3-41be-a787-663105612282",
+      "events": [
+        {
+          "metric": "TTFB",
+          "value": 4749.4,
+          "rating": "poor",
+          "navigationType": "navigate",
+          "path": "/Dashboard"
+        }
+      ]
+    }
+  },
+  {
+    "url": "http://localhost:3000/api/rum",
+    "body": {
+      "sessionId": "77e3f30e-e1c3-41be-a787-663105612282",
+      "events": [
+        {
+          "metric": "FCP",
+          "value": 5036,
+          "rating": "poor",
+          "navigationType": "navigate",
+          "path": "/Dashboard"
+        }
+      ]
+    }
+  }
+]

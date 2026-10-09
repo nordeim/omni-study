@@ -12,6 +12,8 @@ import {
   practiceTestSchema,
   preferencesSchema,
   resetPasswordSchema,
+  rumBatchSchema,
+  rumEventSchema,
   studyGroupSchema,
   subjectSchema,
   taskSchema,
@@ -416,5 +418,92 @@ describe("resetPasswordSchema (S15)", () => {
     expect(resetPasswordSchema.safeParse({ token: "XYZ!", password: "NewPass1234!" }).success).toBe(false);
     expect(resetPasswordSchema.safeParse({ token: "a".repeat(47), password: "NewPass1234!" }).success).toBe(false);
     expect(resetPasswordSchema.safeParse({ password: "NewPass1234!" }).success).toBe(false);
+  });
+});
+
+describe("rumEventSchema (S18 — the RUM hook)", () => {
+  it("accepts each web-vitals metric with a rating and navigation type", () => {
+    for (const metric of ["TTFB", "FCP", "LCP", "CLS", "INP"] as const) {
+      const r = rumEventSchema.safeParse({
+        metric,
+        value: 123.4,
+        rating: "good",
+        navigationType: "navigate",
+        path: "/",
+        sessionId: "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+        userAgent: "Mozilla/5.0 (X11; Linux x86_64)",
+      });
+      expect(r.success).toBe(true);
+    }
+  });
+
+  it("accepts every rating and navigationType the library emits", () => {
+    for (const rating of ["good", "needs-improvement", "poor"] as const) {
+      expect(
+        rumEventSchema.safeParse({ metric: "LCP", value: 1, rating, navigationType: "reload" }).success,
+      ).toBe(true);
+    }
+    for (const navigationType of [
+      "navigate",
+      "reload",
+      "back-forward",
+      "back-forward-cache",
+      "prerender",
+      "restore",
+      "soft-navigation",
+    ] as const) {
+      expect(
+        rumEventSchema.safeParse({ metric: "CLS", value: 0, rating: "good", navigationType }).success,
+      ).toBe(true);
+    }
+  });
+
+  it("rejects unknown metrics, negative values, and unknown ratings", () => {
+    const base = { metric: "LCP", value: 100, rating: "good", navigationType: "navigate" };
+    expect(rumEventSchema.safeParse({ ...base, metric: "SI" }).success).toBe(false);
+    expect(rumEventSchema.safeParse({ ...base, value: -1 }).success).toBe(false);
+    expect(rumEventSchema.safeParse({ ...base, rating: "excellent" }).success).toBe(false);
+    expect(rumEventSchema.safeParse({ ...base, navigationType: "unknown" }).success).toBe(false);
+  });
+
+  it("bounds the path and userAgent strings (the store stays tidy)", () => {
+    const base = { metric: "FCP", value: 50, rating: "good", navigationType: "navigate" };
+    expect(rumEventSchema.safeParse({ ...base, path: "x".repeat(201) }).success).toBe(false);
+    expect(rumEventSchema.safeParse({ ...base, path: "/".repeat(200) }).success).toBe(true);
+    expect(rumEventSchema.safeParse({ ...base, userAgent: "u".repeat(301) }).success).toBe(false);
+    // The sessionId is bounded on the BATCH schema (one per POST body).
+    expect(rumBatchSchema.safeParse({ sessionId: "s".repeat(101), events: [{ ...base }] }).success).toBe(false);
+    expect(rumBatchSchema.safeParse({ sessionId: "s".repeat(100), events: [{ ...base }] }).success).toBe(true);
+  });
+});
+
+describe("rumBatchSchema (S18 — the beacon POST body)", () => {
+  const event = {
+    metric: "TTFB",
+    value: 42,
+    rating: "good",
+    navigationType: "navigate",
+    path: "/",
+  };
+
+  it("accepts a sessionId with up to 10 events", () => {
+    const r = rumBatchSchema.safeParse({
+      sessionId: "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+      events: [{ ...event }, { ...event, metric: "FCP", value: 90 }],
+    });
+    expect(r.success).toBe(true);
+    expect(rumBatchSchema.safeParse({ sessionId: "abc", events: Array(10).fill(event) }).success).toBe(true);
+  });
+
+  it("rejects a missing sessionId, an empty batch, and >10 events", () => {
+    expect(rumBatchSchema.safeParse({ events: [event] }).success).toBe(false);
+    expect(rumBatchSchema.safeParse({ sessionId: "abc", events: [] }).success).toBe(false);
+    expect(rumBatchSchema.safeParse({ sessionId: "abc", events: Array(11).fill(event) }).success).toBe(false);
+  });
+
+  it("rejects an invalid event inside the batch (per-item validation)", () => {
+    expect(
+      rumBatchSchema.safeParse({ sessionId: "abc", events: [{ ...event, metric: "NOPE" }] }).success,
+    ).toBe(false);
   });
 });

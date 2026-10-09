@@ -64,6 +64,7 @@ model User {
   chatMessages         AiChatMessage[]
   calcHistory          CalculatorHistoryEntry[]
   holidays             Holiday[]
+  rumEvents            RumEvent[]
   verificationTokens   VerificationToken[]
   passwordResetTokens  PasswordResetToken[]
 }
@@ -436,4 +437,28 @@ model Holiday {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
+}
+
+// S18 (ADR-016) — the RUM hook: one row per (sessionId, metric) report the
+// authed beacon POSTs. UPSERT on the unique pair so the web-vitals
+// final-value-wins semantics update in place (an LCP candidate re-report
+// never duplicates). ~5 rows per pageload, capped by the route's per-user
+// rate limit; scratch-cleanable via db:reset.
+model RumEvent {
+  id             String   @id @default(cuid())
+  userId         String
+  metric         String // TTFB | FCP | LCP | CLS | INP
+  value          Float // ms (CLS is unitless)
+  rating         String // good | needs-improvement | poor
+  navigationType String   @default("navigate")
+  path           String   @default("") // SPA path at report time (bounded 200)
+  sessionId      String   @default("") // one per pageload (crypto UUID)
+  userAgent      String   @default("") // bounded 300
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, metric])
+  @@index([userId, createdAt])
 }
