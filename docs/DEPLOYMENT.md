@@ -100,3 +100,53 @@ bun run test:e2e                              # Playwright suite (local)
 | `Error code 14: Unable to open the database file` | Server started from a directory that has no `prisma/schema.prisma` and no absolute `DATABASE_URL` | Start via `bun run start`, or set an absolute `file:` URL (§4) |
 | Logins loop back to `/login` | `AUTH_SECRET` changed between restarts | Keep the secret stable across restarts |
 | Rate-limited logins (429) | 10 attempts/IP/15 min fixed window | Wait for `Retry-After`, or restart to clear the in-memory buckets (single-node) |
+
+## 8. Docker (one-command containerized deployment)
+
+The repo ships a production `Dockerfile` + `docker-compose.yml`
+(session-18). The container runs the same standalone server as
+`bun run start` — the app code is unchanged by containerization; only
+the environment contract moves (§4 form-2: the absolute `file:` URL).
+
+```bash
+# 1. First run — initialize the SQLite volume (schema + demo seed),
+#    then start the app:
+AUTH_SECRET="$(openssl rand -hex 32)" docker compose --profile init up -d
+
+# 2. Subsequent runs:
+docker compose up -d
+
+# 3. Verify:
+curl -s http://localhost:3000/api/health     # {"status":"ok","db":"up",...}
+```
+
+What the compose file does:
+
+| Piece | Purpose |
+|---|---|
+| `studyflow` service | The standalone server on :3000 (`STUDYFLOW_PORT` remaps), `/data` volume for SQLite, healthcheck on `/api/health` |
+| `init` service (`--profile init`) | One-shot `prisma db push` + the idempotent seed onto the same volume |
+| `db-data` volume | The SQLite file (`file:/data/custom.db`) — survives container rebuilds |
+| `AUTH_SECRET` | **Required** — compose refuses to boot with the placeholder (§3) |
+| `NEXT_PUBLIC_SITE_URL` | Optional canonical origin (read at serve time by metadata/sitemap) |
+
+Notes:
+
+- **The image carries no database bytes.** The build context ignores
+  `db/`, the output tracer's stale `.next/standalone/db/` snapshot is
+  removed in the runtime stage, and the absolute `DATABASE_URL` points
+  at the volume regardless.
+- **Validation status (honest caveat):** the layout was validated
+  end-to-end OUTSIDE Docker (a local simulation of the exact runtime
+  filesystem: prod-deps overlay + standalone + `src/lib` + `prisma/`,
+  then `db push` → seed → boot → health/login/RUM checks — see
+  `scripts/docker-layout-sim-s27.sh`), but the dev sandbox that
+  authored it has no Docker daemon. The first
+  `docker compose --profile init up` on a Docker host is the remaining
+  verification step; report any divergence as an issue.
+- **Schema updates:** re-run the init profile after `git pull` +
+  rebuild (`docker compose build && docker compose --profile init run
+  --rm init` — the push is additive/idempotent).
+- **PostgreSQL** (§4 form-3) works in containers too: set the
+  `DATABASE_URL` service environment to the postgres URL and leave the
+  volume unmounted.

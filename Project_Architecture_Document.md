@@ -186,6 +186,14 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 - **Consequences:** New User fields flow through `getCurrentUser`'s select + `PublicUserShape` + `loadFromUser` (keep the three in sync); fresh-user e2e specs must not exceed the register budget; the dev server needs a RESTART after `db:generate` (Turbopack does not reload the generated client — a stale client 500s `/api/auth/me` on the new select fields, the live lesson this session).
 - **Alternatives Rejected:** matching the reference's squeezed mobile two-pane layout (broken-ish UX — 112px clipped pane; the clone's stacked fallback is the documented superset); a "there" greeting fallback (the reference's pre-load flash is a Base44 async-entity artifact; the clone's pre-warmed first paint renders the final name with zero CLS); pre-seeding starter subjects on register (invented nicety the reference never ships).
 
+**ADR-016: The RUM observability hook + the Docker packaging (session-18)**
+
+- **Context:** With the parity backlog empty (the reference unchanged since S17 — re-verified this session: zero-data account, stable branding split, all Settings tabs matching the S17 measurements; the standing drawer check GREEN; CWV re-measured: CLS 0.00 on every scenario), the session-24 backlog items governed: real-user web-vitals telemetry (the reference has NO field monitoring — its own mobile login LCP measures 7.5-8.0s POOR) and one-command containerized deployment.
+- **Decision:** (1) `RumEvent` model (additive: metric/value/rating/navigationType/path/sessionId/userAgent; `@@unique([sessionId, metric])` + `@@index([userId, createdAt])`); `rumEventSchema`/`rumBatchSchema` in validation.ts (the enums mirror the web-vitals v6 Metric unions; 10-event batch cap); `POST /api/rum` (auth-gated, Zod-validated, `checkRateLimit("rum:" + userId, 1000)` — the budget covers the e2e suite's own ~500-750 beacon POSTs; each event UPSERTS on the unique pair so final-value-wins re-reports update in place); `GET /api/rum` (p75 per metric via nearest-rank over the last 200 events + the 10 most recent + counts). (2) `<RumBeacon />` in the authed shell (src/components/layout/rum-beacon.tsx): renders null (zero DOM — byte parity preserved), dynamic-imports web-vitals, batches per microtask into keepalive POSTs, flushes on visibilitychange-hidden/pagehide, swallows ALL failures; ONE crypto-UUID sessionId per pageload carries the upsert identity; the LOGIN route is deliberately un-instrumented (an unauthenticated metrics endpoint is an abuse surface). (3) Docker: multi-stage `Dockerfile` (deps-prod → build → bun runtime with the standalone overlay; `rm -rf /app/db` guards the output tracer's stale db snapshot out of the image), `.dockerignore`, `docker-compose.yml` (SQLite on the /data volume via the §4 form-2 ABSOLUTE `file:/data/custom.db` URL; AUTH_SECRET required at boot; an `init` profile pushes schema + seeds; healthcheck on /api/health).
+- **Rationale:** Field telemetry is the production-observability superset a self-hosted owner cannot get any other way; the upsert-dedupe keeps the store at ~5 rows/pageload despite web-vitals' re-report semantics; the 1000/15min budget bounds the auth-gated write surface while admitting the test suite's own beacon traffic (a lower budget would 429 the suite mid-run — measured, not guessed).
+- **Consequences:** web-vitals@6 in dependencies (dynamically imported — never in the login bundle); every shell-loading e2e spec now fires real beacon POSTs (harmless — swallowed failures, upsert dedupe); the RumEvent table grows slowly on the scratch e2e db (assert-on-recency, never on absolute counts); the Docker layout was validated end-to-end OUTSIDE Docker (`scripts/docker-layout-sim-s27.sh`: prod-deps overlay → db push → seed → boot → health/login/RUM-401 checks all GREEN) — the sandbox has no Docker daemon, so the first real `docker compose --profile init up` on the owner's host is the remaining verification step (documented in DEPLOYMENT.md §8).
+- **Alternatives Rejected:** a visible RUM dashboard panel (chrome on pinned surfaces — the GET endpoint is the v1 inspection surface; a diagnostics panel stays a future option); instrumenting the login route (abuse surface; its CWV is already pinned); sendBeacon-only transport (no response handling, fires-and-forgets even when retryable); per-metric rows without the upsert constraint (web-vitals' final-value-wins semantics would duplicate every LCP/CLS re-report); pruned/retentioned storage (premature at ~5 rows/pageload; db:reset clears the scratch).
+
 ---
 
 ## 2. High-Level System Topology
@@ -280,7 +288,7 @@ omni-study/
 │   │   └── server/{http,entities}.ts    ← CRUD factory + 16 delegates
 │   └── hooks/                           ← (reserved)
 ├── prisma/
-│   ├── schema.prisma                    ← 21 models + the DATABASE PATH CONTRACT header
+│   ├── schema.prisma                    ← 22 models + the DATABASE PATH CONTRACT header
 │   └── seed.ts                          ← idempotent demo data (uses db.ts for env-aware resolution)
 ├── tests/
 │   ├── *.test.ts                        ← Vitest: router, theme, date, calculator, auth, validation, db-path
@@ -370,7 +378,7 @@ if (path.isAbsolute(raw) || /^[A-Za-z]:[\\/]/.test(raw)) {
 
 ### 4.1 Database Schema
 
-SQLite, provider `sqlite`, url `env("DATABASE_URL")` (see ADR-002). Twenty models; all children cascade on `User` deletion; nullable subject/list references use `SetNull`.
+SQLite, provider `sqlite`, url `env("DATABASE_URL")` (see ADR-002). Twenty-two models; all children cascade on `User` deletion; nullable subject/list references use `SetNull`.
 
 ```mermaid
 erDiagram
@@ -392,6 +400,7 @@ erDiagram
     User ||--o{ AiChatMessage : owns
     User ||--o{ CalculatorHistoryEntry : owns
     User ||--o{ Holiday : owns
+    User ||--o{ RumEvent : monitors
     Subject ||--o{ Task : tags
     Subject ||--o{ Assignment : tags
     Subject ||--o{ Exam : tags
@@ -643,7 +652,7 @@ Enforced: ESLint flat config + `tsc --noEmit` (both gate). Convention (review-en
 | `src/components/layout/mobile-chrome.tsx` | ~145 | Fixed glass app bar (brand + live clock) + the reference-exact drawer |
 | `src/components/views/dashboard-view.tsx` | ~250 | The parity-pinned dashboard layout |
 | `src/components/views/events-view.tsx` | ~530 | The dark terminal panel (slate-900, both themes) + recurring-event expansion + reminders (S5-B) |
-| `prisma/schema.prisma` | ~330 | 21 models + the DB contract header |
+| `prisma/schema.prisma` | ~460 | 22 models + the DB contract header |
 | `prisma/seed.ts` | ~230 | Idempotent demo data |
 | `tests/e2e/mobile-navigation.spec.ts` | ~100 | The highest-regression-risk chrome (drawer + lg breakpoint) |
 | `tests/e2e/navigation.spec.ts` | ~145 | 20-view render matrix + computed parity pins |
