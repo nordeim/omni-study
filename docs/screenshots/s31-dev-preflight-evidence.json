@@ -1,0 +1,76 @@
+{
+  "session": 31,
+  "workspaceRun": "session-62",
+  "date": "2026-10-10",
+  "finding": {
+    "class": "tooling-integrity (the S27/S28/S30 family — this time: the environment precondition no probe verified)",
+    "surface": "dev-server boot stability — the stale Turbopack .next/dev cache reload loop",
+    "capturedFailureState": {
+      "trigger": "mid-suite daemon restart after an unclean pkill (Turbopack mid-cache-write)",
+      "symptom": "the connectivity audit failed OPAQUELY — page.click timeout 30000ms on the disabled login submit button; the Playwright log showed 'element was detached from the DOM, retrying' + repeated 'navigated to http://localhost:3000/login'",
+      "diagnosticProbe": {
+        "method": "framenavigated recording (main frame) + hydration observation over a 15s window on /login",
+        "navigations": "17+ same-URL main-frame navigations in 15s (~1/second, sustained)",
+        "hydration": false,
+        "note": "React never hydrated; form fills were discarded on every reload; the button stayed disabled={busy || !email || !password} because the input events never landed in hydrated state"
+      },
+      "httpHealthDuringLoop": "{\"status\":\"ok\",\"db\":\"up\",\"app\":\"studyflow\"} — /api/health 200 and /login 200 (29ms warm) WHILE the route reload-looped: liveness ≠ stability ≠ hydration (the AP-76 lesson)"
+    },
+    "differentialProof": {
+      "step1_restartWithoutCacheClear": "daemon restarted cleanly (fresh boot, health ok, /login 200) — the reload loop PERSISTED (connectivity audit failed twice more; the diagnostic probe captured 17+ navs/15s)",
+      "step2_cacheClear": "pkill + rm -rf .next/dev (282MB Turbopack incremental cache) + restart — the loop is GONE: login completes end-to-end (button enables after fill; click lands on /Dashboard)",
+      "conclusion": "the stale state lives IN .next/dev, not in the daemon process — the S9 lesson's 'restart the daemon cleanly' remedy is INSUFFICIENT for this variant"
+    },
+    "nonDeterminism": {
+      "control": "a deliberate unclean kill (pkill after warming /login) + restart WITHOUT the cache clear did NOT reproduce the loop a second time",
+      "interpretation": "the corruption requires a kill mid-cache-write (the audits hammering /login while Turbopack wrote route cache entries); intermittent + opaque = exactly the class a future session would misdiagnose as an app defect ('the login button never enables') and fix in the wrong layer"
+    }
+  },
+  "deliverable": {
+    "seam": "src/lib/dev-preflight.ts — classifyBootStability({reachable, navigations, hydrated}) → {verdict: green|reload-loop|no-hydration|unreachable, remedy}; NAV_LOOP_THRESHOLD = 5 (healthy: 0-1 post-load navs; the captured loop: ~1/s sustained)",
+    "unitPins": "tests/dev-preflight.test.ts — 11 pins (the four verdicts; the >=5 boundary; loop-beats-no-hydration; loop-beats-mid-window-hydration; unreachable-beats-all; the honest-remedy guards — the loop remedy names .next/dev, the unreachable remedy does not)",
+    "runner": "scripts/dev-server-preflight.mjs (bun-run, the dep-audit.mjs precedent) — loads /login, counts same-path main-frame navigations over an 8s post-load window, fills the demo credentials and waits for the submit button to enable (NEVER submits — zero login requests, zero rate-limit budget), classifies via the seam, prints the self-describing envelope, exit 0 iff green",
+    "docsAlignment": "AGENTS.md (the commands-table entry + the S9-lesson extension), CLAUDE.md (the unit-layer count + the preflight-first note), vitest.config.ts (19 files / 284 tests + the seam), PAD §8.1 (the dev-preflight row + Total 47 files / 575 tests), README (the session-31 status row + §Testing counts), SKILL.md (the 575/284 counts + AP-76)"
+  },
+  "negativeControls": {
+    "a_deadPort": {
+      "command": "PREFLIGHT_BASE=http://localhost:3999 bun scripts/dev-server-preflight.mjs",
+      "exit": 1,
+      "verdict": "unreachable",
+      "remedyNamesBunRunDev": true,
+      "remedyNamesCacheClear": false
+    },
+    "b_reloadLoopScratchServer": {
+      "model": "a scratch login-shaped page on :3998 — email + password inputs, a disabled submit button that never enables, a 400ms location.reload() loop (the captured failure state, faithfully modeled); scratch deleted after validation",
+      "exit": 1,
+      "verdict": "reload-loop",
+      "measured": { "navigations": 19, "hydrated": false },
+      "remedyNamesNextDevCacheClear": true
+    },
+    "c_genuineHealthyServer": {
+      "exit": 0,
+      "verdict": "green",
+      "measured": { "navigations": 1, "hydrated": true }
+    }
+  },
+  "gates": {
+    "lint": "ok",
+    "typecheck": "ok",
+    "unit": "284 passed (19 files) — was 273/18",
+    "build": "ok (standalone)",
+    "e2e": "291 passed, cold db/e2e.db, 4.5m — the 291 prior pins untouched by construction (zero app code, zero CSS, zero Tailwind v4 surface, zero parity-pinned bytes)",
+    "total": "575 green (was 564; +11 unit pins)"
+  },
+  "standingChecksPostChange": {
+    "drawerCheck": "GREEN — backdrop oklab+blur(4px), 288px white panel, 20 links, no footer, Escape-close",
+    "screenshots": "the standing 31 refreshed via capture-studyflow.mjs — 29 byte-changed (the S29/S30 pattern); theme restored light and verified via Prisma (light/violet)"
+  },
+  "baselineOnArrival": {
+    "gates": "lint ok; tsc ok; 273 unit ok; build ok; cold-db 291 e2e ok (4.5m) = the documented 564-green re-confirmed",
+    "drawerCheck": "GREEN (backdrop oklab+blur(4px), 288px panel, 20 links, no footer, Escape-close)",
+    "agentBrowserWalkthrough390x844": "GREEN — app bar (menu button + brand + live clock); drawer dialog with all 20 links; Settings navigates by ref; Profile tab renders the S26 Email card above the S24 Change password + S25 Danger zone cards; scrollWidth 390 — the mobile navigation menu is working as expected",
+    "referenceReSweep": "UNCHANGED since S19-S30 (zero-data 0/0; greeting from the email prefix; 'Saturday, October 10, 2026'; the same 20 nav views in the same order; the 'AcademiaFlow (Copy)' platform-rename artifact; the same five Settings tabs with School/Grade/Goal fields)",
+    "copySweep": "14/20 MATCH; the 6 diffs all data-state (the documented S17-pinned non-gap family: greeting name, MyDay 'Add Your First Task', Tasks '5 tasks' vs '0 tasks' + zero-data list buttons, Timetable '0 classes' accordion chips, Exams '3 upcoming' vs '0 upcoming', Flashcards 'Create Deck')",
+    "auditSuite": "security ok (0 findings, 7 nonGaps — the documented limiter shape after the single clean run); settings-roundtrip ok; connectivity ok (the S28 repair validated live); upload-edge ok; data-volume ok; forced-colors ok; print ok; focus-order ok; CWV ok (CLS GOOD everywhere; clone throttled-mobile dashboard LCP NI — the documented S16 state; the reference's own mobile login LCP POOR); dark-sweep ok (the S27 repair validated live: MODE dark, 0 findings); accent-dark-sweep ok (0 fails); ai-error ok (0); ai-a11y ok (0); pre15-preflight ok ('deps pinned by design, client bundle lean, no action'); dep-audit ok (GREEN — the S30 probe's first standing re-run: 2 advisories documented non-production, 0 runtime-reachable)"
+  }
+}
