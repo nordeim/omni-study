@@ -207,16 +207,27 @@ export function NotesView() {
         </div>
       </div>
 
-      {/* Mobile list — the reference's left pane is desktop-only; below lg
-          the clone keeps the notes reachable via a stacked list. */}
+      {/* Mobile list — the reference's two-pane renders at EVERY width (its
+          w-80 pane overflows to 416px at 390); below lg the clone stacks the
+          notes in a no-overflow list instead. S33: the stacked list keeps the
+          view's IDENTITY HEADING — the reference renders its h1 at mobile,
+          and the stack had lost it (the S16 mobile-only-gap class). The h2
+          follows the StudyGroups S8-H pattern: the single h1 lives in the
+          desktop pane, keeping main h1 count at 1. */}
       <div className="flex flex-col gap-3 lg:hidden">
         <div className="flex items-center justify-between gap-2">
-          <Button variant="gradient" onClick={createNote} className="gap-1.5">
-            <Plus className="h-4 w-4" /> New Note
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => setNotebookDialogOpen(true)} aria-label="New notebook">
-            <FolderPlus className="h-4 w-4" />
-          </Button>
+          <h2 className="flex items-center gap-2 text-2xl font-bold text-slate-800 dark:text-slate-100">
+            <BookOpen className="h-6 w-6 text-sf-primary" strokeWidth={2} aria-hidden="true" />
+            Notes
+          </h2>
+          <div className="flex items-center gap-2">
+            <Button variant="gradient" onClick={createNote} className="gap-1.5">
+              <Plus className="h-4 w-4" /> New Note
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => setNotebookDialogOpen(true)} aria-label="New notebook">
+              <FolderPlus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         {visible.length === 0 ? (
           <div className="sf-card">

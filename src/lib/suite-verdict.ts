@@ -27,6 +27,7 @@ export const AUDIT_NAMES = [
   "forced-colors",
   "print",
   "focus-order",
+  "mobile-sweep",
   "dark-sweep",
   "accent-dark-sweep",
   "cwv",
@@ -206,6 +207,54 @@ function classifyFocusOrder(env: unknown): StageVerdict {
   };
 }
 
+// --- mobile-sweep (S33) ------------------------------------------------------
+// The light-mode 390×844 drawer-navigation sweep — the mobile navigation
+// menu's executable guarantee (the AP-78 doctrine: the manual walkthrough
+// every session narrative recorded as prose, encoded as a standing probe).
+// Every view is navigated THROUGH THE DRAWER (the menu is the vehicle), each
+// view record carrying the identity heading, the scrollWidth measurement
+// (the no-horizontal-overflow guarantee), the drawer-closed flag, the app-bar
+// check, and the per-view console-error list. mode MUST be "light" — the
+// dark/accent mobile surfaces belong to their own audits, and a dark-mode run
+// of the LIGHT sweep is the exact S27 rot class.
+
+function classifyMobileSweep(env: unknown): StageVerdict {
+  if (!isObj(env)) return shapeError("envelope must be an object");
+  if (typeof env.mode !== "string") return shapeError("mode must be a string");
+  if (!isObj(env.viewport) || env.viewport.width !== 390) {
+    return shapeError("viewport must be the mobile 390×844 — the finding classes are width-dependent");
+  }
+  if (!isObj(env.views)) return shapeError("views must be an object of per-view records");
+  if (!isObj(env.drawer) || typeof env.drawer.linkCount !== "number" || typeof env.drawer.order !== "string") {
+    return shapeError("drawer must carry linkCount + order (the drawer-content check)");
+  }
+  if (!isArr(env.findings)) return shapeError("findings must be an Array");
+  const views = Object.keys(env.views);
+  for (const v of views) {
+    const rec = env.views[v];
+    if (!isObj(rec)) return shapeError(`views.${v} must be a record`);
+    if (typeof rec.heading !== "string" || rec.heading.length === 0) {
+      return shapeError(`views.${v}.heading must be a non-empty string`);
+    }
+    if (typeof rec.scrollWidth !== "number") return shapeError(`views.${v}.scrollWidth must be a number`);
+    if (typeof rec.drawerClosed !== "boolean") return shapeError(`views.${v}.drawerClosed must be a boolean`);
+    if (typeof rec.appBar !== "boolean") return shapeError(`views.${v}.appBar must be a boolean`);
+    if (!isArr(rec.consoleErrors)) return shapeError(`views.${v}.consoleErrors must be an Array`);
+  }
+  if (env.mode !== "light") {
+    return {
+      green: false,
+      findings: env.findings.length,
+      note: `mode=${env.mode} — the sweep ran in the wrong mode (the S27 rot class; the LIGHT-mode mobile surface is this audit's contract — the dark/accent mobile surfaces belong to their own audits)`,
+    };
+  }
+  return {
+    green: env.findings.length === 0,
+    findings: env.findings.length,
+    note: `${views.length} views swept through the drawer at 390×844 (light); drawer carried ${env.drawer.linkCount} links`,
+  };
+}
+
 // --- dark-sweep ---------------------------------------------------------------
 // The S27 rot guard: `mode` MUST be "dark" — a light-mode sweep with zero
 // findings reads NON-green ("mode=light"), not green. A missing/non-string
@@ -333,6 +382,7 @@ export function classifyAudit(name: string, envelope: unknown): StageVerdict {
   if (name === "forced-colors") return classifyForcedColors(envelope);
   if (name === "print") return classifyPrint(envelope);
   if (name === "focus-order") return classifyFocusOrder(envelope);
+  if (name === "mobile-sweep") return classifyMobileSweep(envelope);
   if (name === "dark-sweep") return classifyDarkSweep(envelope);
   if (name === "accent-dark-sweep") return classifyAccentDarkSweep(envelope);
   if (name === "cwv") return classifyCwv(envelope);

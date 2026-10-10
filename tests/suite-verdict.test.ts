@@ -471,6 +471,108 @@ describe("classifyAudit findings (non-green)", () => {
   });
 });
 
+// --- mobile-sweep (S33 — the light-mode 390×844 drawer-navigation sweep) ----
+// The fixture mirrors the genuine probe envelope: every view navigated THROUGH
+// THE DRAWER (the mobile navigation menu is the vehicle), each carrying its
+// identity heading, the no-overflow measurement, the drawer-closed flag, the
+// app-bar check, and the per-view console-error list.
+
+const MOBILE_SWEEP_GREEN = {
+  mode: "light",
+  viewport: { width: 390, height: 844 },
+  drawer: { linkCount: 20, order: "Dashboard,My Day,Tasks,Calendar,Events,Timetable,Assignments,Exams,Notes,Flashcards,Practice Tests,Study Groups,Grade Tracker,Analytics,Files,Calculator,Math Solver,AI Assistant,Focus Timer,Settings" },
+  views: {
+    Dashboard: { heading: "Good evening, Demo Student 👋", scrollWidth: 390, drawerClosed: true, appBar: true, consoleErrors: [] },
+    Tasks: { heading: "All Tasks", scrollWidth: 390, drawerClosed: true, appBar: true, consoleErrors: [] },
+    Timetable: { heading: "Timetable", scrollWidth: 390, drawerClosed: true, appBar: true, consoleErrors: [] },
+    Settings: { heading: "Settings", scrollWidth: 390, drawerClosed: true, appBar: true, consoleErrors: [] },
+  },
+  findings: [],
+};
+
+describe("classifyAudit mobile-sweep (S33)", () => {
+  it("the GREEN shape: 20-link drawer, per-view records, zero findings", () => {
+    const v = classifyAudit("mobile-sweep", MOBILE_SWEEP_GREEN);
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/4 views/);
+    expect(v.note).toMatch(/drawer/);
+  });
+
+  it("a missing findings key is a LOUD shape-error (the anti-phantom guard)", () => {
+    const { findings, ...noFindings } = MOBILE_SWEEP_GREEN;
+    expect(findings).toEqual([]);
+    const v = classifyAudit("mobile-sweep", noFindings);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a non-Array findings key is a shape-error", () => {
+    const v = classifyAudit("mobile-sweep", { ...MOBILE_SWEEP_GREEN, findings: "none" });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a view record missing its scrollWidth is a shape-error (the measurement IS the guarantee)", () => {
+    const views = { ...MOBILE_SWEEP_GREEN.views, Tasks: { heading: "All Tasks", drawerClosed: true, appBar: true, consoleErrors: [] } };
+    const v = classifyAudit("mobile-sweep", { ...MOBILE_SWEEP_GREEN, views });
+    expect(isErr(v)).toBe(true);
+    expect(v.note).toMatch(/Tasks/);
+  });
+
+  it("a view record with a non-boolean drawerClosed is a shape-error", () => {
+    const views = { ...MOBILE_SWEEP_GREEN.views, Tasks: { ...MOBILE_SWEEP_GREEN.views.Tasks, drawerClosed: "yes" } };
+    const v = classifyAudit("mobile-sweep", { ...MOBILE_SWEEP_GREEN, views });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a missing views object is a shape-error", () => {
+    const { views, ...rest } = MOBILE_SWEEP_GREEN;
+    const v = classifyAudit("mobile-sweep", rest);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a non-390 viewport is a shape-error (the finding classes are width-dependent)", () => {
+    const v = classifyAudit("mobile-sweep", { ...MOBILE_SWEEP_GREEN, viewport: { width: 1280, height: 800 } });
+    expect(isErr(v)).toBe(true);
+    expect(v.note).toMatch(/viewport/i);
+  });
+
+  it("the S27 rot class: a dark-mode run of the LIGHT sweep reads NON-green with the mode in the note", () => {
+    const v = classifyAudit("mobile-sweep", { ...MOBILE_SWEEP_GREEN, mode: "dark" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=dark/);
+    expect(v.note).toMatch(/S27 rot/);
+  });
+
+  it("a non-string mode is a shape-error", () => {
+    const v = classifyAudit("mobile-sweep", { ...MOBILE_SWEEP_GREEN, mode: 1 });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("an overflow finding (scrollWidth 512) → non-green, findings=1", () => {
+    const views = { ...MOBILE_SWEEP_GREEN.views, Timetable: { ...MOBILE_SWEEP_GREEN.views.Timetable, scrollWidth: 512 } };
+    const v = classifyAudit("mobile-sweep", { ...MOBILE_SWEEP_GREEN, views, findings: [{ view: "Timetable", kind: "overflow", detail: "scrollWidth 512 > 390" }] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("a drawer-stuck finding → non-green", () => {
+    const v = classifyAudit("mobile-sweep", { ...MOBILE_SWEEP_GREEN, findings: [{ view: "Files", kind: "drawer-stuck", detail: "the dialog did not close after link navigation" }] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("a link-count finding (the drawer lost a view) → non-green", () => {
+    const v = classifyAudit("mobile-sweep", { ...MOBILE_SWEEP_GREEN, drawer: { linkCount: 19, order: "Dashboard,My Day" }, findings: [{ kind: "link-count", detail: "drawer carried 19 links, expected 20" }] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the unknown-audit guard still holds: a name outside AUDIT_NAMES is a shape-error", () => {
+    const v = classifyAudit("mobile-sweeep", MOBILE_SWEEP_GREEN);
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {

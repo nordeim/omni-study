@@ -10,10 +10,11 @@
 //   0. dev-server-preflight  (the S31 convention, ENFORCED: abort the suite
 //      loudly on any non-green verdict, remedy included — the boot-stability
 //      precondition is executable, not advisory)
-//   1-15. security, settings-roundtrip, connectivity, upload-edge,
-//      data-volume, forced-colors, print, focus-order, dark-sweep,
-//      accent-dark-sweep, cwv, ai-error, ai-a11y, pre15-preflight, dep-audit
-//   16. the demo-theme closing guard (light/violet via Prisma — a mid-suite
+//   1-16. security, settings-roundtrip, connectivity, upload-edge,
+//      data-volume, forced-colors, print, focus-order, mobile-sweep,
+//      dark-sweep, accent-dark-sweep, cwv, ai-error, ai-a11y,
+//      pre15-preflight, dep-audit
+//   17. the demo-theme closing guard (light/violet via Prisma — a mid-suite
 //      crash must not leave the demo user dark/teal, the documented
 //      poisoning class)
 //
@@ -51,6 +52,7 @@ const STAGES = [
   { name: "forced-colors", file: "scripts/forced-colors-sweep.mjs", runtime: "node" },
   { name: "print", file: "scripts/print-audit.mjs", runtime: "node" },
   { name: "focus-order", file: "scripts/focus-order-audit.mjs", runtime: "node" },
+  { name: "mobile-sweep", file: "scripts/mobile-sweep.mjs", runtime: "node" },
   { name: "dark-sweep", file: "scripts/dark-sweep.mjs", runtime: "node" },
   { name: "accent-dark-sweep", file: "scripts/accent-dark-sweep.mjs", runtime: "node" },
   { name: "cwv", file: "scripts/cwv-audit-s16.mjs", runtime: "node" },
@@ -185,7 +187,7 @@ let cwvPreconditionFailed = false;
 try {
   // Stage 0 — the S31 preflight FIRST, enforced (the suite never starts on an
   // unstable boot; the remedy rides the verdict).
-  log(`[standing-suite] stage 0/16 — dev-server-preflight (the S31 boot-stability precondition)`);
+  log(`[standing-suite] stage 0/17 — dev-server-preflight (the S31 boot-stability precondition)`);
   const pre = await run("bun", [join(REPO, "scripts/dev-server-preflight.mjs")], 90_000);
   writeFileSync(join(RAW_DIR, "dev-server-preflight.json"), pre.stdout);
   const preParsed = parseAuditStdout(pre.stdout);
@@ -213,17 +215,17 @@ try {
     for (let i = 0; i < STAGES.length; i += 1) {
       const spec = STAGES[i];
       if (spec.name === "cwv" && cwvPreconditionFailed) {
-        log(`[standing-suite] stage ${i + 1}/16 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
+        log(`[standing-suite] stage ${i + 1}/17 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
         continue;
       }
-      log(`[standing-suite] stage ${i + 1}/16 — ${spec.name}`);
+      log(`[standing-suite] stage ${i + 1}/17 — ${spec.name}`);
       const r = await runAuditStage(spec);
       rows.push({ name: r.name, verdict: r.verdict });
       await new Promise((res) => setTimeout(res, SETTLE_MS));
     }
 
     // The closing guard.
-    log(`[standing-suite] stage 16/16 — theme-restore (the demo-theme closing guard)`);
+    log(`[standing-suite] stage 17/17 — theme-restore (the demo-theme closing guard)`);
     rows.push(await themeGuard());
   }
 } finally {
