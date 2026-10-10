@@ -1,0 +1,124 @@
+{
+  "guardFamily": {
+    "wrongPassword": {
+      "status": 400,
+      "body": {
+        "error": "Your password is incorrect."
+      }
+    },
+    "mismatchedConfirm": {
+      "status": 400,
+      "body": {
+        "error": "The email addresses do not match."
+      }
+    },
+    "shortPassword": {
+      "status": 400,
+      "body": {
+        "error": "Enter your password and the new email address twice."
+      }
+    },
+    "sameEmail": {
+      "status": 400,
+      "body": {
+        "error": "This is already your email address."
+      }
+    },
+    "duplicateEmail": {
+      "status": 409,
+      "body": {
+        "error": "An account with this email already exists. Try a different address."
+      }
+    }
+  },
+  "demoStillSignsIn": true,
+  "anonGate": {
+    "status": 401,
+    "body": {
+      "error": "Authentication required"
+    }
+  },
+  "freshUserChange": {
+    "registered": 201,
+    "verifiedLogin": 200,
+    "change": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "email": "s26-capture-new-1791590639051@studyflow.app"
+      }
+    },
+    "dbCheck": {
+      "newAddressResolves": true,
+      "sameAccountId": true,
+      "emailVerifiedStillTrue": true,
+      "oldAddressGone": true
+    },
+    "meAfter": {
+      "status": 200,
+      "email": "s26-capture-new-1791590639051@studyflow.app"
+    },
+    "oldLogin": {
+      "status": 401,
+      "body": {
+        "error": "Invalid email or password"
+      }
+    },
+    "newLogin": 200,
+    "cleanupDelete": 200
+  },
+  "screenshots": {
+    "light": {
+      "chrome": {
+        "pinnedHeader": true,
+        "schoolInput": true,
+        "saveProfileButton": true,
+        "emailAddressCard": true,
+        "changePasswordCard": true,
+        "dangerZoneCard": true,
+        "copyText": true,
+        "newEmailField": true,
+        "confirmField": true,
+        "passwordField": true,
+        "updateButton": true
+      }
+    },
+    "dark": {
+      "htmlClass": "dark",
+      "chrome": {
+        "pinnedHeader": true,
+        "schoolInput": true,
+        "saveProfileButton": true,
+        "emailAddressCard": true,
+        "changePasswordCard": true,
+        "dangerZoneCard": true,
+        "copyText": true,
+        "newEmailField": true,
+        "confirmField": true,
+        "passwordField": true,
+        "updateButton": true
+      }
+    },
+    "success": {
+      "note": "Email address updated.",
+      "identityShowsNewEmail": true,
+      "demoRestoredLogin": 200
+    },
+    "mobile": {
+      "overflow": false,
+      "chrome": {
+        "pinnedHeader": true,
+        "schoolInput": true,
+        "saveProfileButton": true,
+        "emailAddressCard": true,
+        "changePasswordCard": true,
+        "dangerZoneCard": true,
+        "copyText": true,
+        "newEmailField": true,
+        "confirmField": true,
+        "passwordField": true,
+        "updateButton": true
+      }
+    }
+  }
+}

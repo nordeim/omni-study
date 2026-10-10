@@ -239,3 +239,25 @@ card's warning copy points there. Deleting a household member's
 account is the same flow signed in as them (there is deliberately no
 admin-deletes-others surface); for bulk/manual removal the SQLite file
 remains the operator's escape hatch.
+
+### 8.5 After deployment: change the sign-in email (session-26)
+
+A signed-in owner changes the address they log in with from
+**Settings → Profile** — the **Email address** card above the Change
+password card. Enter the new address TWICE (the confirm field guards
+the typo lockout: a mistyped address is unrecoverable through the UI —
+the next sign-in needs the new address) plus the account password,
+then click **Update email address**. The route
+(`POST /api/auth/change-email`) verifies the password FIRST (a wrong
+password is rejected with 400 and changes nothing), is rate-limited to
+10 attempts per 15 minutes per account, then checks that the new
+address differs from the current one (400 otherwise) and is not owned
+by ANY existing account (409 otherwise — including unverified ones).
+The write moves the login identifier (stored lowercased);
+`emailVerified` STAYS true — with no SMTP, a re-verification code
+would surface to the same person who just proved the password, so the
+password proof IS the verification. The current session SURVIVES the
+change (the cookie is signed over the user id, not the email) and the
+Profile identity block + sidebar footer update live. **Sign in with
+the NEW address next time** — the old address no longer resolves (the
+uniform "Invalid email or password" error, no enumeration signal).

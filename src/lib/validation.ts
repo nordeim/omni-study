@@ -65,6 +65,26 @@ export const deleteAccountSchema = z
     message: "Type DELETE to confirm.",
   });
 
+// S26 (ADR-024) — the account-identity rotation schema. The password proof
+// applies the register family's policy (min 8 / max 200 — ONE policy, no
+// drift) and the email fields carry the register family's email shape
+// (z.string().email().max(200) — the same rule everywhere); the
+// confirm-match rule rides the object's refine so the route's safeParse
+// failure message IS the actionable copy — a mistyped address is
+// UNRECOVERABLE through the UI (the next login needs the new address),
+// unlike the password, which the forgot-password flow can rescue. The
+// must-differ and uniqueness rules live in the ROUTE (the current email
+// is server state, not a body field — see docs/remediation-plan-session26.md).
+export const changeEmailSchema = z
+  .object({
+    password: z.string().min(8).max(200),
+    newEmail: z.string().email().max(200),
+    confirmEmail: z.string().email().max(200),
+  })
+  .refine((v) => v.newEmail === v.confirmEmail, {
+    message: "The email addresses do not match.",
+  });
+
 export const subjectSchema = z.object({
   name: bounded(80).min(1),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#8b5cf6"),

@@ -31,6 +31,7 @@ export function SettingsView() {
   const setMode = useThemeStore((s) => s.setMode);
   const setAccent = useThemeStore((s) => s.setAccent);
   const setAvatar = useThemeStore((s) => s.setAvatar);
+  const setEmail = useThemeStore((s) => s.setEmail);
   const mode = useThemeStore((s) => s.mode);
   const accent = useThemeStore((s) => s.accent);
   const avatar = useThemeStore((s) => s.avatar);
@@ -76,6 +77,17 @@ export function SettingsView() {
   const [delConfirmation, setDelConfirmation] = React.useState("");
   const [delBusy, setDelBusy] = React.useState(false);
   const [delError, setDelError] = React.useState<string | null>(null);
+  // S26 (ADR-024) — the Email address card's state (the account-identity
+  // rotation, below the pinned Profile surfaces — the S23/S24 additive
+  // pattern). Always visible (email change is NOT destructive — no
+  // two-step reveal, the S24 posture); the success note clears the fields
+  // and the theme store's email slice updates live.
+  const [emNew, setEmNew] = React.useState("");
+  const [emConfirm, setEmConfirm] = React.useState("");
+  const [emPassword, setEmPassword] = React.useState("");
+  const [emBusy, setEmBusy] = React.useState(false);
+  const [emError, setEmError] = React.useState<string | null>(null);
+  const [emSuccess, setEmSuccess] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     void loadAll(["subjects", "holidays"]);
@@ -172,6 +184,48 @@ export function SettingsView() {
       }
     } finally {
       setPwBusy(false);
+    }
+  }
+
+  // S26 (ADR-024) — the account-identity rotation. Client-side pre-checks
+  // mirror the schema (the early inline error, no request); on success the
+  // theme store's email slice updates LIVE (the identity block re-renders —
+  // the setEmail action) and the fields clear. Errors render inline
+  // (role="alert" — the S15/S24/S25 auth convention: auth errors never
+  // render as toasts).
+  async function changeEmail() {
+    setEmError(null);
+    setEmSuccess(null);
+    if (!emNew || !emConfirm || !emPassword) {
+      setEmError("Enter the new email address twice and your password.");
+      return;
+    }
+    if (emNew !== emConfirm) {
+      setEmError("The email addresses do not match.");
+      return;
+    }
+    setEmBusy(true);
+    try {
+      const res = await apiSend<{ ok: boolean; email: string }>("POST", "/api/auth/change-email", {
+        password: emPassword,
+        newEmail: emNew,
+        confirmEmail: emConfirm,
+      });
+      // The route answers { ok, email } — the store slice updates from the
+      // server's normalized (lowercased) address, never the raw input.
+      setEmail(res.email);
+      setEmSuccess("Email address updated.");
+      setEmNew("");
+      setEmConfirm("");
+      setEmPassword("");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setEmError(err.message);
+      } else {
+        setEmError("Could not change the email address — try again.");
+      }
+    } finally {
+      setEmBusy(false);
     }
   }
 
@@ -520,6 +574,81 @@ export function SettingsView() {
               </p>
             )}
           </div>
+
+          {/* S26 (ADR-024) — the Email address card: a purely additive
+              sf-card BELOW the pinned Profile surfaces and ABOVE the S24
+              Change password card (the natural account order: identity →
+              security → destructive exit; the S24/S25 cards stay
+              byte-identical). The reference has NO email-change surface;
+              this is the clone's own account-identity rotation superset.
+              Always visible (email change is NOT destructive — no two-step
+              reveal, the S24 posture); the confirm field guards the typo
+              lockout (a mistyped address is unrecoverable through the UI);
+              the identity block's email line updates LIVE through the theme
+              store's setEmail action. NO new CSS (zero Tailwind v4 surface). */}
+          <section aria-label="Email address" className="sf-card flex max-w-lg flex-col gap-4 p-6">
+            <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">
+              Email address
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Update the address you use to sign in. You'll need your current password.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="new-email">New email</Label>
+              <Input
+                id="new-email"
+                type="email"
+                autoComplete="off"
+                spellCheck={false}
+                value={emNew}
+                onChange={(e) => setEmNew(e.target.value)}
+                maxLength={200}
+                placeholder="e.g. you@example.com"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="confirm-new-email">Confirm new email</Label>
+              <Input
+                id="confirm-new-email"
+                type="email"
+                autoComplete="off"
+                spellCheck={false}
+                value={emConfirm}
+                onChange={(e) => setEmConfirm(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email-password">Password</Label>
+              <Input
+                id="email-password"
+                type="password"
+                autoComplete="current-password"
+                value={emPassword}
+                onChange={(e) => setEmPassword(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+            {emError && (
+              <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+                {emError}
+              </p>
+            )}
+            {emSuccess && (
+              <p role="status" className="text-sm text-green-600 dark:text-green-400">
+                {emSuccess}
+              </p>
+            )}
+            <div>
+              <Button
+                variant="gradient"
+                onClick={() => void changeEmail()}
+                disabled={emBusy || !emNew || !emConfirm || !emPassword}
+              >
+                Update email address
+              </Button>
+            </div>
+          </section>
 
           {/* S24 (ADR-022) — the change-password card: a purely additive
               sf-card BELOW the pinned Profile surfaces (the S23

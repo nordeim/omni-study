@@ -25,7 +25,7 @@ tags:
 
 > **What this is:** the single-source-of-truth reference for working in
 > `nordeim/omni-study`. Every fact below is verified against the codebase
-> (537 tests green at last update: 253 Vitest unit + 284 Playwright e2e incl. 1 setup).
+> (549 tests green at last update: 258 Vitest unit + 291 Playwright e2e incl. 1 setup).
 > Sections marked with ⚠️ encode non-obvious contracts — violating them has
 > historically produced silent visual or data-path bugs.
 

@@ -109,6 +109,10 @@ interface ThemeState {
   setMode: (mode: ThemeMode) => void;
   setAccent: (accent: Accent) => void;
   setAvatar: (emoji: string) => void;
+  /** S26 (ADR-024): the account-identity rotation updates the email slice
+   * live (the Profile tab's identity block re-renders without a reload —
+   * the setAvatar pattern). */
+  setEmail: (email: string) => void;
   loadFromUser: (user: {
     themeMode?: string;
     accentColor?: string;
@@ -221,6 +225,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     applyToDocument(get().mode, accent);
   },
   setAvatar: (avatar) => set({ avatar }),
+  setEmail: (email) => set({ email }),
   loadFromUser: (user) => {
     const mode = user.themeMode === "light" || user.themeMode === "dark" ? user.themeMode : user.themeMode === "system" ? "system" : get().mode;
     const accent = (user.accentColor && user.accentColor in ACCENT_TOKENS ? user.accentColor : get().accent) as Accent;

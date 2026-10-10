@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assignmentSchema,
   aiChatSchema,
+  changeEmailSchema,
   changePasswordSchema,
   deleteAccountSchema,
   eventSchema,
@@ -588,6 +589,75 @@ describe("deleteAccountSchema (S25 — the ownership exit)", () => {
     expect(r.success).toBe(true);
     if (r.success) {
       expect(r.data).not.toHaveProperty("email");
+    }
+  });
+});
+
+describe("changeEmailSchema (S26 — the account-identity rotation)", () => {
+  it("accepts a valid triple (password + matching emails)", () => {
+    expect(
+      changeEmailSchema.safeParse({
+        password: "Demo1234!",
+        newEmail: "student@example.com",
+        confirmEmail: "student@example.com",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("applies the register family's policy (password min 8 / max 200; email max 200)", () => {
+    expect(
+      changeEmailSchema.safeParse({
+        password: "short",
+        newEmail: "student@example.com",
+        confirmEmail: "student@example.com",
+      }).success,
+    ).toBe(false);
+    expect(
+      changeEmailSchema.safeParse({
+        password: "a".repeat(201),
+        newEmail: "student@example.com",
+        confirmEmail: "student@example.com",
+      }).success,
+    ).toBe(false);
+    expect(changeEmailSchema.safeParse({ newEmail: "student@example.com", confirmEmail: "student@example.com" }).success).toBe(
+      false,
+    );
+    expect(changeEmailSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("rejects a malformed new email (the email field's own shape)", () => {
+    for (const bad of ["not-an-email", "missing@tld", "a".repeat(200) + "@x.test", ""]) {
+      const r = changeEmailSchema.safeParse({
+        password: "Demo1234!",
+        newEmail: bad,
+        confirmEmail: bad,
+      });
+      expect(r.success, `newEmail "${bad.slice(0, 30)}" should fail`).toBe(false);
+    }
+  });
+
+  it("rejects the mismatched confirm with the actionable copy (the refine rule)", () => {
+    const r = changeEmailSchema.safeParse({
+      password: "Demo1234!",
+      newEmail: "student@example.com",
+      confirmEmail: "student@typo.example",
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues[0].message).toBe("The email addresses do not match.");
+    }
+  });
+
+  it("strips unknown keys (the repo-wide Zod convention — strip mode)", () => {
+    const r = changeEmailSchema.safeParse({
+      password: "Demo1234!",
+      newEmail: "student@example.com",
+      confirmEmail: "student@example.com",
+      userId: "attacker-injection",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data).not.toHaveProperty("userId");
     }
   });
 });
