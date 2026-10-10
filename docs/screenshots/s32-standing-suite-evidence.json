@@ -1,0 +1,117 @@
+{
+ "ranAt": "2026-10-10T09:23:01.323Z",
+ "source": "standing-suite",
+ "stages": [
+  {
+   "name": "dev-server-preflight",
+   "green": true,
+   "findings": 0,
+   "note": "hydrated and navigation-stable"
+  },
+  {
+   "name": "security",
+   "green": true,
+   "findings": 0,
+   "note": "7 nonGaps"
+  },
+  {
+   "name": "settings-roundtrip",
+   "green": true,
+   "findings": 0,
+   "note": "5 nonGaps"
+  },
+  {
+   "name": "connectivity",
+   "green": true,
+   "findings": 0,
+   "note": "7 nonGaps"
+  },
+  {
+   "name": "upload-edge",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "data-volume",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "forced-colors",
+   "green": true,
+   "findings": 0,
+   "note": "4 views probed; 1 sr-only controls exempt (visually hidden by design); reference rides the envelope"
+  },
+  {
+   "name": "print",
+   "green": true,
+   "findings": 0,
+   "note": "40 view-counts checked; overflow probe data preserved (20 entries)"
+  },
+  {
+   "name": "focus-order",
+   "green": true,
+   "findings": 0,
+   "note": "dialogs=1; 2 dev-portal artifacts excluded (NEXTJS-PORTAL — dev-mode only); drawer/skipLink ride the envelope (n/a/n/a)"
+  },
+  {
+   "name": "dark-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views probed in MODE dark"
+  },
+  {
+   "name": "accent-dark-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "31 entries probed; 5 CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); 122 WARN (lowcontrast — the S11 non-gap family)"
+  },
+  {
+   "name": "cwv",
+   "green": true,
+   "findings": 0,
+   "note": "ref POOR informational; 1 ref POOR (the reference's own documented state — informational, not a clone finding)"
+  },
+  {
+   "name": "ai-error",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "ai-a11y",
+   "green": true,
+   "findings": 0,
+   "note": "4 nonGaps"
+  },
+  {
+   "name": "pre15-preflight",
+   "green": true,
+   "findings": 0,
+   "note": "GREEN — deps pinned by design (majors), client bundle lean, no action"
+  },
+  {
+   "name": "dep-audit",
+   "green": true,
+   "findings": 0,
+   "note": "GREEN — 2 advisory(ies) documented as non-production (dev/CLI surface), 0 runtime-reachable"
+  },
+  {
+   "name": "theme-restore",
+   "green": true,
+   "findings": 0,
+   "note": "demo theme = light/violet (expected light/violet — a mid-suite crash must not leave the demo user mutated)"
+  }
+ ],
+ "rawDir": "/tmp/standing-suite",
+ "standalone": {
+  "startedHere": false
+ },
+ "aborted": false,
+ "green": true,
+ "failed": [],
+ "summary": "17/17 green",
+ "evidenceNote": "The S32 validation run (genuine run 3): the clean-limiter-window re-run after the documented dev-server restart remedy. Run 1 (13/17) and run 2 (16/17) are preserved in this session execution log — run 1 surfaced the ai-a11y probe-row leak (fixed: reload-first + Prisma cleanup + the 4 stale pairs purged) and the three documented non-gap signatures; run 2 surfaced the pre-spent-budget differential (the ai: limiter is shared across every audit invocation in a 15-min window)."
+}

@@ -12,10 +12,22 @@
 //  5. The quick-action mode cards use aria-pressed (S12-scoped — fine).
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
+import { PrismaClient } from "@prisma/client";
 
 const BASE = "http://localhost:3000";
 const OUT = "/tmp/s14-a11y-evidence";
 mkdirSync(OUT, { recursive: true });
+
+// S32: the probe-row ledger. The D2 probe holds the /api/ai/chat route and
+// must NEVER leak the held request to the real server (the S14 lesson:
+// reload FIRST — document unload aborts the fetch — THEN unroute). The
+// auditStart timestamp + the closing cleanup below are the defense-in-depth
+// guard: whatever this audit persisted to the demo chat history is deleted
+// before the script exits (the ai-error-audit.mjs pattern). Without it, each
+// run leaks a "s14 a11y probe D2" pair, which the dark/accent sweeps then
+// flag as flashbulbs through the designed user-bubble inversion.
+const auditStart = new Date();
+const prisma = new PrismaClient({ datasources: { db: { url: "file:../db/custom.db" } } });
 
 const findings = [];
 const nonGaps = [];
@@ -119,8 +131,14 @@ const d2 = await page.evaluate(() => {
     sendAriaBusy: sendBtn ? sendBtn.getAttribute("aria-busy") : null,
   };
 });
-await page.unroute("**/api/ai/chat");
+// S32: the S14 remedy, in the right order — reload FIRST (the document
+// unload aborts the held request), THEN unroute. The previous order
+// (unroute → reload) released the held D2 request to the REAL server, and
+// the real AI route persisted the probe pair on every run (4 pairs
+// accumulated in db/custom.db before this fix — the standing-suite's
+// dark-sweep surfaced them as flashbulbs).
 await page.reload();
+await page.unroute("**/api/ai/chat");
 await page.waitForFunction(() => document.querySelector("main") !== null, null, { timeout: 20000 });
 await page.waitForTimeout(1000);
 if (d2.thinkingPresent && !d2.thinkingAnnounced && d2.sendAriaBusy === null) {
@@ -177,4 +195,19 @@ if (d4.composerLabelled && d4.sendLabelled && d4.quickActionPressedSemantics >= 
 }
 
 await browser.close();
+
+// S32 cleanup — remove any probe chat rows THIS run persisted (the
+// ai-error-audit.mjs pattern): everything the demo user gained since
+// auditStart. Idempotent; a zero count is the expected healthy case.
+try {
+  const demo = await prisma.user.findUnique({ where: { email: "demo@studyflow.app" }, select: { id: true } });
+  if (demo) {
+    const del = await prisma.aiChatMessage.deleteMany({
+      where: { userId: demo.id, createdAt: { gte: auditStart } },
+    });
+    console.error(`[cleanup] removed ${del.count} probe chat rows created by this audit`);
+  }
+} finally {
+  await prisma.$disconnect();
+}
 console.log(JSON.stringify({ findings, nonGaps }, null, 2));
