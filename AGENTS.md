@@ -9,7 +9,7 @@ High-signal instructions for coding agents working in this repo. Everything here
 | `bun install` | Install deps (Bun ≥ 1.3) |
 | `bun run dev` | Dev server on :3000 (Turbopack), logs tee'd to `dev.log` |
 | `bun run lint` / `bun run typecheck` | ESLint / `tsc --noEmit` — both must be clean |
-| `bun run test` | Vitest unit layer (258 tests; `*.test.ts` only — never picks up e2e specs) |
+| `bun run test` | Vitest unit layer (273 tests; `*.test.ts` only — never picks up e2e specs) |
 | `bun run build` | Production build → `.next/standalone` (**required before e2e**) |
 | `bun run test:e2e` | Playwright vs the standalone build on :3100 with `db/e2e.db` (291 specs) |
 | `node scripts/capture-studyflow.mjs` | Refresh all 31 `docs/screenshots/` captures from the dev server (24 light + 7 dark) |
@@ -27,6 +27,7 @@ High-signal instructions for coding agents working in this repo. Everything here
 | `node scripts/connectivity-audit.mjs` | Offline/online audit (offline banner, AI rollback under REAL transport failure, task dialog, SPA nav, login, recovery). S28: the A4 login-offline probe asserts the DESIGNED failure channel — the S15 inline `role=alert` on the auth card (scoped to `div.shadow-2xl`, never page-wide), the user stays on `/login`, the button recovers; a toast on the login route is now the WRONG design (the S15 change replaced the S14 toast — asserting the retired toast design produced a phantom finding) |
 | `node scripts/settings-roundtrip-audit.mjs` | Settings persistence round-trips (display name, avatar, whitespace guard, second-write-wins, concurrent families) |
 | `node scripts/security-audit.mjs` | Security audit (cookie flags, AI-route rate limits, upload MIME decision, download headers, logout, auth-gating) |
+| `bun scripts/dep-audit.mjs` | Dependency-security audit (session-30): runs `bun audit`, parses its text report (no JSON reporter in bun 1.3.14), and classifies every advisory by RUNTIME REACHABILITY against the `.next/standalone/node_modules` trace — runtime-reachable → FAIL (exit 1); dev/CLI-surface advisories ride the envelope as DOCUMENTED non-production entries with their classification evidence. Self-verifying preconditions (the S27 doctrine): the trace must exist AND be newer than `bun.lock`, else exit 1 with NO findings. Run with BUN (the `prisma/seed.ts` precedent — plain node cannot import the `src/lib/dep-audit.ts` seam). The seam + parser fixtures are unit-pinned by `tests/dep-audit.test.ts` |
 | `node scripts/ai-a11y-audit.mjs` | AI-surface accessibility audit (transcript live region, busy semantics, solver announcement, composer labels) |
 | `node scripts/ref-auth-probe-s15.mjs` | Capture the reference's auth sub-screen ground truth (login error alert, signup, verify OTP, forgot 3-state) as JSON |
 | `node scripts/auth-flow-audit-s15.mjs` | Clone-side auth-flow audit (inline login error, signup form, forgot flow) — GREEN post-S15 |

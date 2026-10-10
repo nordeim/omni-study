@@ -1,0 +1,130 @@
+{
+ "session": "S30 (dependency-security audit \u2014 the never-audited surface)",
+ "workspace_session": 59,
+ "finding": {
+  "class": "the un-audited surface (the S27/S28 tooling-integrity family, proactive sibling)",
+  "tell": "pre15-preflight's verdict read 'GREEN \u2014 deps pinned by design, no action' while `bun audit` on the same tree reported 2 HIGH advisories \u2014 two tools measuring DIFFERENT surfaces (outdated-count vs security advisories) with no probe covering the second",
+  "verified_advisories": [
+   {
+    "module": "braces",
+    "range": "<=3.0.3",
+    "severity": "high",
+    "advisory": "GHSA-vfj7-8cjw-p6xm",
+    "path": "eslint-config-next \u203a @next/eslint-plugin-next \u203a fast-glob \u203a micromatch \u203a braces",
+    "surface": "dev (devDependency chain only)",
+    "in_standalone_trace": false,
+    "fixable_at_source": false,
+    "evidence": "3.0.3 IS the latest version on npm (npm view braces@latest \u2192 3.0.3) \u2014 the advisory covers every published 3.x; no patched release exists"
+   },
+   {
+    "module": "deepmerge-ts",
+    "range": "<8.0.0",
+    "severity": "high",
+    "advisory": "GHSA-ggr8-5vv4-36mx",
+    "path": "prisma \u203a @prisma/config \u203a deepmerge-ts",
+    "surface": "cli (prod-declared tooling the runtime never imports)",
+    "in_standalone_trace": false,
+    "fixable_at_source": false,
+    "evidence": "@prisma/config@6.19.3 pins deepmerge-ts EXACTLY at 7.1.5 (an exact pin, not a range \u2014 Prisma's own lockfile-tested choice); an override to 8.x would fight the upstream pin inside Prisma's CLI"
+   }
+  ],
+  "standalone_trace_module_roots": [
+   ".prisma",
+   "detect-libc",
+   "@prisma/client",
+   "sharp",
+   "@img/colour",
+   "@img/sharp-linux-x64",
+   "@img/sharp-libvips-linuxmusl-x64",
+   "@img/sharp-linuxmusl-x64",
+   "@img/sharp-libvips-linux-x64",
+   "@swc/helpers",
+   "@next/env",
+   "semver",
+   "client-only",
+   "next",
+   "z-ai-web-dev-sdk",
+   "react",
+   "styled-jsx",
+   "react-dom"
+  ]
+ },
+ "repair": {
+  "pure_seam": "src/lib/dep-audit.ts (parseBunAuditOutput + classifyAdvisory + buildDepAuditEnvelope)",
+  "unit_pins": "tests/dep-audit.test.ts (15 tests: the parser fixtures incl. today's byte-exact report, the classification matrix [runtime/dev/cli/unclassified + runtime-beats-dev], the envelope contracts)",
+  "runner": "scripts/dep-audit.mjs (bun-run \u2014 the prisma/seed.ts precedent; self-verifying preconditions: trace exists AND newer than bun.lock, else exit 1 with NO findings)",
+  "genuine_run": {
+   "ranAt": "2026-10-10T06:22:36.018Z",
+   "source": "bun audit",
+   "runtimeModules": [
+    ".prisma",
+    "detect-libc",
+    "@prisma/client",
+    "sharp",
+    "@img/colour",
+    "@img/sharp-linux-x64",
+    "@img/sharp-libvips-linuxmusl-x64",
+    "@img/sharp-linuxmusl-x64",
+    "@img/sharp-libvips-linux-x64",
+    "@swc/helpers",
+    "@next/env",
+    "semver",
+    "client-only",
+    "next",
+    "z-ai-web-dev-sdk",
+    "react",
+    "styled-jsx",
+    "react-dom"
+   ],
+   "totalAdvisories": 2,
+   "runtimeFindings": [],
+   "nonProductionFindings": [
+    {
+     "module": "braces",
+     "severity": "high",
+     "surface": "dev",
+     "runtimeReachable": false,
+     "paths": [
+      "eslint-config-next \u203a @next/eslint-plugin-next \u203a fast-glob \u203a micromatch \u203a braces"
+     ],
+     "verdict": "NON-PRODUCTION",
+     "rationale": "Not in the standalone trace; every path roots in a devDependency (eslint-config-next) \u2014 dev-time tooling only; documented non-production risk."
+    },
+    {
+     "module": "deepmerge-ts",
+     "severity": "high",
+     "surface": "cli",
+     "runtimeReachable": false,
+     "paths": [
+      "prisma \u203a @prisma/config \u203a deepmerge-ts"
+     ],
+     "verdict": "NON-PRODUCTION",
+     "rationale": "Not in the standalone trace, but reached from the prod-declared tooling prisma (the CLI/build class \u2014 the app runtime never imports it); documented non-production risk."
+    }
+   ],
+   "verdict": "GREEN \u2014 2 advisory(ies) documented as non-production (dev/CLI surface), 0 runtime-reachable"
+  },
+  "negative_controls": {
+   "a_fabricated_runtime_advisory": "exit 1, verdict 'FAIL \u2014 1 runtime-reachable advisory(ies) present', the loud stderr message \u2014 the guard is not a rubber stamp (scratch copy deleted after)",
+   "b_stale_trace": "exit 1, ZERO stdout bytes (no findings emitted), the stderr remedy naming `bun run build` \u2014 observed live first when this session's own earlier `bun update braces` touched bun.lock after the build (the precondition caught a real staleness, not a synthetic one), then reproduced deliberately",
+   "c_genuine_run": "exit 0, GREEN \u2014 2 advisories documented as NON-PRODUCTION (dev/CLI surface) with their classification evidence riding the envelope"
+  }
+ },
+ "gates": {
+  "lint": "clean",
+  "typecheck": "clean",
+  "unit": "273 passed (18 files \u2014 was 258/17; +15 dep-audit pins)",
+  "build": "clean (standalone)",
+  "e2e": "291 passed cold-db (4.8 min)",
+  "total": "564 green (273 unit + 291 e2e) \u2014 was 549"
+ },
+ "standing_checks_post_change": {
+  "drawer_check": "GREEN (backdrop oklab(0 0 0/0.2) + blur(4px), 288px panel, 20 links, no footer, Escape-close)",
+  "mobile_walkthrough_390x844": "the app bar + drawer dialog with all 20 links, Settings navigation by ref, the S26/S24/S25 cards on the Profile tab, scrollWidth 390 \u2014 the mobile navigation menu is working as expected",
+  "reference_re_sweep": "UNCHANGED since S19-S29 (zero-data 0/0; the 'AcademiaFlow (Copy)' login/title platform-rename artifact with in-app StudyFlow branding; the same 20 nav views in the same order; the same five Settings tabs with School/Grade/Goal/Account created)",
+  "copy_sweep": "14/20 MATCH, 6 data-state non-gaps (the documented S17-pinned family)",
+  "screenshots": "the standing 31 refreshed via capture-studyflow.mjs (29 byte-changed; theme restored light and verified via Prisma: light/violet)",
+  "standing_audit_suite": "security \u2713 settings-roundtrip \u2713 connectivity \u2713 (the S28 repair validated live) upload-edge \u2713 data-volume \u2713 forced-colors \u2713 print \u2713 focus-order \u2713 CWV \u2713 dark-sweep \u2713 (the S27 repair validated live) accent-dark-sweep \u2713 ai-error \u2713 ai-a11y \u2713 pre15-preflight \u2713 \u2014 all with zero code findings"
+ },
+ "no_parity_surface_touched": "one new pure seam + one new test file + one new script + doc/comment updates; zero app code, zero CSS, zero Tailwind v4 surface; the 291 e2e pins untouched by construction"
+}
