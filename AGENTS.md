@@ -24,7 +24,7 @@ High-signal instructions for coding agents working in this repo. Everything here
 | `node scripts/upload-edge-audit.mjs` | Upload edge cases: the 2 MiB boundary, empty/unicode filenames, download round-trip, concurrency, auth |
 | `node scripts/capture-s13-evidence.mjs` | The S13 resilience evidence captures (the AI rollback, the MIME-guard toast, the drawer, Files) |
 | `node scripts/drawer-check-s14.mjs` | The standing mobile-drawer probe (both apps, 390×844 — backdrop/panel/links/footer + Escape-close) |
-| `node scripts/connectivity-audit.mjs` | Offline/online audit (offline banner, AI rollback under REAL transport failure, task dialog, SPA nav, login, recovery) |
+| `node scripts/connectivity-audit.mjs` | Offline/online audit (offline banner, AI rollback under REAL transport failure, task dialog, SPA nav, login, recovery). S28: the A4 login-offline probe asserts the DESIGNED failure channel — the S15 inline `role=alert` on the auth card (scoped to `div.shadow-2xl`, never page-wide), the user stays on `/login`, the button recovers; a toast on the login route is now the WRONG design (the S15 change replaced the S14 toast — asserting the retired toast design produced a phantom finding) |
 | `node scripts/settings-roundtrip-audit.mjs` | Settings persistence round-trips (display name, avatar, whitespace guard, second-write-wins, concurrent families) |
 | `node scripts/security-audit.mjs` | Security audit (cookie flags, AI-route rate limits, upload MIME decision, download headers, logout, auth-gating) |
 | `node scripts/ai-a11y-audit.mjs` | AI-surface accessibility audit (transcript live region, busy semantics, solver announcement, composer labels) |

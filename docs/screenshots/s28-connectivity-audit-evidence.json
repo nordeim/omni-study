@@ -1,0 +1,72 @@
+{
+ "session": "S28 \u2014 the connectivity-audit A4 repair (the designed-channel doctrine)",
+ "workspace": "session-54 run at 270a898",
+ "before": {
+  "finding": {
+   "family": "A",
+   "surface": "Login offline shows no/silent feedback",
+   "measured": "{\"url\":\"/login\",\"toast\":[],\"bodyText\":\"Welcome to StudyFlowSign in to continueContinue with GoogleorEmailPasswordYou appear to be offline. Check your connection and try again.Sign inForgot password?Need an account? Sign upDemo account: dem\"}"
+  },
+  "characterization": "The phantom finding: toast=[] read as 'no/silent feedback' while the finding's own measured bodyText contains the offline message \u2014 the probe asserted the retired S14 toast design"
+ },
+ "reproductionProbe": {
+  "url": "/login",
+  "toast": [],
+  "alerts": [
+   {
+    "text": "You appear to be offline. Check your connection and try again.",
+    "cls": "relative w-full rounded-xl border p-4"
+   }
+  ],
+  "banner": false,
+  "button": {
+   "disabled": false,
+   "text": "Sign in"
+  },
+  "url_still_login": true
+ },
+ "after": {
+  "nonGap": {
+   "surface": "Login offline announces the failure through the S15 inline alert (stays on the card, button recovered)",
+   "detail": "{\"url\":\"/login\",\"alert\":[\"You appear to be offline. Check your connection and try again.\"],\"button\":{\"disabled\":false,\"text\":\"Sign in\"}}"
+  },
+  "findingsCount": 0,
+  "allNonGaps": [
+   "No offline surface in the DOM while online (byte-parity guard)",
+   "AI offline send rolls back (bounce-back + toast) AND the offline banner is visible",
+   "Offline transport failures toast the human message",
+   "Task create offline toasts the error (dialog kept for retry)",
+   "SPA navigation works offline (shell + cached data)",
+   "Login offline announces the failure through the S15 inline alert (stays on the card, button recovered)",
+   "Post-offline retry succeeds (composer usable immediately)"
+  ]
+ },
+ "negativeControl": {
+  "exit": 1,
+  "stderr": "A4 NEGATIVE CONTROL: the genuine finding fires \u2014 Login offline fails silently or loses the card",
+  "measured": {
+   "url": "/login",
+   "alert": [
+    "You appear to be offline. Check your connection and try again."
+   ],
+   "button": {
+    "disabled": false,
+    "text": "Sign in"
+   }
+  }
+ },
+ "gates": {
+  "lint": "green",
+  "typecheck": "green",
+  "unit": "258 green",
+  "build": "green (the documented Ecmascript edge-runtime warning for instrumentation.ts process.exit \u2014 known behavior)",
+  "e2e": "291 green (cold db/e2e.db, 4.5 min) = 549 total"
+ },
+ "standingChecks": {
+  "drawerCheck": "GREEN post-change",
+  "mobileWalkthrough": "agent-browser 390x844 \u2014 app bar, drawer dialog with 20 links, Settings navigation, the S26 Email card on the Profile tab, scrollWidth 390",
+  "referenceReSweep": "UNCHANGED since S19-S27 (login + dashboard + Settings Profile; 20-view copy sweep 14/20 MATCH, 6 data-state non-gaps)",
+  "captures": "the standing 31 refreshed (24 light + 7 dark; theme restored light)"
+ },
+ "scope": "scripts/connectivity-audit.mjs family A4 ONLY \u2014 zero app code, zero new CSS, zero Tailwind v4 surface, zero parity-pinned bytes"
+}

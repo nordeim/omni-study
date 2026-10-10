@@ -187,20 +187,46 @@ await page4.fill("input[type=password]", "Demo1234!");
 await ctx4.setOffline(true);
 await page4.click("button[type=submit]");
 await page4.waitForTimeout(3000);
+// S28 — assert the DESIGNED failure channel, never a retired expectation.
+// A4 was written in S14 against the then-current toast design; S15
+// (ADR-013) replaced the login card's error rendering with the reference's
+// MEASURED pattern — auth errors render INLINE as a role=alert wash between
+// Password and Sign in ("the reference's measured pattern, replacing the
+// S14 toast" — login-card.tsx), pinned by tests/e2e/auth-flows.spec.ts
+// (div.shadow-2xl getByRole("alert") + toHaveURL(/\/login/)). A toast on
+// the login route is now the WRONG design (parity-breaking). The probe
+// enumerates the observable end state from the live DOM: the user stays on
+// the card, the alert announces, the button recovers. A probe that asserts
+// a design that no longer exists produces findings whose own measured
+// evidence disproves them (the AP-73 expectation-rot lesson).
 const a4 = await page4
-  .evaluate(() => ({
-    url: location.pathname,
-    toast: [...document.querySelectorAll('[role="status"]')].map((t) => t.textContent.trim().slice(0, 90)),
-    bodyText: document.body.textContent.slice(0, 200),
-  }))
+  .evaluate(() => {
+    const card = document.querySelector("div.shadow-2xl");
+    const button = document.querySelector("button[type=submit]");
+    return {
+      url: location.pathname,
+      // Scoped to the auth card — Next's route announcer also uses
+      // role=alert (the S15 e2e lesson); never enumerate page-wide.
+      alert: card
+        ? [...card.querySelectorAll('[role="alert"]')].map((t) => t.textContent.trim().slice(0, 90))
+        : [],
+      button: button ? { disabled: button.disabled, text: button.textContent.trim() } : null,
+    };
+  })
   .catch(() => null);
 await ctx4.setOffline(false);
 await page4.screenshot({ path: `${OUT}/a4-login-offline.png` }).catch(() => {});
 await ctx4.close();
-if (a4 && a4.toast.length) {
-  ok("Login offline toasts the failure (stays on the card)", JSON.stringify(a4.toast));
+const a4StaysCard = a4 && a4.url === "/login";
+const a4Announces = a4 && a4.alert.some((t) => /offline/i.test(t));
+const a4Recovered = a4 && a4.button && !a4.button.disabled && a4.button.text !== "Signing in…";
+if (a4 && a4StaysCard && a4Announces && a4Recovered) {
+  ok(
+    "Login offline announces the failure through the S15 inline alert (stays on the card, button recovered)",
+    JSON.stringify(a4)
+  );
 } else {
-  note("A", "Login offline shows no/silent feedback", { measured: JSON.stringify(a4) });
+  note("A", "Login offline fails silently or loses the card", { measured: JSON.stringify(a4) });
 }
 
 // ---------------------------------------------------------------------------
