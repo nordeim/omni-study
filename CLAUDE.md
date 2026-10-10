@@ -144,7 +144,7 @@ One-page SPA shell + rewrites; fixed glass sidebar ≥ lg; below lg a fixed glas
 REST-ish `/api/<entity>` collections with `/[id]` items; Zod at every boundary; ownership in the WHERE clause; destructive ops are plain DELETE behind auth (no tokens/approvals — single-user contexts).
 
 ### Database / Data Layer
-20 views over 22 models (see `prisma/schema.prisma`); SQLite via Prisma 6.19; `db/` at repo root, gitignored; idempotent seed; e2e gets its own `db/e2e.db`.
+20 views over 24 models (see `prisma/schema.prisma` — 22 with direct `userId` Cascade relations; `Flashcard` is scoped through its deck); SQLite via Prisma 6.19; `db/` at repo root, gitignored; idempotent seed; e2e gets its own `db/e2e.db`.
 
 ### Environment Variables
 

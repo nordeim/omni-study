@@ -1,0 +1,90 @@
+{
+  "session": 29,
+  "workspace_session": 57,
+  "base": "9fda56e",
+  "class": "documentation-drift repair (the AP-74 prose-rot family — the S27/S28 tooling-integrity class extended to the doc layer)",
+  "before": {
+    "model_count_claims": {
+      "schema_truth": 24,
+      "models": "21 original + VerificationToken + PasswordResetToken (S15/ADR-013) + RumEvent (S18/ADR-016)",
+      "user_relation_truth": "22 userId onDelete:Cascade relations (Flashcard is deck-scoped — CORRECT as written in the 'all 22 user relations' claims)",
+      "stale_claims": {
+        "CLAUDE.md:147": "20 views over 22 models",
+        "Project_Architecture_Document.md:376/466/752": "22 models / Twenty-two models",
+        "README.md:105/268": "22 models",
+        "omni-study_SKILL.md:326": "21 models + the pre-S15 model list"
+      }
+    },
+    "false_current_state_claims_PAD": {
+      "sec6.3:579": "Registration seeds three starter subjects (false since S17/ADR-015 — zero subjects)",
+      "sec9.3:677": "the repo ships no Dockerfile (false since S18/ADR-016 — Dockerfile + docker-compose.yml shipped)",
+      "sec5.4:554": "no reduced-motion special-casing yet (resolved S12/ADR-010)",
+      "sec3.2:374": "src/hooks/ ← (reserved) — no such directory exists"
+    },
+    "stale_claims_SKILL": {
+      "sec11:510": "Current green state: 106 unit / 194 e2e (thirteen sessions stale; truth 258/291 = 549)",
+      "sec5:280": "drawer backdrop bg-black/20 backdrop-blur-sm (the code ships backdrop-blur-xs — the S4 trap-9 fix; mobile-chrome.tsx:94, e2e-pinned blur(4px))",
+      "sec8:380": "Known gap (open): no prefers-reduced-motion handling (resolved S12/ADR-010)"
+    },
+    "scaffold_era_comment_vitest_config": "vitest.config.ts header named 'router, clarify questions, plan sanitizer, check-in mapping, db-path resolution' + scripts/smoke-test.sh — seams of the ORIGINAL pre-clone scaffold app that never existed in StudyFlow (clarify questions / plan sanitizer / check-in mapping / smoke-test.sh)"
+  },
+  "after": {
+    "grep_verification": "grep across AGENTS/CLAUDE/PAD/SKILL/README returns zero stale model-count claims; the remaining backdrop-blur-sm mentions are the trap-9 explanations (correct context); 'all 22 user relations' kept in CLAUDE.md:59, PAD:249 [all 22], README:189",
+    "new_truths": {
+      "model_count": "24 models in CLAUDE.md:147, PAD:376/466/752, README:105/268, SKILL.md:326 (with the full 24-model list)",
+      "er_diagram": "PAD §4.1 mermaid gains the two S15 token relations (VerificationToken / PasswordResetToken one-shot)",
+      "registration": "PAD §6.3: zero starter subjects (S17/ADR-015)",
+      "docker": "PAD §9.3: the shipped S18 Dockerfile + compose + the outside-Docker validation + the remaining real compose-up step",
+      "reduced_motion": "PAD §5.4 + SKILL §8: the S12 global reduced-motion collapse block (ADR-010)",
+      "test_counts": "SKILL §11: 258 unit / 291 e2e (549 green)",
+      "drawer_blur": "SKILL §5: backdrop-blur-xs (matches §4 trap 9 + mobile-chrome.tsx:94 + login-card.tsx:383)",
+      "hooks_line": "removed from the PAD §3.2 tree",
+      "vitest_comment": "the actual 17-file/258-test seam list; the smoke-test.sh claim dropped"
+    },
+    "kept_untouched": [
+      "CLAUDE.md:59 / PAD:249 / README:189 'all 22 user relations carry onDelete: Cascade' — verified CORRECT (22 userId-Cascade relations; Flashcard deck-scoped)",
+      "the README per-session phase rows S2–S28 (history log)",
+      "the reference's 'AcademiaFlow (Copy)' platform-title artifact (documented since the S19-era probe; the in-app reference branding is StudyFlow / Your study companion — drawer-verified this session)",
+      "the accent-dark-sweep residual lowcontrast entries (the documented S11 verified non-gap family)",
+      "the 20-view copy-sweep data-state diffs (the documented S17-pinned non-gap family: the zero-data reference account vs the populated demo account)"
+    ]
+  },
+  "tdd_form": "docs-only (no app code, no CSS, zero Tailwind v4 surface, zero parity-pinned bytes, no test files touched): RED = the grep evidence above, verified against the executable truth (schema grep / source grep / config read); GREEN = the re-grep returning zero stale claims; the regression confirmation = the full gates re-run",
+  "gates": {
+    "lint": "ok",
+    "typecheck": "ok",
+    "unit": "258 passed (17 files)",
+    "build": "ok (standalone)",
+    "e2e": "291 passed (cold db/e2e.db, 4.7 min) — the first post-change run hit the persistent-e2e-db artifact on tests/e2e/s23-import.spec.ts:61 (fixed envelope ids: created→updated on the second run against the same db); resolved by the documented cold-db convention (rm db/e2e.db), the S27/S28 operating rule; NOT a code defect"
+  },
+  "standing_checks_post_change": {
+    "drawer_check": "GREEN (backdrop oklab(0 0 0/0.2) + blur(4px), 288px panel, 20 links, no footer, Escape-close)",
+    "mobile_walkthrough_390x844": "the app bar (brand + live clock), the drawer dialog with all 20 links, Settings navigation by ref (the documented covered-element quirk), the Profile tab with the S26 Email address card above the S24 Change password + S25 Danger zone cards, scrollWidth 390 — no horizontal overflow",
+    "reference_re_sweep": "UNCHANGED since S19–S28 (zero-data 0/0, greeting from the email prefix, Saturday October 10 2026, the same 20 nav views, the StudyFlow / Your study companion branding split, the same five Settings tabs with School name/Grade level/Daily Study Goal/Account created, the MyDay amber greeting empty state; the 20-view copy sweep 14/20 MATCH with 6 data-state non-gaps)",
+    "sweeps": {
+      "security": "0 findings (7 nonGaps; the documented limiter shape 20x400 then 2x429 cutoffAt=21; one clean dev-server restart after this session's own double-run artifact — the session-55 lesson re-applied)",
+      "settings_roundtrip": "0 failures",
+      "connectivity": "0 findings — the S28 repair validated live ('Login offline announces the failure through the S15 inline alert (stays on the card, button recovered)')",
+      "upload_edge": "0 findings",
+      "data_volume": "0 findings",
+      "forced_colors": "0 invisible / 0 unbounded",
+      "print": "0 findings",
+      "focus_order": "0 findings",
+      "cwv": "CLS 0.00 everywhere; throttled-mobile dashboard LCP NI 2624/2720ms (the documented S16 state); the reference's own mobile login POOR 7888ms + its dashboard POOR/CLS 0.261",
+      "dark_sweep": "MODE dark, 0 flashbulbs / 0 unreadable across 20 views — the S27 repair validated live (the interrupted first accent sweep left the demo user dark/orange; restored through the settings API and verified via Prisma)",
+      "accent_dark_sweep": "0 FAIL findings; residual lowcontrast = the documented S11 verified non-gap family (Calendar adjacent-month 2.36 dark)"
+    }
+  },
+  "evidence_captures": {
+    "standing_31": "refreshed via capture-studyflow.mjs (29 byte-changed + 01-login/dark-Login byte-identical; theme restored light; the dev server restarted cleanly by PID first — the AP-70 lesson)",
+    "per_session_pairs": "the s2X-* evidence pairs untouched (verified in git status)"
+  },
+  "docs_aligned": [
+    "CLAUDE.md (the 24-model line with the 22-relation/Flashcard note)",
+    "Project_Architecture_Document.md (Last Updated 2026-10-10; §4.1 twenty-four models + the ER token relations; §3.2 tree 24 models + hooks line removed; §5.4 reduced-motion resolved; §6.3 zero-subjects registration; §9.3 the shipped Docker config; §12 24 models)",
+    "README.md (schema.prisma 24 models; the phase-row 24 models; the session-29 status row; the captures line note)",
+    "omni-study_SKILL.md (§5 backdrop-blur-xs; §7 24 models + the full list + the 22-relation note; §8 reduced-motion resolved; §11 549 green; AP-74)",
+    "vitest.config.ts (the StudyFlow seam-list comment; the smoke-test.sh claim dropped)"
+  ],
+  "no_test_count_change": "549 stays: 258 unit + 291 e2e — no app code touched (the vitest.config.ts change is comment-only)"
+}

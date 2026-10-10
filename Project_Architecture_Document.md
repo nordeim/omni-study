@@ -3,7 +3,7 @@
 **Classification:** Internal Engineering Reference
 **Status:** DEFINITIVE, PRODUCTION-LOCKED BLUEPRINT
 **Companion Documents:** `README.md` (user-facing), `AGENTS.md` (agent quick-reference), `CLAUDE.md` (agent operating conventions), `docs/Tailwind-V4-Validation-Report.md` (parity trap log)
-**Last Updated:** 2026-10-09
+**Last Updated:** 2026-10-10
 **Audience:** Senior Engineers, Tech Leads, DevOps, Onboarding Engineers, and AI Coding Agents
 **Rule:** Every architectural decision in this document traces to a specific rationale. Nothing is here "because it's popular."
 
@@ -371,9 +371,8 @@ omni-study/
 │   │   ├── store.ts                     ← useAppStore + useThemeStore (+ html token application)
 │   │   ├── data.ts                      ← useDataStore + typed mutations (refresh-on-mutate)
 │   │   └── server/{http,entities}.ts    ← CRUD factory + 16 delegates
-│   └── hooks/                           ← (reserved)
 ├── prisma/
-│   ├── schema.prisma                    ← 22 models + the DATABASE PATH CONTRACT header
+│   ├── schema.prisma                    ← 24 models + the DATABASE PATH CONTRACT header
 │   └── seed.ts                          ← idempotent demo data (uses db.ts for env-aware resolution)
 ├── tests/
 │   ├── *.test.ts                        ← Vitest: router, theme, date, calculator, auth, validation, db-path
@@ -463,7 +462,7 @@ if (path.isAbsolute(raw) || /^[A-Za-z]:[\\/]/.test(raw)) {
 
 ### 4.1 Database Schema
 
-SQLite, provider `sqlite`, url `env("DATABASE_URL")` (see ADR-002). Twenty-two models; all children cascade on `User` deletion; nullable subject/list references use `SetNull`.
+SQLite, provider `sqlite`, url `env("DATABASE_URL")` (see ADR-002). Twenty-four models — 21 original + the S15 one-shot token pair (`VerificationToken`, `PasswordResetToken` — ADR-013) + `RumEvent` (S18 — ADR-016); 22 of the 23 non-User models carry direct `userId` `onDelete: Cascade` relations (`Flashcard` is scoped through its deck, the documented S7 nesting); all children cascade on `User` deletion; nullable subject/list references use `SetNull`.
 
 ```mermaid
 erDiagram
@@ -486,6 +485,8 @@ erDiagram
     User ||--o{ CalculatorHistoryEntry : owns
     User ||--o{ Holiday : owns
     User ||--o{ RumEvent : monitors
+    User ||--o{ VerificationToken : "one-shot, 15 min (S15)"
+    User ||--o{ PasswordResetToken : "one-shot, 30 min (S15)"
     Subject ||--o{ Task : tags
     Subject ||--o{ Assignment : tags
     Subject ||--o{ Exam : tags
@@ -551,7 +552,7 @@ Radix: dialog, select, tabs, dropdown-menu, checkbox, switch, progress, separato
 
 ### 5.4 Motion
 
-CSS-keyframe only (`sf-shimmer` skeletons, `sf-toast-in` slide, dialog zoom/fade via Radix data-state classes, `transition-all duration-200/300` on chrome). No animation library; no reduced-motion special-casing yet (see §11).
+CSS-keyframe only (`sf-shimmer` skeletons, `sf-toast-in` slide, dialog zoom/fade via Radix data-state classes, `transition-all duration-200/300` on chrome). No animation library; reduced-motion is handled by the global `@media (prefers-reduced-motion: reduce)` collapse block (session-12/ADR-010 — see §11, RESOLVED).
 
 ---
 
@@ -576,7 +577,7 @@ CSS-keyframe only (`sf-shimmer` skeletons, `sf-toast-in` slide, dialog zoom/fade
 
 ### 6.3 Authentication & Authorization
 
-Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, exp }` HMAC-SHA256 with `AUTH_SECRET` (dev fallback constant when unset — production MUST set it). Registration seeds three starter subjects. Logout clears the cookie client- and server-side.
+Single-role per-user ownership model; no admin surface. Session: `{ uid, iat, exp }` HMAC-SHA256 with `AUTH_SECRET` (dev fallback constant when unset — production MUST set it, enforced at boot by the S22 guard). Registration creates the account with ZERO starter subjects (S17/ADR-015 — the reference's own measured behavior; the seeded demo account carries the showcase). Logout clears the cookie client- and server-side.
 
 ### 6.4 Threat Model
 
@@ -674,7 +675,7 @@ Production should use an **absolute** `DATABASE_URL` (see `docs/DEPLOYMENT.md` �
 
 ### 9.3 Docker Configuration
 
-None — the repo ships no Dockerfile; the standalone output is the deployment unit. (Documented honestly rather than backfilled with an untested image.)
+Shipped in session-18 (ADR-016): a production multi-stage `Dockerfile` (prod-deps → build → bun runtime, with the `rm -rf /app/db` guard so the output tracer's stale db snapshot never ships) + `.dockerignore` + `docker-compose.yml` — SQLite on the /data volume via the ABSOLUTE `file:/data/custom.db` URL (§4 form-2), `AUTH_SECRET` required at boot, an `init` profile (schema push + seed), and a healthcheck on `/api/health`. The runtime layout was validated end-to-end OUTSIDE Docker (`scripts/docker-layout-sim-s27.sh` — the sandbox has no daemon); the first real `docker compose --profile init up` on a Docker host is the remaining verification step (documented in DEPLOYMENT.md §8). The standalone output remains the non-Docker deployment unit.
 
 ### 9.4 CI/CD Pipeline
 
@@ -749,7 +750,7 @@ Enforced: ESLint flat config + `tsc --noEmit` (both gate). Convention (review-en
 | `src/components/layout/mobile-chrome.tsx` | ~145 | Fixed glass app bar (brand + live clock) + the reference-exact drawer |
 | `src/components/views/dashboard-view.tsx` | ~250 | The parity-pinned dashboard layout |
 | `src/components/views/events-view.tsx` | ~530 | The dark terminal panel (slate-900, both themes) + recurring-event expansion + reminders (S5-B) |
-| `prisma/schema.prisma` | ~460 | 22 models + the DB contract header |
+| `prisma/schema.prisma` | ~460 | 24 models + the DB contract header |
 | `prisma/seed.ts` | ~230 | Idempotent demo data |
 | `tests/e2e/mobile-navigation.spec.ts` | ~100 | The highest-regression-risk chrome (drawer + lg breakpoint) |
 | `tests/e2e/navigation.spec.ts` | ~145 | 20-view render matrix + computed parity pins |

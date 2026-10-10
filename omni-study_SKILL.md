@@ -277,7 +277,7 @@ below `lg` a FIXED `h-16` `.glass` app bar (hamburger + 32px gradient brand
 chip + "StudyFlow" + live clock "03:43 AM" on the right — never the view
 title) — `pt-20` models the reference's measured 64px bar + 16px breathing
 room (first heading y=80 on BOTH apps). The slide-in drawer is a `w-72`
-(288px) white panel over a `bg-black/20 backdrop-blur-sm` backdrop with
+(288px) white panel over a `bg-black/20 backdrop-blur-xs` backdrop with
 `shadow-2xl`, a `p-6` brand header (40px gradient chip), nav items from the
 SHARED `nav-items.tsx` (`NavItemLink`: icon + label + trailing dot,
 px-4 py-3 rounded-xl, active gradient tint), Esc/backdrop close, and NO
@@ -323,11 +323,16 @@ only mutation path (no direct `fetch` in views).
 
 ## §7 Data Layer: Prisma Models, CRUD Factory & Seed
 
-**21 models** (`prisma/schema.prisma`): User, Subject, TaskList, Task,
+**24 models** (`prisma/schema.prisma`): User, VerificationToken, PasswordResetToken (the S15 one-shot pair — ADR-013), Subject, TaskList, Task,
 Assignment, Exam, Event, TimetableClass, Notebook, Note, FlashcardDeck,
 Flashcard, PracticeTest, StudyGroup, Grade, FocusSession, FileFolder,
-FileItem, AiChatMessage, CalculatorHistoryEntry, Holiday. All entity rows
-carry `userId` + timestamps; ownership is enforced in every query.
+FileItem, AiChatMessage, CalculatorHistoryEntry, Holiday, RumEvent (S18 —
+ADR-016). All entity rows
+carry `userId` + timestamps; ownership is enforced in every query — except
+`Flashcard`, which is scoped through its deck (no userId column; the S7
+nesting). 22 of the 23 non-User models carry direct `userId` `onDelete:
+Cascade` relations (the count behind the "all 22 user relations" claims —
+correct as written).
 
 **The CRUD factory** (`src/lib/server/entities.ts`, 621 lines): one
 `EntityDelegate` config per entity (model name, Zod create/update schemas,
@@ -377,8 +382,10 @@ notes, decks, grades; `avatarEmoji: ""` (reference default state).
 - **Drawer:** Esc key + backdrop click close (spec'd in
   `tests/e2e/mobile-navigation.spec.ts`).
 - **Emoji avatar picker:** `aria-pressed` per option + descriptive labels.
-- **Known gap (documented, open):** no `prefers-reduced-motion` handling for
-  the shimmer/slide keyframes.
+- **Reduced motion (resolved session-12, ADR-010):** the global
+  `@media (prefers-reduced-motion: reduce)` collapse block stills the
+  shimmer/slide keyframes and transitions — a superset the reference lacks
+  (pinned by `tests/e2e/accessibility.spec.ts`).
 
 ---
 
@@ -459,6 +466,7 @@ notes, decks, grades; `avatarEmoji: ""` (reference default state).
 | AP-71 | MEDIUM | Two live lessons from the S25 deletion build: (a) a DOCUMENTED budget count can drift from reality — the S24 spec comment said the suite spends ~8 registrations + 1 = 9/10 of the register limiter's budget, but the real count was already 10/10 (S9 registers 2, not 1; s16-perf-parity also registers 1 through the UI), so the S25 fresh-user registration was 429'd in the full suite while passing in isolation (the per-spec run never re-hits the exhausted in-memory limiter — an isolation-passing spec can still fail suite-wise on a shared-budget route); (b) the register AND verify routes are both IP-keyed (`register:${ip}` / `verify:${ip}` via `clientIp` → x-forwarded-for first) | re-derive documented budget counts by grep (`grep -rn "auth/register\|create account" tests/e2e/`) before adding a new consuming spec — never trust the previous session's arithmetic; when a suite-level budget is exhausted, have the new spec's POSTs ride a DISTINCT client IP (`headers: { "x-forwarded-for": "192.0.2.25" }` — the RFC 5737 TEST-NET range): behind a proxy distinct users have distinct IPs, so the loopback pile-up is the suite artifact, and the limiter logic itself stays untouched and pinned | S25 account deletion (session-25) |
 | AP-72 | HIGH | An audit tool validated once can SILENTLY ROT under a later app change and keep emitting plausible-looking findings for the WRONG state: `scripts/dark-sweep.mjs` (validated GREEN in session-10) forced dark mode via `classList.add("dark")` + `localStorage["sf-theme-mode"]` — but the S11 theme lifecycle added a pre-paint boot script that reads `sf-theme` (a DIFFERENT key, read by nothing) and an auth-correction window that re-applies the user's stored preference on every full load, so by S27 the probe swept in LIGHT mode: `MODE:` printed empty, 97 phantom "flashbulbs" (ordinary white cards) + 7 phantom "unreadable" flags (reference-measured muted surfaces) — findings that would have invited parity-breaking "fixes" | every probe must (1) set state through the REAL application path (the settings API — the accent-dark-sweep/capture-studyflow convention), never a parallel side-channel (a forced class + a private localStorage key is a second implementation of theming that drifts); (2) SELF-VERIFY its precondition and fail loudly — poll `waitForFunction` for the observable end state, print the failure to stderr, `process.exit(1)`, and emit NO findings (a probe that cannot verify its own mode must never emit findings that look like findings); (3) ride the applied state in its structured output (`{ mode, views }` — self-describing artifacts); (4) restore mutated state with an awaited write before close; validate the guard with a negative-control probe (never-true wait → exit 1 + empty stdout), and re-run every standing audit after any lifecycle change touches what they measure | S27 dark-sweep repair (session-27) |
 | AP-73 | HIGH | The S27 mode-forcing rot has a VERDICT-rot sibling: the probe still runs, still measures the right state, but asserts a DESIGN THAT NO LONGER EXISTS — `scripts/connectivity-audit.mjs` family A4 (written S14, validated against the then-current toast design) kept enumerating `[role=\"status\"]` toasts on the login route, but S15 had replaced the login card's errors with the reference's MEASURED inline `role=alert` (between Password and Sign in), so for thirteen sessions every audit run emitted the phantom finding "Login offline shows no/silent feedback" — with `toast: []` as the measured evidence while the SAME finding's bodyText contained "You appear to be offline. Check your connection and try again.": a finding disproved by its own measured evidence, undetected through every "connectivity ✓" verdict since (the sessions trusted the aggregate and never re-read the findings array) — and a future session acting on it would have reverted the login card to toasts, breaking the S15 reference-parity pins | the tell for this rot class: a finding whose own measured evidence disproves it — when the probe's measured JSON contains the very feedback the finding claims is absent, the EXPECTATION is stale, not the app. The doctrine: assert the DESIGNED channel (enumerated from the live DOM, scoped to the designed container — the auth card `div.shadow-2xl`, never page-wide: Next's route announcer also carries role=alert), assert the observable end states (the user stays on the card, the button recovers), keep the genuine-failure criterion LOUD (never normalize a finding away), ride the measured state in the verdict, and re-run every standing audit after any change that touches what it measures — reading the FINDINGS array, not the aggregate verdict | S28 connectivity-audit A4 repair (session-28) |
+| AP-74 | MEDIUM | The S27/S28 rot has a PROSE sibling: doc claims validated once drift silently under additive change — the schema's model count was written as "22" at S18 (forgetting the S15 token pair) in CLAUDE/PAD/README and stayed "21" (the pre-S15 list) in SKILL §7 for eleven more sessions; PAD claimed "registration seeds three starter subjects" for ten sessions after ADR-015 shipped zero-subjects, "ships no Dockerfile" for ten after ADR-016 shipped one, "no reduced-motion yet" for sixteen after ADR-010 resolved it, and its tree listed a `src/hooks/` that never existed; SKILL §11 carried test counts thirteen sessions stale (106/194 vs 549) and §5 named the pre-S4 `backdrop-blur-sm` where the code ships `backdrop-blur-xs`; `vitest.config.ts`'s header comment still named seams ("clarify questions, plan sanitizer, check-in mapping", `scripts/smoke-test.sh`) of the ORIGINAL pre-clone scaffold app. The tell (same family as AP-73's): multiple layers carrying DIFFERENT stale values for the same quantity — 24 vs 22 vs 21 — while every session's "docs aligned" summary trusted the last session's prose instead of re-reading it | the guard: on every additive schema/config change, grep EVERY doc layer for the quantities it repeats (model counts, test counts, capture counts, class names) and re-derive them from the executable truth (the schema grep, the source grep, the config read) — prose is the repo's findings array: read it, don't trust the aggregate. The same number can be right in one claim and wrong in another (22 userId-Cascade relations is CORRECT; 22 total models is WRONG) — fix the claim, not the number | S29 documentation-drift repair (session-29) |
 
 ---
 
@@ -507,7 +515,7 @@ tail -40 dev.log                            # request traces + prisma queries
 ```bash
 bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
-Current green state: lint ✓ · tsc ✓ · 106 unit ✓ · build ✓ · 194 e2e ✓.
+Current green state: lint ✓ · tsc ✓ · 258 unit ✓ · build ✓ · 291 e2e ✓ (549 green).
 
 **Pre-deployment:** set a real `AUTH_SECRET` (`openssl rand -hex 32`); use an
 ABSOLUTE `DATABASE_URL` (see `docs/DEPLOYMENT.md` §4); never ship `.env`,
