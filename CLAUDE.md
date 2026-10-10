@@ -26,6 +26,7 @@ Key decisions that shape everything else: **Next.js 16 App Router as a one-page 
 - **Parity is measured, not guessed.** Computed styles from the live reference are the ground truth; screenshots are secondary. Every parity fix lands with a pinning test where feasible.
 - **One database file, three anchors.** The `DATABASE_URL` contract (see Project_Architecture_Document.md ADR-002) is the most fragile invariant in the repo — treat changes to it as high-risk.
 - **The local gate is the only gate.** No CI exists; nothing ships that hasn't passed lint/typecheck/test/build/e2e locally.
+- **Audit tools self-verify (S27/ADR-025).** A probe sets state only through the real application path (the settings API — never a forced class or a private side-channel) and asserts its own precondition, failing loudly (non-zero exit, no findings) when it cannot verify the state it is about to measure; the applied state rides the structured output. Silent tooling rot under app change is how `dark-sweep.mjs` swept in light mode for 15 sessions (AP-72).
 
 ## Implementation Standards
 

@@ -1,8 +1,15 @@
-// Dark-mode consistency sweep for the clone (session-10 audit).
-// Logs in, enables dark mode, visits all 20 views, and flags:
+// Dark-mode consistency sweep for the clone (session-10 audit; S27 repair).
+// Logs in, enables dark mode THROUGH THE REAL APPLICATION PATH (the settings
+// API + the S11 pre-paint/auth-corrected lifecycle — never a forced class:
+// the session-10 forcing silently rotted after S11), visits all 20 views,
+// and flags:
 //  - "flashbulb" surfaces: opaque light backgrounds (luminance > 0.80) at least 40x40px on the dark canvas
 //  - unreadable text: contrast(text, effective bg) < 2.2
 // Effective background = walk up ancestors until an opaque bg is found.
+// S27 self-verifying precondition: the sweep FAILS LOUDLY (non-zero exit)
+// if the dark class is not applied at sweep time — it never silently
+// measures the wrong mode; the applied mode rides the JSON envelope.
+// Restores light at the end (the dev user resting state).
 import { chromium } from "playwright";
 
 const BASE = "http://localhost:3000";
@@ -91,11 +98,38 @@ await page.fill("input[type=email]", "demo@studyflow.app");
 await page.fill("input[type=password]", "Demo1234!");
 await page.click("button[type=submit]");
 await page.waitForURL(`${BASE}/Dashboard`, { timeout: 20000 });
-// ensure dark mode
-await page.evaluate(() => { document.documentElement.classList.add("dark"); localStorage.setItem("sf-theme-mode", "dark"); });
+// S27 — set dark mode through the REAL application path (the settings API
+// → server persistence → the S11 pre-paint boot cache → auth-confirmed
+// loadFromUser) and SELF-VERIFY the precondition before sweeping. The
+// session-10 approach (forced class + localStorage["sf-theme-mode"]) silently
+// rotted when the S11 lifecycle added the pre-paint cache + auth correction:
+// that key is read by NOTHING (the real cache key is "sf-theme"), and the
+// user's stored light preference corrected the forced class on the very next
+// full load — the sweep measured LIGHT mode and reported 97 phantom
+// flashbulbs. A probe that cannot verify its own mode must fail loudly, never
+// emit findings that look like findings (the AP-69/AP-70 lesson applied to
+// tooling; AGENTS.md dark-sweep entry).
+const patch = await page.request.patch(`${BASE}/api/settings/preferences`, { data: { themeMode: "dark" } });
+if (!patch.ok()) {
+  console.error(`DARK-SWEEP PRECONDITION FAILED: the settings PATCH answered ${patch.status()} — the sweep refuses to measure the wrong mode (see AGENTS.md dark-sweep entry).`);
+  process.exit(1);
+}
 await page.goto(`${BASE}/Dashboard`);
-await page.waitForTimeout(1500);
-const mode = await page.evaluate(() => document.documentElement.className);
+try {
+  // Gate on the OBSERVABLE end state (the S16 lesson — never a fixed sleep):
+  // the class must arrive through the real lifecycle, never a probe side-channel.
+  await page.waitForFunction(() => document.documentElement.classList.contains("dark"), null, { timeout: 30000 });
+} catch {
+  console.error("DARK-SWEEP PRECONDITION FAILED: the dark class never applied through the real lifecycle — the sweep refuses to measure the wrong mode (see AGENTS.md dark-sweep entry).");
+  await page.request.patch(`${BASE}/api/settings/preferences`, { data: { themeMode: "light" } });
+  process.exit(1);
+}
+const mode = await page.evaluate(() => (document.documentElement.classList.contains("dark") ? "dark" : ""));
+if (mode !== "dark") {
+  console.error("DARK-SWEEP PRECONDITION FAILED: the applied mode is not dark — the sweep refuses to measure the wrong mode (see AGENTS.md dark-sweep entry).");
+  await page.request.patch(`${BASE}/api/settings/preferences`, { data: { themeMode: "light" } });
+  process.exit(1);
+}
 console.log("MODE:", mode);
 
 const out = {};
@@ -105,5 +139,9 @@ for (const v of VIEWS) {
   const r = await page.evaluate(CHECKER);
   out[v] = JSON.parse(r);
 }
+// S27 — restore the dev user resting state (light) BEFORE closing: the
+// PATCH is awaited so it can never be aborted in-flight (the theme-spec
+// lesson — an aborted restore persists dark and poisons later light pins).
+await page.request.patch(`${BASE}/api/settings/preferences`, { data: { themeMode: "light" } });
 await browser.close();
-console.log(JSON.stringify(out, null, 1));
+console.log(JSON.stringify({ mode, views: out }, null, 1));

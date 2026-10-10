@@ -1,0 +1,173 @@
+{
+  "session": "S27 (session-52 workspace run) \u2014 the dark-sweep audit-tool repair + self-verifying precondition",
+  "contract": "docs/remediation-plan-session27.md; AGENTS.md dark-sweep entry; PAD ADR-025; SKILL AP-72",
+  "beforeState": {
+    "mode": "(empty \u2014 the forced class never survived the S11 lifecycle; the sweep measured LIGHT mode)",
+    "modeLine": "MODE: ",
+    "totals": {
+      "flashbulb": 97,
+      "unreadable": 7,
+      "perView": {
+        "Dashboard": {
+          "flashbulb": 8,
+          "unreadable": 2
+        },
+        "MyDay": {
+          "flashbulb": 6,
+          "unreadable": 0
+        },
+        "Tasks": {
+          "flashbulb": 9,
+          "unreadable": 0
+        },
+        "Calendar": {
+          "flashbulb": 5,
+          "unreadable": 4
+        },
+        "Timetable": {
+          "flashbulb": 5,
+          "unreadable": 0
+        },
+        "Assignments": {
+          "flashbulb": 6,
+          "unreadable": 1
+        },
+        "Exams": {
+          "flashbulb": 5,
+          "unreadable": 0
+        },
+        "Notes": {
+          "flashbulb": 1,
+          "unreadable": 0
+        },
+        "Flashcards": {
+          "flashbulb": 1,
+          "unreadable": 0
+        },
+        "PracticeTests": {
+          "flashbulb": 3,
+          "unreadable": 0
+        },
+        "StudyGroups": {
+          "flashbulb": 1,
+          "unreadable": 0
+        },
+        "GradeTracker": {
+          "flashbulb": 6,
+          "unreadable": 0
+        },
+        "Analytics": {
+          "flashbulb": 10,
+          "unreadable": 0
+        },
+        "Files": {
+          "flashbulb": 2,
+          "unreadable": 0
+        },
+        "Calculator": {
+          "flashbulb": 8,
+          "unreadable": 0
+        },
+        "MathSolver": {
+          "flashbulb": 8,
+          "unreadable": 0
+        },
+        "AIAssistant": {
+          "flashbulb": 2,
+          "unreadable": 0
+        },
+        "FocusTimer": {
+          "flashbulb": 6,
+          "unreadable": 0
+        },
+        "Settings": {
+          "flashbulb": 5,
+          "unreadable": 0
+        }
+      }
+    },
+    "falseUnreadableEntries": [
+      {
+        "view": "Dashboard",
+        "text": "high",
+        "color": "rgb(234, 179, 8)",
+        "bgEff": "rgb(254,252,232)",
+        "contrast": 1.85
+      },
+      {
+        "view": "Dashboard",
+        "text": "medium",
+        "color": "rgb(234, 179, 8)",
+        "bgEff": "rgb(254,252,232)",
+        "contrast": 1.85
+      },
+      {
+        "view": "Calendar",
+        "text": "27",
+        "color": "rgb(203, 213, 225)",
+        "bgEff": "rgb(255,255,255)",
+        "contrast": 1.48
+      },
+      {
+        "view": "Calendar",
+        "text": "28",
+        "color": "rgb(203, 213, 225)",
+        "bgEff": "rgb(255,255,255)",
+        "contrast": 1.48
+      },
+      {
+        "view": "Calendar",
+        "text": "29",
+        "color": "rgb(203, 213, 225)",
+        "bgEff": "rgb(255,255,255)",
+        "contrast": 1.48
+      },
+      {
+        "view": "Calendar",
+        "text": "30",
+        "color": "rgb(203, 213, 225)",
+        "bgEff": "rgb(255,255,255)",
+        "contrast": 1.48
+      },
+      {
+        "view": "Assignments",
+        "text": "medium",
+        "color": "rgb(234, 179, 8)",
+        "bgEff": "rgb(254,252,232)",
+        "contrast": 1.85
+      }
+    ],
+    "falseUnreadableNote": "All 7 are reference-measured LIGHT-mode muted surfaces (the amber-500-on-yellow-50 medium priority pill at 1.85; the Calendar adjacent-month slate-300-on-white days at 1.48) \u2014 the documented parity-preserved non-gap family. The 97 flashbulbs were ordinary white cards on the light canvas."
+  },
+  "afterState": {
+    "mode": "dark",
+    "modeLine": "MODE: dark",
+    "totals": {
+      "flashbulb": 0,
+      "unreadable": 0,
+      "perView": {}
+    },
+    "note": "All 20 views clean in REAL dark mode \u2014 the session-10 post-fix state, consistent with the S11 verified non-gap family (2.15-3.07) sitting above the <2.2 unreadable bar and the e2e dark pins passing in the 549 regression."
+  },
+  "guardProbe": {
+    "injection": "scratch copy with a never-true waitForFunction (deleted after)",
+    "exitCode": 1,
+    "stderr": "DARK-SWEEP PRECONDITION FAILED: the dark class never applied through the real lifecycle \u2014 the sweep refuses to measure the wrong mode (see AGENTS.md dark-sweep entry).",
+    "stdoutEmpty": true
+  },
+  "preferenceRestore": {
+    "demoUserThemeMode": "light",
+    "verifiedVia": "Prisma direct query post-sweep"
+  },
+  "gates": {
+    "lint": true,
+    "tsc": true,
+    "unit": 258,
+    "build": true,
+    "e2e": 291,
+    "note": "The full 549 re-run green post-change; the script repair touches no app code \u2014 the 291 prior pins untouched by construction."
+  },
+  "drawerCheck": "GREEN post-change (both apps)",
+  "mobileWalkthrough": "agent-browser 390x844: app bar renders, drawer opens as a dialog with 20 links, Settings navigates, the Profile tab renders the S26 Email card above the S24/S25 cards, no horizontal overflow (scrollWidth 390)",
+  "screenshots": "All 31 standing captures refreshed via scripts/capture-studyflow.mjs (24 light + 7 dark; theme restored to light); the per-session evidence pairs (s2X-*.png) byte-identical \u2014 no restoration needed"
+}

@@ -13,7 +13,7 @@ High-signal instructions for coding agents working in this repo. Everything here
 | `bun run build` | Production build → `.next/standalone` (**required before e2e**) |
 | `bun run test:e2e` | Playwright vs the standalone build on :3100 with `db/e2e.db` (291 specs) |
 | `node scripts/capture-studyflow.mjs` | Refresh all 31 `docs/screenshots/` captures from the dev server (24 light + 7 dark) |
-| `node scripts/dark-sweep.mjs` | Dark-mode contrast audit over all 20 views (flashbulb/unreadable detector) |
+| `node scripts/dark-sweep.mjs` | Dark-mode contrast audit over all 20 views (flashbulb/unreadable detector). S27: sets dark mode through the settings API (the real lifecycle) and SELF-VERIFIES the precondition — fails loudly (exit 1, no findings) if the dark class is not applied; the applied mode rides the JSON envelope. Never force the class directly (the session-10 approach silently rotted after S11) |
 | `node scripts/accent-dark-sweep.mjs` | Accent × dark-mode audit: all 7 accents × 20 desktop views + 6 mobile views + the drawer (FAIL <2.2, WARN <3.2 for accent text) |
 | `node scripts/forced-colors-sweep.mjs` | Forced-colors (Windows HC) audit: all 20 views + drawer + reference baseline (invisible-text / unbounded-control / state-probe detectors) |
 | `node scripts/print-audit.mjs` | Print audit: print-media text colors in BOTH modes + real A4 `page.pdf()` renders + overflow probes (pre-applies print emulation — the real Ctrl+P pipeline) |
