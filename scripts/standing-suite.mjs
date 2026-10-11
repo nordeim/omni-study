@@ -62,7 +62,7 @@ const STAGES = [
   { name: "dark-mobile-sweep", file: "scripts/dark-mobile-sweep.mjs", runtime: "node" },
   { name: "accent-light-sweep", file: "scripts/accent-light-sweep.mjs", runtime: "node" },
   { name: "dark-sweep", file: "scripts/dark-sweep.mjs", runtime: "node" },
-  { name: "accent-dark-sweep", file: "scripts/accent-dark-sweep.mjs", runtime: "node" },
+  { name: "accent-dark-sweep", file: "scripts/accent-dark-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S38: the mobile 20-view matrix — 7 accents × (20 desktop + 20 mobile + the drawer) ≈ 17–18 min measured; the default 10-min budget would SIGKILL it mid-sweep (exit 124)
   { name: "cwv", file: "scripts/cwv-audit-s16.mjs", runtime: "node" },
   { name: "ai-error", file: "scripts/ai-error-audit.mjs", runtime: "node" },
   { name: "ai-a11y", file: "scripts/ai-a11y-audit.mjs", runtime: "node" },
@@ -141,7 +141,7 @@ async function ensureStandalone() {
 // --- the stages ---------------------------------------------------------------
 
 async function runAuditStage(spec) {
-  const { code, stdout, stderr } = await run(spec.runtime, [join(REPO, spec.file)], STAGE_TIMEOUT_MS);
+  const { code, stdout, stderr } = await run(spec.runtime, [join(REPO, spec.file)], spec.timeoutMs ?? STAGE_TIMEOUT_MS);
   writeFileSync(join(RAW_DIR, `${spec.name}.json`), stdout);
   if (code !== 0) {
     return {

@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-// Unit-test layer for the pure domain seams — 20 files / 402 tests:
+// Unit-test layer for the pure domain seams — 20 files / 419 tests:
 // router, theme, theme-cache, date, calculator, auth, validation, db-path,
 // site, api-timeout, api-offline, files (content-disposition),
 // rum-diagnostics, data-export, data-import, env-check, view-collections,
@@ -31,7 +31,18 @@ import path from "node:path";
 // [unreadable / lowcontrast — the flashbulb class does not apply on the
 // light canvas], the drawer record per accent, and the three
 // signature-strict non-gap exemptions [the CTA-face, the calendar
-// adjacent-month days, and the yellow priority-pill vocabulary]).
+// adjacent-month days, and the yellow priority-pill vocabulary];
+// extended in S38 with the accent-dark-sweep classifier rebuild pins: the
+// accent × dark MOBILE 20-view matrix [the pre-S38 mobile pass swept only
+// 6 views — MOBILE_VIEWS — and 14 views had never been rendered in dark ×
+// accent at the stacked mobile layout by any standing audit] — with the
+// ALL-ACCENTS guard on both surfaces + the applied map, the ALL-VIEWS
+// guard [the omission-means-clean recording RETIRED — every view recorded
+// explicitly, clean views carry empty detector arrays], the drawer-present
+// guard with the drawer-open failure counted as a FINDING, the mode rot
+// guard [mode MUST be dark — the INVERSE of accent-light's], the
+// mobileViewport 390×844 contract, the per-accent applied
+// self-verification, and the mobile scrollWidth overflow class].
 // Browser/E2E coverage lives in tests/e2e/*.spec.ts (Playwright — never
 // picked up by this config, which matches *.test.ts only; the standalone
 // server is booted by playwright.config.ts's webServer).

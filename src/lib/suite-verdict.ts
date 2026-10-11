@@ -696,25 +696,99 @@ function classifyDarkSweep(env: unknown): StageVerdict {
 }
 
 // --- accent-dark-sweep --------------------------------------------------------
-// FAIL-class = flashbulbs + unreadable; `lowcontrast` is the documented S11
-// WARN non-gap family (counted into the note, never the findings).
+// The S38 contract: the accent × dark family at FULL mobile coverage — the
+// mobile pass sweeps ALL 20 views per accent (the pre-S38 probe swept only
+// 6: MOBILE_VIEWS — the 14-view gap S38 closed), every view is recorded
+// EXPLICITLY on both surfaces (the omission-means-clean recording is
+// RETIRED — clean views carry empty detector arrays), and the per-accent
+// `applied` self-verified readings + `mode` + the mobile `mobileViewport`
+// ride the envelope. The ALL-ACCENTS + ALL-VIEWS + drawer-present guards
+// make every silently-skipped dimension a LOUD shape-error, never
+// green-by-omission (the S37 anti-phantom doctrine applied to this
+// family). Counting semantics preserved from S11/S65: flashbulbs are
+// ALWAYS findings; white-on-accent unreadable entries are the CTA-face
+// exemption (the S11 family-2 non-gap); lowcontrast entries are WARN.
+
+const ACCENT_DARK_ALL_ACCENTS = new Set(["violet", "blue", "green", "orange", "pink", "red", "teal"]);
+const ACCENT_DARK_ALL_VIEWS = [
+  "Dashboard", "MyDay", "Tasks", "Calendar", "Events", "Timetable",
+  "Assignments", "Exams", "Notes", "Flashcards", "PracticeTests",
+  "StudyGroups", "GradeTracker", "Analytics", "Files", "Calculator",
+  "MathSolver", "AIAssistant", "FocusTimer", "Settings",
+];
 
 function classifyAccentDarkSweep(env: unknown): StageVerdict {
-  if (!isObj(env) || !isObj(env.desktop) || !isObj(env.mobile)) {
+  if (!isObj(env)) return shapeError("envelope must be an object");
+  if (typeof env.mode !== "string") return shapeError("mode must be a string (the S27 rot-guard metadata)");
+  if (!isObj(env.mobileViewport) || env.mobileViewport.width !== 390 || env.mobileViewport.height !== 844) {
+    return shapeError("mobileViewport must be the mobile portrait 390×844 (the S33 mobile class) — the mobile pass's contract (the desktop pass rides its own 1280×800 context)");
+  }
+  if (!isObj(env.applied)) return shapeError("applied must be an object of per-accent self-verified <html data-accent> readings");
+  if (!isObj(env.desktop) || !isObj(env.mobile)) {
     return shapeError("desktop/mobile must be accent→view maps");
+  }
+  // The ALL-ACCENTS guard (both surfaces + the applied map): an accent that
+  // silently did not run must never read green-by-omission.
+  for (const a of ACCENT_DARK_ALL_ACCENTS) {
+    if (!(a in env.desktop)) return shapeError(`desktop must carry all 7 accents (violet, blue, green, orange, pink, red, teal) — "${a}" is missing: an accent that silently did not run must never read green-by-omission`);
+    if (!(a in env.mobile)) return shapeError(`mobile must carry all 7 accents (violet, blue, green, orange, pink, red, teal) — "${a}" is missing: an accent that silently did not run must never read green-by-omission`);
+    if (!(a in env.applied)) return shapeError(`applied must carry all 7 accents — "${a}" is missing (the self-verified reading)`);
+  }
+  // The ALL-VIEWS guard (both surfaces — the omission-means-clean recording
+  // is RETIRED): every accent's view map must carry all 20 canonical views.
+  for (const [surfaceName, surface] of [["desktop", env.desktop], ["mobile", env.mobile]] as [string, Record<string, unknown>][]) {
+    for (const [accent, views] of Object.entries(surface)) {
+      if (!isObj(views)) return shapeError(`${accent} must be a view map`);
+      for (const v of ACCENT_DARK_ALL_VIEWS) {
+        if (!(v in views)) {
+          return shapeError(`${surfaceName}.${accent} must carry all 20 views — "${v}" is missing: a view that silently did not run must never read green-by-omission (the S38 mobile 20-view matrix contract)`);
+        }
+      }
+    }
+  }
+  // The drawer-present guard (mobile, per accent).
+  for (const [accent, views] of Object.entries(env.mobile)) {
+    if (!isObj(views) || !("(drawer)" in views)) {
+      return shapeError(`mobile.${accent} must carry the "(drawer)" record (the drawer is part of the mobile contract per accent)`);
+    }
   }
   let findings = 0;
   let warns = 0;
   let ctaFace = 0;
-  let entries = 0;
-  for (const surface of [env.desktop, env.mobile] as Record<string, unknown>[]) {
+  let renderings = 0;
+  let drawerErrors = 0;
+  let overflows = 0;
+  const notApplied: string[] = [];
+  for (const [accent, appliedReading] of Object.entries(env.applied)) {
+    if (appliedReading !== accent) notApplied.push(`${accent}→${String(appliedReading)}`);
+  }
+  for (const [isMobile, surface] of [[false, env.desktop], [true, env.mobile]] as [boolean, Record<string, Record<string, unknown>>][]) {
     for (const [accent, views] of Object.entries(surface)) {
-      if (!isObj(views)) return shapeError(`${accent} must be a view map`);
+      if (!isObj(views)) continue; // already shape-checked above
       for (const [view, rec] of Object.entries(views)) {
-        if (!isObj(rec) || !isArr(rec.flashbulbs) || !isArr(rec.unreadable)) {
-          return shapeError(`${accent}.${view} must carry flashbulbs/unreadable Arrays`);
+        if (!isObj(rec) || !isArr(rec.flashbulbs) || !isArr(rec.unreadable) || !isArr(rec.lowcontrast)) {
+          return shapeError(`${accent}.${view} must carry flashbulbs/unreadable/lowcontrast Arrays`);
         }
-        entries += 1;
+        // The drawer record: linkCount + the detector family; an `error`
+        // string (the guarded drawer-open catch) is a FINDING — never a
+        // swallow (the anti-phantom doctrine).
+        if (view === "(drawer)") {
+          if (typeof rec.linkCount !== "number") {
+            return shapeError(`mobile.${accent}.(drawer) must carry linkCount (the drawer's own link census)`);
+          }
+          findings += rec.flashbulbs.length;
+          for (const entry of rec.unreadable) {
+            if (isObj(entry) && entry.color === "rgb(255, 255, 255)") ctaFace += 1;
+            else findings += 1;
+          }
+          warns += rec.lowcontrast.length;
+          if (typeof rec.error === "string" && rec.error.length > 0) {
+            findings += 1;
+            drawerErrors += 1;
+          }
+          continue;
+        }
+        renderings += 1;
         findings += rec.flashbulbs.length; // flashbulbs are ALWAYS findings — never a signature class
         // The documented non-gap signature (session-65, verified against
         // remediation-plan-session11 family 2): white-on-accent unreadable
@@ -725,14 +799,49 @@ function classifyAccentDarkSweep(env: unknown): StageVerdict {
           if (isObj(entry) && entry.color === "rgb(255, 255, 255)") ctaFace += 1;
           else findings += 1;
         }
-        if (isArr(rec.lowcontrast)) warns += rec.lowcontrast.length;
+        warns += rec.lowcontrast.length;
+        if (isMobile) {
+          if (typeof rec.scrollWidth !== "number") {
+            return shapeError(`mobile.${accent}.${view}.scrollWidth must be a number (the S16 mobile-only-gap class, measured)`);
+          }
+          if (rec.scrollWidth > 390) {
+            findings += 1;
+            overflows += 1;
+          }
+        }
       }
     }
   }
+  // The mode rot guard (the S27 family): the accent × light family belongs
+  // to accent-light-sweep — the INVERSE guard of S37's.
+  if (env.mode !== "dark") {
+    return {
+      green: false,
+      findings: findings + 1,
+      note: `mode=${env.mode} — the sweep ran in the wrong mode (the accent × light family belongs to accent-light-sweep; the accent-dark contract is mode=dark)`,
+    };
+  }
+  if (notApplied.length > 0) {
+    return {
+      green: false,
+      findings: findings + notApplied.length,
+      note: `${notApplied.length} accent(s) did not apply through the real lifecycle (applied ${notApplied.join(", ")}) — the accent-application finding class`,
+    };
+  }
+  if (findings > 0) {
+    const extras: string[] = [];
+    if (overflows > 0) extras.push(`${overflows} mobile overflow(s) (scrollWidth > 390 — the S16 class)`);
+    if (drawerErrors > 0) extras.push(`${drawerErrors} drawer error(s) (the drawer-open failure class)`);
+    return {
+      green: false,
+      findings,
+      note: `${findings} finding(s) across ${renderings} view renderings (7 accents × 20 views × desktop+mobile) + 7 drawer records${extras.length > 0 ? `; ${extras.join("; ")}` : ""}; ${ctaFace} CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); ${warns} WARN (lowcontrast — the S11 non-gap family)`,
+    };
+  }
   return {
-    green: findings === 0,
-    findings,
-    note: `${entries} entries probed; ${ctaFace} CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); ${warns} WARN (lowcontrast — the S11 non-gap family)`,
+    green: true,
+    findings: 0,
+    note: `${renderings} view renderings probed (7 accents × 20 views × desktop+mobile) + 7 drawer records; ${ctaFace} CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); ${warns} WARN (lowcontrast — the S11 non-gap family)`,
   };
 }
 

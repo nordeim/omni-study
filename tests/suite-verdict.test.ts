@@ -56,14 +56,70 @@ const FOCUS_GREEN = {
 
 const DARK_GREEN = { mode: "dark", views: { Dashboard: { flashbulbs: [], unreadable: [] }, Tasks: { flashbulbs: [], unreadable: [] } } };
 
-const ACCENT_GREEN = {
-  desktop: { violet: { Calendar: { flashbulbs: [], unreadable: [], lowcontrast: [
+// --- accent-dark-sweep full-shape generators (S38 — the mobile 20-view matrix)
+// The pre-S38 envelope recorded only NON-CLEAN views (omission-means-clean —
+// the S11 shape): the seam could not distinguish "clean because measured"
+// from "clean because never rendered", and the mobile pass swept only 6 of
+// 20 views. The S38 shape records EVERY view explicitly on BOTH surfaces,
+// carries the per-accent self-verified `applied` readings, the `mode`, and
+// the mobile pass's `mobileViewport` — the ALL-ACCENTS + ALL-VIEWS guards
+// (the S37 anti-phantom doctrine applied to the accent-dark family) make a
+// silently-skipped accent or view a LOUD shape-error, never green-by-omission.
+
+const S38_ACCENTS = ["violet", "blue", "green", "orange", "pink", "red", "teal"] as const;
+const S38_VIEWS = [
+  "Dashboard", "MyDay", "Tasks", "Calendar", "Events", "Timetable",
+  "Assignments", "Exams", "Notes", "Flashcards", "PracticeTests",
+  "StudyGroups", "GradeTracker", "Analytics", "Files", "Calculator",
+  "MathSolver", "AIAssistant", "FocusTimer", "Settings",
+];
+// The pre-S38 mobile pass (the exact rot the ALL-VIEWS guard catches).
+const S38_MOBILE_VIEWS_PRE_S38 = ["Dashboard", "MyDay", "Timetable", "Tasks", "Settings", "Calendar"];
+
+type S38Rec = Record<string, unknown>;
+
+function s38DesktopRec(o: S38Rec = {}): S38Rec {
+  return { flashbulbs: [] as unknown[], unreadable: [] as unknown[], lowcontrast: [] as unknown[], ...o };
+}
+function s38MobileRec(o: S38Rec = {}): S38Rec {
+  return { flashbulbs: [] as unknown[], unreadable: [] as unknown[], lowcontrast: [] as unknown[], scrollWidth: 390, ...o };
+}
+function s38DrawerRec(o: S38Rec = {}): S38Rec {
+  return { linkCount: 20, flashbulbs: [] as unknown[], unreadable: [] as unknown[], lowcontrast: [] as unknown[], ...o };
+}
+
+/** The full accent-dark envelope: 7 accents × 20 views on BOTH surfaces +
+ *  the drawer per mobile accent, with per-view detector overrides merged in. */
+function s38Envelope(
+  desktopOverrides: Record<string, Record<string, S38Rec>> = {},
+  mobileOverrides: Record<string, Record<string, S38Rec>> = {},
+): S38Rec {
+  const desktop: S38Rec = {};
+  const mobile: S38Rec = {};
+  const applied: S38Rec = {};
+  for (const a of S38_ACCENTS) {
+    applied[a] = a;
+    const d: S38Rec = {};
+    const m: S38Rec = {};
+    for (const v of S38_VIEWS) {
+      d[v] = s38DesktopRec(desktopOverrides[a]?.[v]);
+      m[v] = s38MobileRec(mobileOverrides[a]?.[v]);
+    }
+    m["(drawer)"] = s38DrawerRec();
+    desktop[a] = d;
+    mobile[a] = m;
+  }
+  return { mode: "dark", mobileViewport: { width: 390, height: 844 }, applied, desktop, mobile };
+}
+
+const ACCENT_GREEN = s38Envelope(
+  { violet: { Calendar: { lowcontrast: [
     { text: "27", color: "rgb(71, 85, 105)", bgEff: "rgb(15,23,42)", contrast: 2.36, cls: "text-sm font-medium" },
   ] } } },
-  mobile: { violet: { Calendar: { flashbulbs: [], unreadable: [], lowcontrast: [
+  { violet: { Calendar: { lowcontrast: [
     { text: "27", color: "rgb(71, 85, 105)", bgEff: "rgb(15,23,42)", contrast: 2.36, cls: "text-sm font-medium" },
   ] } } },
-};
+);
 
 const CWV_GREEN = {
   thresholds: { lcp: 2500, cls: 0.1 },
@@ -328,26 +384,25 @@ describe("classifyAudit documented non-gap signatures", () => {
     // The genuine session-65 suite output: the ORANGE accent's Calendar chip
     // + PracticeTests Start Test — color rgb(255,255,255) on the accent bg
     // (orange-500, contrast 2.15) — the same in light mode; the reference's
-    // own accent-CTA design (remediation-plan-session11 family 2).
-    const v = classifyAudit("accent-dark-sweep", {
-      desktop: {
-        orange: {
-          Calendar: { flashbulbs: [], unreadable: [{ text: "Calendar", color: "rgb(255, 255, 255)", bgEff: "rgb(245,158,11)", contrast: 2.15, cls: "flex h-8 items-center gap-2 rounded-md px-3 text-xs font-medium tr" }], lowcontrast: [] },
-          PracticeTests: { flashbulbs: [], unreadable: [{ text: "Start Test", color: "rgb(255, 255, 255)", bgEff: "rgb(245,158,11)", contrast: 2.15, cls: "inline-flex items-center justify-center whitespace-nowrap rounded-" }], lowcontrast: [] },
-        },
-      },
-      mobile: { orange: { Calendar: { flashbulbs: [], unreadable: [{ text: "Calendar", color: "rgb(255, 255, 255)", bgEff: "rgb(245,158,11)", contrast: 2.15 }], lowcontrast: [] } } },
-    });
+    // own accent-CTA design (remediation-plan-session11 family 2). The S38
+    // full-shape fixture: the same entries riding the all-accents ×
+    // all-views envelope.
+    const v = classifyAudit("accent-dark-sweep", s38Envelope(
+      { orange: {
+        Calendar: { flashbulbs: [], unreadable: [{ text: "Calendar", color: "rgb(255, 255, 255)", bgEff: "rgb(245,158,11)", contrast: 2.15, cls: "flex h-8 items-center gap-2 rounded-md px-3 text-xs font-medium tr" }], lowcontrast: [] },
+        PracticeTests: { flashbulbs: [], unreadable: [{ text: "Start Test", color: "rgb(255, 255, 255)", bgEff: "rgb(245,158,11)", contrast: 2.15, cls: "inline-flex items-center justify-center whitespace-nowrap rounded-" }], lowcontrast: [] },
+      } },
+      { orange: { Calendar: { flashbulbs: [], unreadable: [{ text: "Calendar", color: "rgb(255, 255, 255)", bgEff: "rgb(245,158,11)", contrast: 2.15 }], lowcontrast: [] } } },
+    ));
     expect(v.green).toBe(true);
     expect(v.findings).toBe(0);
     expect(v.note).toMatch(/3 CTA-face/);
   });
 
   it("accent-dark-sweep: a NON-white unreadable entry is still a finding (the CTA-face signature is strict)", () => {
-    const v = classifyAudit("accent-dark-sweep", {
-      desktop: { violet: { Tasks: { flashbulbs: [], unreadable: [{ text: "hint", color: "rgb(71, 85, 105)", bgEff: "rgb(15,23,42)", contrast: 1.4 }], lowcontrast: [] } } },
-      mobile: {},
-    });
+    const v = classifyAudit("accent-dark-sweep", s38Envelope(
+      { violet: { Tasks: { flashbulbs: [], unreadable: [{ text: "hint", color: "rgb(71, 85, 105)", bgEff: "rgb(15,23,42)", contrast: 1.4 }], lowcontrast: [] } } },
+    ));
     expect(v.green).toBe(false);
     expect(v.findings).toBe(1);
   });
@@ -357,10 +412,9 @@ describe("classifyAudit documented non-gap signatures", () => {
     // rendered through the designed user-bubble inversion (dark:bg-slate-100)
     // — a flashbulb in every accent. The FIX is the probe-row cleanup, never
     // a re-classification of flashbulbs.
-    const v = classifyAudit("accent-dark-sweep", {
-      desktop: { violet: { AIAssistant: { flashbulbs: [{ cls: "max-w-[78%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15px]", bg: "rgb(241, 245, 249)", text: "s14 a11y probe D2" }], unreadable: [], lowcontrast: [] } } },
-      mobile: {},
-    });
+    const v = classifyAudit("accent-dark-sweep", s38Envelope(
+      { violet: { AIAssistant: { flashbulbs: [{ cls: "max-w-[78%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15px]", bg: "rgb(241, 245, 249)", text: "s14 a11y probe D2" }], unreadable: [], lowcontrast: [] } } },
+    ));
     expect(v.green).toBe(false);
     expect(v.findings).toBe(1);
   });
@@ -424,7 +478,7 @@ describe("classifyAudit findings (non-green)", () => {
   });
 
   it("accent FAIL-class (flashbulbs non-empty) → findings counted; lowcontrast stays WARN", () => {
-    const v = classifyAudit("accent-dark-sweep", { desktop: { violet: { Calendar: { flashbulbs: [{ text: "x" }], unreadable: [], lowcontrast: [] } } }, mobile: {} });
+    const v = classifyAudit("accent-dark-sweep", s38Envelope({ violet: { Calendar: { flashbulbs: [{ text: "x" }], unreadable: [], lowcontrast: [] } } }));
     expect(v.green).toBe(false);
     expect(v.findings).toBe(1);
   });
@@ -1075,6 +1129,142 @@ describe("classifyAudit accent-light-sweep (S37)", () => {
 
   it("the unknown-audit guard still holds: a name outside AUDIT_NAMES is a shape-error", () => {
     const v = classifyAudit("accent-light-sweeep", ACCENT_LIGHT_SWEEP_GREEN);
+    expect(isErr(v)).toBe(true);
+  });
+});
+
+// --- accent-dark-sweep (S38 — the mobile 20-view matrix) ----------------------
+// The accent × dark × MOBILE combo covered only 6 of 20 views (MOBILE_VIEWS
+// — Dashboard, MyDay, Timetable, Tasks, Settings, Calendar); the other 14
+// had NEVER been rendered in dark × accent at the stacked mobile layout by
+// any standing audit (mobile/midband/landscape are LIGHT + violet-only;
+// dark-mobile is violet-only; accent-light is LIGHT-only). The S38 shape
+// closes the matrix AND retires the omission-means-clean recording: every
+// view is recorded explicitly on BOTH surfaces, the per-accent `applied`
+// self-verification, `mode`, and the mobile `mobileViewport` ride the
+// envelope, and the ALL-ACCENTS + ALL-VIEWS + drawer-present guards make
+// every silently-skipped dimension a LOUD shape-error (the S37 anti-phantom
+// doctrine applied to the accent-dark family — an audit that cannot verify
+// its own coverage cannot be green).
+
+describe("classifyAudit accent-dark-sweep (S38 — the mobile 20-view matrix)", () => {
+  it("the GREEN shape: all 7 accents × 20 views on BOTH surfaces + the drawer per accent → green with the swept counts", () => {
+    const v = classifyAudit("accent-dark-sweep", s38Envelope());
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/280 view renderings/);
+    expect(v.note).toMatch(/7 drawer records/);
+  });
+
+  it("the ALL-VIEWS guard (mobile): an accent map missing ONE view reads shape-error — a view that silently did not run must never read green-by-omission", () => {
+    const env = s38Envelope() as { mobile: Record<string, Record<string, unknown>> };
+    delete env.mobile.violet.Notes;
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the ALL-VIEWS guard (desktop): the omission-means-clean recording shape is RETIRED — a desktop accent map missing a view reads shape-error", () => {
+    const env = s38Envelope() as { desktop: Record<string, Record<string, unknown>> };
+    delete env.desktop.teal.Files;
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the ALL-ACCENTS guard: a surface missing ONE accent reads shape-error", () => {
+    const env = s38Envelope() as { mobile: Record<string, unknown> };
+    delete env.mobile.red;
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the ALL-ACCENTS guard (applied map): a missing self-verified reading reads shape-error", () => {
+    const env = s38Envelope() as { applied: Record<string, unknown> };
+    delete env.applied.green;
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical 6-view mobile envelope (the pre-S38 MOBILE_VIEWS rot) reads shape-error — the exact shrink this guard catches", () => {
+    const env = s38Envelope() as { mobile: Record<string, Record<string, unknown>> };
+    for (const view of S38_VIEWS) {
+      if (!S38_MOBILE_VIEWS_PRE_S38.includes(view)) delete env.mobile.violet[view];
+    }
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the missing drawer record reads shape-error (the drawer is part of the mobile contract per accent)", () => {
+    const env = s38Envelope() as { mobile: Record<string, Record<string, unknown>> };
+    delete env.mobile.pink["(drawer)"];
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("mode is part of the contract: an envelope without mode reads shape-error", () => {
+    const env = s38Envelope() as Record<string, unknown>;
+    delete env.mode;
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("mobileViewport must be the 390×844 mobile contract — a desktop viewport fed here reads shape-error, never a silent re-scope", () => {
+    const v = classifyAudit("accent-dark-sweep", { ...s38Envelope(), mobileViewport: { width: 1280, height: 800 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the mode rot guard: mode=light reads NON-green (the accent × light family belongs to accent-light-sweep — the INVERSE guard)", () => {
+    const v = classifyAudit("accent-dark-sweep", { ...s38Envelope(), mode: "light" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=light/);
+  });
+
+  it("the applied-mismatch family: an accent whose self-verified reading differs from its key is a finding", () => {
+    const env = s38Envelope() as { applied: Record<string, unknown> };
+    env.applied.teal = "violet";
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the drawer-error family: a drawer that failed to open is a FINDING (never a swallow)", () => {
+    const env = s38Envelope() as { mobile: Record<string, Record<string, unknown>> };
+    env.mobile.blue["(drawer)"] = { linkCount: 0, flashbulbs: [], unreadable: [], lowcontrast: [], error: "TimeoutError: locator.click: Timeout 10000ms" };
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the mobile overflow family: scrollWidth > 390 is a finding (the S16 mobile-only-gap class, measured never ignored)", () => {
+    const v = classifyAudit("accent-dark-sweep", s38Envelope({}, { green: { Notes: { scrollWidth: 420 } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the strict record shape: a mobile record missing lowcontrast reads shape-error", () => {
+    const env = s38Envelope() as { mobile: Record<string, Record<string, unknown>> };
+    delete (env.mobile.red.Tasks as Record<string, unknown>).lowcontrast;
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the mobile record shape: scrollWidth must be a number — a missing reading is a shape-error", () => {
+    const env = s38Envelope() as { mobile: Record<string, Record<string, unknown>> };
+    delete (env.mobile.orange.Events as Record<string, unknown>).scrollWidth;
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the lowcontrast WARN family rides the note on the new shape (the S11 non-gap family)", () => {
+    const env = s38Envelope({ violet: { Calendar: { lowcontrast: [
+      { text: "27", color: "rgb(148, 163, 184)", bgEff: "rgb(15,23,42)", contrast: 2.36 },
+    ] } } });
+    const v = classifyAudit("accent-dark-sweep", env);
+    expect(v.green).toBe(true);
+    expect(v.note).toMatch(/1 WARN/);
+  });
+
+  it("the unknown-audit guard still holds for the extended shape: a name outside AUDIT_NAMES is a shape-error", () => {
+    const v = classifyAudit("accent-dark-swep", s38Envelope());
     expect(isErr(v)).toBe(true);
   });
 });
