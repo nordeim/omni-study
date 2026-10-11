@@ -370,7 +370,6 @@ try {
     accents,
     findings,
   };
-  console.log(JSON.stringify(envelope, null, 1));
   // exit 0 iff the structural findings are empty AND every non-exempt
   // contrast detection is zero. The three DOCUMENTED non-gap signatures
   // (mirrored at the seam — suite-verdict's classifyAccentLightSweep): the
@@ -398,7 +397,14 @@ try {
       }
     }
   }
-  process.exit(findings.length === 0 && detections === 0 ? 0 : 1);
+  const exitCode = findings.length === 0 && detections === 0 ? 0 : 1;
+  // S39-F (the stdout-flush race): this envelope measures ~150KB — a bare
+  // process.exit() after console.log can truncate the ASYNC pipe write
+  // mid-flush (the S39 validation run caught this probe truncated at
+  // 146176 bytes with findings 0 — the runner read a false "stdout did not
+  // parse"). The trailing-write callback fires only after every prior byte
+  // has flushed to the pipe, so the exit can never cut the envelope.
+  process.stdout.write(JSON.stringify(envelope, null, 1) + "\n", () => process.exit(exitCode));
 } catch (e) {
   // The failure-path restore (the theme-spec lesson — an aborted restore
   // persists the accent and poisons every later violet pin).

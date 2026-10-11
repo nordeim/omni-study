@@ -32,6 +32,7 @@ export const AUDIT_NAMES = [
   "landscape-sweep",
   "dark-mobile-sweep",
   "accent-light-sweep",
+  "accent-midband-sweep",
   "dark-sweep",
   "accent-dark-sweep",
   "cwv",
@@ -851,6 +852,249 @@ function classifyAccentDarkSweep(env: unknown): StageVerdict {
 // informational (the reference's own mobile login LCP POOR is the documented
 // reference state, not a clone finding).
 
+// --- accent-midband-sweep (S39) -----------------------------------------------
+// The accent × mid-band drawer-navigation sweep — the 391–1023px band's
+// accent half (768×1024, the md breakpoint), navigated THROUGH THE DRAWER
+// (the only vehicle below 1024), in LIGHT mode: the combo the S38 summary
+// named as the next step ("the drawer-navigation × accent interaction at
+// mid-band"). The per-view records carry the INTERACTION evidence —
+// activeTint (the drawer's active-link inner-span gradient while THIS view
+// was active; "none"/empty is the S8 no-var rot class) and activeLabel
+// (the aria-current link when read — MUST equal the view's own label: the
+// active state must follow the navigation). The dark × mid-band combos are
+// the documented S36 non-gap family (dark-mobile's classifier comment);
+// the desktop light-accent family remains the documented S37 non-gap.
+
+const ACCENT_MIDBAND_ALL_ACCENTS = new Set(["violet", "blue", "green", "orange", "pink", "red", "teal"]);
+// The 20 canonical views by their DISPLAY labels — the drawer links'
+// accessible names ("My Day", "Practice Tests", …), the same convention as
+// the S34 midband-sweep envelope (the vehicle family this audit extends);
+// the per-view `activeLabel` reading is the same display label, so the
+// interaction check compares like-for-like.
+const ACCENT_MIDBAND_ALL_VIEWS = [
+  "Dashboard", "My Day", "Tasks", "Calendar", "Events", "Timetable",
+  "Assignments", "Exams", "Notes", "Flashcards", "Practice Tests",
+  "Study Groups", "Grade Tracker", "Analytics", "Files", "Calculator",
+  "Math Solver", "AI Assistant", "Focus Timer", "Settings",
+];
+
+function classifyAccentMidbandSweep(env: unknown): StageVerdict {
+  if (!isObj(env)) return shapeError("envelope must be an object");
+  if (typeof env.mode !== "string") return shapeError("mode must be a string");
+  if (!isObj(env.viewport) || env.viewport.width !== 768 || env.viewport.height !== 1024) {
+    return shapeError(
+      "viewport must be the mid-band 768×1024 (the md breakpoint) — the LIGHT-mode accent mid-band surface is this audit's contract (the mobile accent family belongs to accent-light-sweep; the dark mid-band combos are the documented S36 non-gap family)",
+    );
+  }
+  if (
+    !isObj(env.chrome) ||
+    typeof env.chrome.sidebarVisible !== "boolean" ||
+    typeof env.chrome.hamburgerVisible !== "boolean"
+  ) {
+    return shapeError("chrome must carry boolean sidebarVisible + hamburgerVisible (the vehicle contract)");
+  }
+  if (!isObj(env.accents)) return shapeError("accents must be an object of per-accent records");
+  if (!isArr(env.findings)) return shapeError("findings must be an Array");
+  const accentKeys = Object.keys(env.accents);
+  for (const a of ACCENT_MIDBAND_ALL_ACCENTS) {
+    if (!(a in env.accents)) {
+      return shapeError(
+        `accents must carry all 7 (violet, blue, green, orange, pink, red, teal) — "${a}" is missing: an accent that silently did not run must never read green-by-omission`,
+      );
+    }
+  }
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec)) return shapeError(`accents.${a} must be a record`);
+    if (typeof rec.applied !== "string") return shapeError(`accents.${a}.applied must be a string (the self-verified <html data-accent> reading)`);
+    if (!isObj(rec.views)) return shapeError(`accents.${a}.views must be an object of per-view records`);
+    for (const v of ACCENT_MIDBAND_ALL_VIEWS) {
+      if (!(v in rec.views)) {
+        return shapeError(
+          `accents.${a}.views must carry all 20 canonical views — "${v}" is missing: a view that silently did not run must never read green-by-omission (the omission-means-clean recording is RETIRED)`,
+        );
+      }
+    }
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (!isObj(vr)) return shapeError(`accents.${a}.views.${v} must be a record`);
+      if (typeof vr.heading !== "string" || vr.heading.length === 0) {
+        return shapeError(`accents.${a}.views.${v}.heading must be a non-empty string`);
+      }
+      if (typeof vr.scrollWidth !== "number") return shapeError(`accents.${a}.views.${v}.scrollWidth must be a number`);
+      if (typeof vr.drawerClosed !== "boolean") return shapeError(`accents.${a}.views.${v}.drawerClosed must be a boolean (the drawer closes on navigation — the vehicle contract)`);
+      if (typeof vr.appBar !== "boolean") return shapeError(`accents.${a}.views.${v}.appBar must be a boolean`);
+      if (!isArr(vr.unreadable)) return shapeError(`accents.${a}.views.${v}.unreadable must be an Array (the light contrast detector family)`);
+      if (!isArr(vr.lowcontrast)) return shapeError(`accents.${a}.views.${v}.lowcontrast must be an Array (the light contrast detector family)`);
+      if (!isArr(vr.consoleErrors)) return shapeError(`accents.${a}.views.${v}.consoleErrors must be an Array`);
+      if (typeof vr.activeTint !== "string") return shapeError(`accents.${a}.views.${v}.activeTint must be a string (the active-link gradient reading — the interaction evidence is part of the record)`);
+      if (typeof vr.activeLabel !== "string") return shapeError(`accents.${a}.views.${v}.activeLabel must be a string (the aria-current link when the tint was read)`);
+    }
+    if (
+      !isObj(rec.drawer) ||
+      typeof rec.drawer.linkCount !== "number" ||
+      !isArr(rec.drawer.unreadable) ||
+      !isArr(rec.drawer.lowcontrast)
+    ) {
+      return shapeError(`accents.${a}.drawer must carry linkCount + unreadable + lowcontrast Arrays (the drawer's own accent rendering)`);
+    }
+  }
+  if (env.mode !== "light") {
+    return {
+      green: false,
+      findings: env.findings.length,
+      note: `mode=${env.mode} — the sweep ran in the wrong mode (the S27 rot class; the LIGHT-mode accent mid-band surface is this audit's contract — the dark × mid-band combos are the documented S36 non-gap family, and the accent × dark family belongs to accent-dark-sweep)`,
+    };
+  }
+  if (env.chrome.sidebarVisible || !env.chrome.hamburgerVisible) {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `the chrome contract broke at 768 — sidebarVisible=${env.chrome.sidebarVisible}, hamburgerVisible=${env.chrome.hamburgerVisible} (the lg contract: the sidebar renders only ≥1024; below that the drawer is the vehicle — the vehicle-contract finding class)`,
+    };
+  }
+  // The applied check: every accent's self-verified reading must match its key.
+  const notApplied: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (isObj(rec) && rec.applied !== a) notApplied.push(`${a}→${String(rec.applied)}`);
+  }
+  if (notApplied.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + notApplied.length,
+      note: `${notApplied.length} accent(s) did not apply through the real lifecycle (applied ${notApplied.join(", ")}) — the accent-application finding class`,
+    };
+  }
+  // The drawer-error check: a drawer that failed to open is a FINDING (never
+  // a swallow — the S38 doctrine).
+  const drawerErrors: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (isObj(rec) && isObj(rec.drawer) && typeof rec.drawer.error === "string") drawerErrors.push(a);
+  }
+  if (drawerErrors.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + drawerErrors.length,
+      note: `${drawerErrors.length} drawer record(s) carry an error (${drawerErrors.join(", ")}) — a drawer that failed to open is a finding, never a swallow`,
+    };
+  }
+  // The interaction checks — the S39 finding classes this audit OWNS:
+  //   (a) the tint rot: an activeTint that computed to "none"/empty is the
+  //       S8 no-var rot class (a camelCase token silently resolves to no
+  //       var and the gradient computes to none);
+  //   (b) the active-state mismatch: the drawer's active link must be the
+  //       view that was active when the tint was read — the active state
+  //       must follow the navigation.
+  const tintRots: string[] = [];
+  const activeMismatches: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec) || !isObj(rec.views)) continue;
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (!isObj(vr)) continue;
+      if (vr.activeTint === "" || vr.activeTint === "none") tintRots.push(`${a}/${v}`);
+      if (vr.activeLabel !== v) activeMismatches.push(`${a}/${v}→${String(vr.activeLabel)}`);
+    }
+  }
+  if (tintRots.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + tintRots.length,
+      note: `${tintRots.length} active-link gradient reading(s) computed to none/empty (${tintRots.slice(0, 4).join(", ")}) — the S8 no-var rot class (the NAV_ACTIVE_GRADIENT_STOPS pair did not resolve)`,
+    };
+  }
+  if (activeMismatches.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + activeMismatches.length,
+      note: `${activeMismatches.length} active-state mismatch(es) (${activeMismatches.slice(0, 4).join(", ")}) — the drawer's active link did not follow the navigation (the interaction contract: while view V is active, V's link carries aria-current=page)`,
+    };
+  }
+  // The overflow check (the S16/S34 class — the Timetable canvas must live
+  // inside its overflow-x-auto container).
+  const overflows: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec) || !isObj(rec.views)) continue;
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (isObj(vr) && typeof vr.scrollWidth === "number" && vr.scrollWidth > 768) overflows.push(`${a}/${v}:${vr.scrollWidth}`);
+    }
+  }
+  if (overflows.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + overflows.length,
+      note: `${overflows.length} view rendering(s) overflow the 768px canvas (${overflows.slice(0, 4).join(", ")}) — the S16/S34 overflow class`,
+    };
+  }
+  // The independent contrast-detection count (the anti-phantom doctrine),
+  // with the documented non-gap exemptions, each SIGNATURE-STRICT (the
+  // S37-exact semantics): the CTA-face, the calendar adjacent-month days,
+  // and the yellow priority-pill vocabulary. Any OTHER unreadable
+  // combination is a genuine finding (counted).
+  let detections = 0;
+  let ctaFace = 0;
+  let calendarDays = 0;
+  let yellowPills = 0;
+  let warns = 0;
+  let renderings = 0;
+  const isCalendarAdjacentDay = (e: unknown) =>
+    isObj(e) && e.color === "rgb(203, 213, 225)" && typeof e.text === "string" && /^\d{1,2}$/.test(e.text.trim());
+  const isYellowPriorityPill = (e: unknown) =>
+    isObj(e) && e.color === "rgb(234, 179, 8)" && typeof e.text === "string" && /^(high|medium|low)$/i.test(e.text.trim());
+  const countEntries = (arr: unknown) => {
+    if (!isArr(arr)) return;
+    for (const e of arr) {
+      if (isObj(e) && e.color === "rgb(255, 255, 255)") {
+        ctaFace += 1;
+        continue;
+      }
+      if (isCalendarAdjacentDay(e)) {
+        calendarDays += 1;
+        continue;
+      }
+      if (isYellowPriorityPill(e)) {
+        yellowPills += 1;
+        continue;
+      }
+      detections += 1;
+    }
+  };
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec)) continue; // already shape-checked; defensive only
+    if (isObj(rec.views)) {
+      for (const v of Object.keys(rec.views)) {
+        const vr = rec.views[v];
+        if (!isObj(vr)) continue;
+        renderings += 1;
+        countEntries(vr.unreadable);
+        if (isArr(vr.lowcontrast)) warns += vr.lowcontrast.length;
+      }
+    }
+    if (isObj(rec.drawer)) {
+      countEntries(rec.drawer.unreadable);
+      if (isArr(rec.drawer.lowcontrast)) warns += rec.drawer.lowcontrast.length;
+    }
+  }
+  if (detections > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + detections,
+      note: `${detections} unreadable detection(s) across ${renderings} view renderings + 7 drawer records (the light contrast detector family; counted independently of the findings array; the CTA-face entries are exempt)`,
+    };
+  }
+  return {
+    green: env.findings.length === 0,
+    findings: env.findings.length,
+    note: `7 accents swept × ${renderings} view renderings + ${renderings} active-tint readings + 7 drawer records at 768×1024 in MODE light, navigated through the drawer; every accent self-verified applied; ${ctaFace} CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); ${calendarDays} calendar adjacent-day exempt (slate-300 — the S6-G reference-measured pin); ${yellowPills} yellow-pill exempt (yellow-500 — the S6/S8 reference-measured pin); ${warns} WARN (lowcontrast — the S11 non-gap family)`,
+  };
+}
+
 const CWV_RATINGS = new Set(["GOOD", "NI", "POOR", "BAD"]);
 
 function classifyCwv(env: unknown): StageVerdict {
@@ -912,6 +1156,7 @@ export function classifyAudit(name: string, envelope: unknown): StageVerdict {
   if (name === "landscape-sweep") return classifyLandscapeSweep(envelope);
   if (name === "dark-mobile-sweep") return classifyDarkMobileSweep(envelope);
   if (name === "accent-light-sweep") return classifyAccentLightSweep(envelope);
+  if (name === "accent-midband-sweep") return classifyAccentMidbandSweep(envelope);
   if (name === "dark-sweep") return classifyDarkSweep(envelope);
   if (name === "accent-dark-sweep") return classifyAccentDarkSweep(envelope);
   if (name === "cwv") return classifyCwv(envelope);
