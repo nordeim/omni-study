@@ -28,6 +28,7 @@ export const AUDIT_NAMES = [
   "print",
   "focus-order",
   "mobile-sweep",
+  "midband-sweep",
   "dark-sweep",
   "accent-dark-sweep",
   "cwv",
@@ -255,6 +256,68 @@ function classifyMobileSweep(env: unknown): StageVerdict {
   };
 }
 
+// --- midband-sweep (S34) -----------------------------------------------------
+// The light-mode 768×1024 drawer-navigation sweep — the md breakpoint, the
+// switchiest width in the 391–1023px band the standing surface never probed
+// (the AP-79 lesson: a viewport band between pinned widths is a blind band —
+// S16's mobile-only-gap class one band out). Every view is navigated THROUGH
+// THE DRAWER (the navigation vehicle through the whole band — the sidebar is
+// lg:flex, so below 1024 the drawer is the only vehicle), each view record
+// carrying the identity heading, the scrollWidth measurement (≤ 768 — the
+// Timetable's min-w-[900px] canvas must live INSIDE its overflow-x-auto
+// container, never widen the document), the drawer-closed flag, the app-bar
+// check, and the per-view console-error list. The chrome record carries the
+// vehicle contract: sidebarVisible MUST be false and hamburgerVisible MUST
+// be true at 768 — a violation is the lg-contract break, a genuine finding
+// class (the seam is the interpretation layer, the S32 doctrine).
+
+function classifyMidbandSweep(env: unknown): StageVerdict {
+  if (!isObj(env)) return shapeError("envelope must be an object");
+  if (typeof env.mode !== "string") return shapeError("mode must be a string");
+  if (!isObj(env.viewport) || env.viewport.width !== 768) {
+    return shapeError("viewport must be the mid-band 768×1024 (the md breakpoint) — the finding classes are width-dependent");
+  }
+  if (!isObj(env.chrome) || typeof env.chrome.sidebarVisible !== "boolean" || typeof env.chrome.hamburgerVisible !== "boolean") {
+    return shapeError("chrome must carry boolean sidebarVisible + hamburgerVisible (the vehicle contract)");
+  }
+  if (!isObj(env.views)) return shapeError("views must be an object of per-view records");
+  if (!isObj(env.drawer) || typeof env.drawer.linkCount !== "number" || typeof env.drawer.order !== "string") {
+    return shapeError("drawer must carry linkCount + order (the drawer-content check)");
+  }
+  if (!isArr(env.findings)) return shapeError("findings must be an Array");
+  const views = Object.keys(env.views);
+  for (const v of views) {
+    const rec = env.views[v];
+    if (!isObj(rec)) return shapeError(`views.${v} must be a record`);
+    if (typeof rec.heading !== "string" || rec.heading.length === 0) {
+      return shapeError(`views.${v}.heading must be a non-empty string`);
+    }
+    if (typeof rec.scrollWidth !== "number") return shapeError(`views.${v}.scrollWidth must be a number`);
+    if (typeof rec.drawerClosed !== "boolean") return shapeError(`views.${v}.drawerClosed must be a boolean`);
+    if (typeof rec.appBar !== "boolean") return shapeError(`views.${v}.appBar must be a boolean`);
+    if (!isArr(rec.consoleErrors)) return shapeError(`views.${v}.consoleErrors must be an Array`);
+  }
+  if (env.mode !== "light") {
+    return {
+      green: false,
+      findings: env.findings.length,
+      note: `mode=${env.mode} — the sweep ran in the wrong mode (the S27 rot class; the LIGHT-mode mid-band surface is this audit's contract — the dark/accent surfaces belong to their own audits)`,
+    };
+  }
+  if (env.chrome.sidebarVisible || !env.chrome.hamburgerVisible) {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `the chrome contract broke at 768 — sidebarVisible=${env.chrome.sidebarVisible}, hamburgerVisible=${env.chrome.hamburgerVisible} (the lg contract: the sidebar renders only ≥1024; below that the drawer is the vehicle — this is the vehicle-contract finding class)`,
+    };
+  }
+  return {
+    green: env.findings.length === 0,
+    findings: env.findings.length,
+    note: `${views.length} views swept through the drawer at 768×1024 (light, the md breakpoint); drawer carried ${env.drawer.linkCount} links; chrome contract holds (sidebar hidden, hamburger visible)`,
+  };
+}
+
 // --- dark-sweep ---------------------------------------------------------------
 // The S27 rot guard: `mode` MUST be "dark" — a light-mode sweep with zero
 // findings reads NON-green ("mode=light"), not green. A missing/non-string
@@ -383,6 +446,7 @@ export function classifyAudit(name: string, envelope: unknown): StageVerdict {
   if (name === "print") return classifyPrint(envelope);
   if (name === "focus-order") return classifyFocusOrder(envelope);
   if (name === "mobile-sweep") return classifyMobileSweep(envelope);
+  if (name === "midband-sweep") return classifyMidbandSweep(envelope);
   if (name === "dark-sweep") return classifyDarkSweep(envelope);
   if (name === "accent-dark-sweep") return classifyAccentDarkSweep(envelope);
   if (name === "cwv") return classifyCwv(envelope);

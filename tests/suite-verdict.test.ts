@@ -573,6 +573,98 @@ describe("classifyAudit mobile-sweep (S33)", () => {
   });
 });
 
+// --- midband-sweep (S34) -----------------------------------------------------
+// The light-mode 768×1024 drawer-navigation sweep — the md breakpoint, the
+// switchiest width in the 391–1023px band the standing surface never probed
+// (the AP-79 lesson: a viewport band between pinned widths is a blind band).
+// Same per-view shape as the mobile sweep + the chrome record — the
+// vehicle contract (sidebar hidden, hamburger visible: the drawer is the
+// only navigation vehicle below lg).
+
+const MIDBAND_SWEEP_GREEN = {
+  mode: "light",
+  viewport: { width: 768, height: 1024 },
+  chrome: { sidebarVisible: false, hamburgerVisible: true },
+  drawer: { linkCount: 20, order: "Dashboard,My Day,Tasks,Calendar,Events,Timetable,Assignments,Exams,Notes,Flashcards,Practice Tests,Study Groups,Grade Tracker,Analytics,Files,Calculator,Math Solver,AI Assistant,Focus Timer,Settings" },
+  views: {
+    Dashboard: { heading: "Good evening, Demo Student 👋", scrollWidth: 768, drawerClosed: true, appBar: true, consoleErrors: [] },
+    Tasks: { heading: "All Tasks", scrollWidth: 768, drawerClosed: true, appBar: true, consoleErrors: [] },
+    Timetable: { heading: "Timetable", scrollWidth: 768, drawerClosed: true, appBar: true, consoleErrors: [] },
+    Settings: { heading: "Settings", scrollWidth: 768, drawerClosed: true, appBar: true, consoleErrors: [] },
+  },
+  findings: [],
+};
+
+describe("classifyAudit midband-sweep (S34)", () => {
+  it("the GREEN shape: the chrome contract holds, per-view records, zero findings", () => {
+    const v = classifyAudit("midband-sweep", MIDBAND_SWEEP_GREEN);
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/4 views/);
+    expect(v.note).toMatch(/768/);
+  });
+
+  it("a missing findings key is a LOUD shape-error (the anti-phantom guard)", () => {
+    const { findings, ...noFindings } = MIDBAND_SWEEP_GREEN;
+    const v = classifyAudit("midband-sweep", noFindings);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a view record missing scrollWidth is a shape-error", () => {
+    const views = { ...MIDBAND_SWEEP_GREEN.views, Timetable: { heading: "Timetable", drawerClosed: true, appBar: true, consoleErrors: [] } };
+    const v = classifyAudit("midband-sweep", { ...MIDBAND_SWEEP_GREEN, views });
+    expect(isErr(v)).toBe(true);
+    expect(v.note).toMatch(/Timetable/);
+  });
+
+  it("a 390 viewport (the mobile-sweep envelope) is a shape-error — the band's representative width is 768", () => {
+    const v = classifyAudit("midband-sweep", { ...MIDBAND_SWEEP_GREEN, viewport: { width: 390, height: 844 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a missing chrome record is a shape-error (the vehicle contract rides the envelope)", () => {
+    const { chrome, ...rest } = MIDBAND_SWEEP_GREEN;
+    const v = classifyAudit("midband-sweep", rest);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a chrome record with a non-boolean sidebarVisible is a shape-error", () => {
+    const v = classifyAudit("midband-sweep", { ...MIDBAND_SWEEP_GREEN, chrome: { sidebarVisible: "no", hamburgerVisible: true } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("mode=dark → non-green with the mode + the S27 class in the note", () => {
+    const v = classifyAudit("midband-sweep", { ...MIDBAND_SWEEP_GREEN, mode: "dark" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=dark/);
+    expect(v.note).toMatch(/S27 rot/);
+  });
+
+  it("an overflow finding (scrollWidth 800) → non-green, findings=1", () => {
+    const views = { ...MIDBAND_SWEEP_GREEN.views, Timetable: { ...MIDBAND_SWEEP_GREEN.views.Timetable, scrollWidth: 800 } };
+    const v = classifyAudit("midband-sweep", { ...MIDBAND_SWEEP_GREEN, views, findings: [{ view: "Timetable", kind: "overflow", detail: "scrollWidth 800 > 768" }] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the chrome contract broken (sidebarVisible: true) → NON-GREEN with the lg-contract note — the vehicle class", () => {
+    const v = classifyAudit("midband-sweep", { ...MIDBAND_SWEEP_GREEN, chrome: { sidebarVisible: true, hamburgerVisible: false }, findings: [] });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/lg contract/);
+  });
+
+  it("the chrome contract broken (hamburgerVisible: false) → NON-GREEN — the drawer is the vehicle below lg", () => {
+    const v = classifyAudit("midband-sweep", { ...MIDBAND_SWEEP_GREEN, chrome: { sidebarVisible: false, hamburgerVisible: false }, findings: [] });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/vehicle/);
+  });
+
+  it("the unknown-audit guard still holds: a name outside AUDIT_NAMES is a shape-error", () => {
+    const v = classifyAudit("midband-sweeep", MIDBAND_SWEEP_GREEN);
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {
