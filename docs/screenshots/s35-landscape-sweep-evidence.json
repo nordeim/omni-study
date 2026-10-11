@@ -1,0 +1,135 @@
+{
+ "source": "s35-landscape-sweep-validation",
+ "ranAt": "2026-10-11T01:35:45.397Z",
+ "summary": "20/20 green",
+ "failed": [],
+ "stageCount": 20,
+ "landscapeRow": {
+  "name": "landscape-sweep",
+  "green": true,
+  "findings": 0,
+  "note": "20 views swept through the drawer at 844\u00d7390 (light, the iPhone-class landscape); drawer carried 20 links; vehicle + nav-scroll contracts hold (sidebar hidden, hamburger visible, nav scrollable)"
+ },
+ "stages": [
+  {
+   "name": "dev-server-preflight",
+   "green": true,
+   "findings": 0,
+   "note": "hydrated and navigation-stable"
+  },
+  {
+   "name": "security",
+   "green": true,
+   "findings": 0,
+   "note": "7 nonGaps"
+  },
+  {
+   "name": "settings-roundtrip",
+   "green": true,
+   "findings": 0,
+   "note": "5 nonGaps"
+  },
+  {
+   "name": "connectivity",
+   "green": true,
+   "findings": 0,
+   "note": "7 nonGaps"
+  },
+  {
+   "name": "upload-edge",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "data-volume",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "forced-colors",
+   "green": true,
+   "findings": 0,
+   "note": "4 views probed; 1 sr-only controls exempt (visually hidden by design); reference rides the envelope"
+  },
+  {
+   "name": "print",
+   "green": true,
+   "findings": 0,
+   "note": "40 view-counts checked; overflow probe data preserved (20 entries)"
+  },
+  {
+   "name": "focus-order",
+   "green": true,
+   "findings": 0,
+   "note": "dialogs=1; 2 dev-portal artifacts excluded (NEXTJS-PORTAL \u2014 dev-mode only); drawer/skipLink ride the envelope (n/a/n/a)"
+  },
+  {
+   "name": "mobile-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 390\u00d7844 (light); drawer carried 20 links"
+  },
+  {
+   "name": "midband-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 768\u00d71024 (light, the md breakpoint); drawer carried 20 links; chrome contract holds (sidebar hidden, hamburger visible)"
+  },
+  {
+   "name": "landscape-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 844\u00d7390 (light, the iPhone-class landscape); drawer carried 20 links; vehicle + nav-scroll contracts hold (sidebar hidden, hamburger visible, nav scrollable)"
+  },
+  {
+   "name": "dark-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views probed in MODE dark"
+  },
+  {
+   "name": "accent-dark-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "31 entries probed; 5 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 122 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "cwv",
+   "green": true,
+   "findings": 0,
+   "note": "ref POOR informational; 1 ref POOR (the reference's own documented state \u2014 informational, not a clone finding)"
+  },
+  {
+   "name": "ai-error",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "ai-a11y",
+   "green": true,
+   "findings": 0,
+   "note": "4 nonGaps"
+  },
+  {
+   "name": "pre15-preflight",
+   "green": true,
+   "findings": 0,
+   "note": "GREEN \u2014 deps pinned by design (majors), client bundle lean, no action"
+  },
+  {
+   "name": "dep-audit",
+   "green": true,
+   "findings": 0,
+   "note": "GREEN \u2014 2 advisory(ies) documented as non-production (dev/CLI surface), 0 runtime-reachable"
+  },
+  {
+   "name": "theme-restore",
+   "green": true,
+   "findings": 0,
+   "note": "demo theme = light/violet (expected light/violet \u2014 a mid-suite crash must not leave the demo user mutated)"
+  }
+ ]
+}

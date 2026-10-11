@@ -665,6 +665,113 @@ describe("classifyAudit midband-sweep (S34)", () => {
   });
 });
 
+// --- landscape-sweep (S35) ---------------------------------------------------
+// The light-mode 844×390 phone-landscape drawer-navigation sweep — the
+// iPhone-class landscape, the representative of the 390–430px-tall band the
+// standing surface never probed (the AP-80 lesson: an axis never varied is
+// an axis never verified — every pinned viewport was portrait-tall). Same
+// per-view shape as the midband sweep + headingClearance (the fixed-bar
+// clearance — the h-16 bar covers 16% of a 390px viewport) + the chrome
+// record gains drawerNavScrollable (the short-viewport contract: the 20
+// reference-measured nav rows cannot fit the ~300px nav area at 390 height —
+// the nav scroll is the ONLY path to links 8–20 in landscape).
+
+const LANDSCAPE_SWEEP_GREEN = {
+  mode: "light",
+  viewport: { width: 844, height: 390 },
+  chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: true },
+  drawer: { linkCount: 20, order: "Dashboard,My Day,Tasks,Calendar,Events,Timetable,Assignments,Exams,Notes,Flashcards,Practice Tests,Study Groups,Grade Tracker,Analytics,Files,Calculator,Math Solver,AI Assistant,Focus Timer,Settings" },
+  views: {
+    Dashboard: { heading: "Good evening, Demo Student 👋", scrollWidth: 844, drawerClosed: true, appBar: true, headingClearance: true, consoleErrors: [] },
+    Tasks: { heading: "All Tasks", scrollWidth: 844, drawerClosed: true, appBar: true, headingClearance: true, consoleErrors: [] },
+    Timetable: { heading: "Timetable", scrollWidth: 844, drawerClosed: true, appBar: true, headingClearance: true, consoleErrors: [] },
+    Settings: { heading: "Settings", scrollWidth: 844, drawerClosed: true, appBar: true, headingClearance: true, consoleErrors: [] },
+  },
+  findings: [],
+};
+
+describe("classifyAudit landscape-sweep (S35)", () => {
+  it("the GREEN shape: both contracts hold, per-view records with clearance, zero findings", () => {
+    const v = classifyAudit("landscape-sweep", LANDSCAPE_SWEEP_GREEN);
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/4 views/);
+    expect(v.note).toMatch(/844/);
+  });
+
+  it("a missing findings key is a LOUD shape-error (the anti-phantom guard)", () => {
+    const { findings, ...noFindings } = LANDSCAPE_SWEEP_GREEN;
+    const v = classifyAudit("landscape-sweep", noFindings);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a view record missing headingClearance is a shape-error (the clearance is this audit's per-view key)", () => {
+    const views = { ...LANDSCAPE_SWEEP_GREEN.views, Timetable: { heading: "Timetable", scrollWidth: 844, drawerClosed: true, appBar: true, consoleErrors: [] } };
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, views });
+    expect(isErr(v)).toBe(true);
+    expect(v.note).toMatch(/Timetable/);
+  });
+
+  it("the 390×844 PORTRAIT envelope (the mobile-sweep shape) is a shape-error — the finding classes are HEIGHT-dependent", () => {
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, viewport: { width: 390, height: 844 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the 768×1024 mid-band envelope is a shape-error — the phone-landscape class is this audit's contract", () => {
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, viewport: { width: 768, height: 1024 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a chrome record missing drawerNavScrollable is a shape-error (the short-viewport contract rides the envelope)", () => {
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, chrome: { sidebarVisible: false, hamburgerVisible: true } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a chrome record with a non-boolean drawerNavScrollable is a shape-error", () => {
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: "yes" } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("mode=dark → non-green with the mode + the S27 class in the note", () => {
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, mode: "dark" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=dark/);
+    expect(v.note).toMatch(/S27 rot/);
+  });
+
+  it("a heading-clearance finding (the heading slid under the fixed bar) → non-green, findings=1", () => {
+    const views = { ...LANDSCAPE_SWEEP_GREEN.views, "Focus Timer": { heading: "Focus Timer", scrollWidth: 844, drawerClosed: true, appBar: true, headingClearance: false, consoleErrors: [] } };
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, views, findings: [{ view: "Focus Timer", kind: "heading-clearance", detail: "the identity heading's top is y=41 < 64 — under the fixed app bar" }] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the vehicle contract broken (sidebarVisible: true) → NON-GREEN with the lg-contract note", () => {
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, chrome: { sidebarVisible: true, hamburgerVisible: false, drawerNavScrollable: true }, findings: [] });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/lg contract/);
+  });
+
+  it("the SHORT-VIEWPORT contract broken (drawerNavScrollable: false) → NON-GREEN with the geometry note — the new class this audit owns", () => {
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: false }, findings: [] });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/scroll/);
+    expect(v.note).toMatch(/geometry|nav|rows/i);
+  });
+
+  it("an overflow finding (scrollWidth 900) → non-green, findings=1", () => {
+    const views = { ...LANDSCAPE_SWEEP_GREEN.views, Timetable: { ...LANDSCAPE_SWEEP_GREEN.views.Timetable, scrollWidth: 900 } };
+    const v = classifyAudit("landscape-sweep", { ...LANDSCAPE_SWEEP_GREEN, views, findings: [{ view: "Timetable", kind: "overflow", detail: "scrollWidth 900 > 844" }] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the unknown-audit guard still holds: a name outside AUDIT_NAMES is a shape-error", () => {
+    const v = classifyAudit("landscape-sweeep", LANDSCAPE_SWEEP_GREEN);
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {
