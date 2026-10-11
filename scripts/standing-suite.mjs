@@ -10,19 +10,21 @@
 //   0. dev-server-preflight  (the S31 convention, ENFORCED: abort the suite
 //      loudly on any non-green verdict, remedy included — the boot-stability
 //      precondition is executable, not advisory)
-//   1-22. security, settings-roundtrip, connectivity, upload-edge,
+//   1-23. security, settings-roundtrip, connectivity, upload-edge,
 //      data-volume, forced-colors, print, focus-order, mobile-sweep,
 //      midband-sweep, landscape-sweep, dark-mobile-sweep, accent-light-sweep,
-//      accent-midband-sweep, accent-landscape-sweep, dark-sweep,
-//      accent-dark-sweep, cwv, ai-error, ai-a11y, pre15-preflight, dep-audit
+//      accent-midband-sweep, accent-landscape-sweep, accent-desktop-sweep,
+//      dark-sweep, accent-dark-sweep, cwv, ai-error, ai-a11y, pre15-preflight,
+//      dep-audit
 //      (the light-mode mobile family, then the light-mode mid-band family,
 //      then the light-mode phone-landscape family, then the DARK-mode mobile
 //      family, then the LIGHT-mode accent family at 390, then the LIGHT-mode
 //      accent family at the mid-band 768 — the vehicle — the S39 stage, then
 //      the LIGHT-mode accent family at the landscape 844×390 — the vehicle at
-//      the short viewport — the S40 stage, then the dark-mode desktop
-//      families — the S37/S39/S40 order)
-//   23. the demo-theme closing guard (light/violet via Prisma — a mid-suite
+//      the short viewport — the S40 stage, then the LIGHT-mode accent family
+//      at the desktop 1280×800 — the SIDEBAR vehicle — the S41 stage, then
+//      the dark-mode desktop families — the S37/S39/S40/S41 order)
+//   24. the demo-theme closing guard (light/violet via Prisma — a mid-suite
 //      crash must not leave the demo user dark/teal, the documented
 //      poisoning class)
 //
@@ -67,6 +69,7 @@ const STAGES = [
   { name: "accent-light-sweep", file: "scripts/accent-light-sweep.mjs", runtime: "node" },
   { name: "accent-midband-sweep", file: "scripts/accent-midband-sweep.mjs", runtime: "node", timeoutMs: 20 * 60_000 }, // S39: 7 accents × 20 drawer-navigated views + the drawer record ≈ 9-12 min measured; the default 10-min budget would SIGKILL it (exit 124 — the S38-C lesson)
   { name: "accent-landscape-sweep", file: "scripts/accent-landscape-sweep.mjs", runtime: "node", timeoutMs: 20 * 60_000 }, // S40: 7 accents × 20 drawer-navigated views at 844×390 + the short-viewport contract + the drawer record ≈ 9-12 min measured; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39 lesson)
+  { name: "accent-desktop-sweep", file: "scripts/accent-desktop-sweep.mjs", runtime: "node", timeoutMs: 20 * 60_000 }, // S41: 7 accents × 20 sidebar-navigated views at 1280×800 + the sidebar-own scroll contract + the sidebar record ≈ 8-11 min measured; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40 lesson)
   { name: "dark-sweep", file: "scripts/dark-sweep.mjs", runtime: "node" },
   { name: "accent-dark-sweep", file: "scripts/accent-dark-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S38: the mobile 20-view matrix — 7 accents × (20 desktop + 20 mobile + the drawer) ≈ 17–18 min measured; the default 10-min budget would SIGKILL it mid-sweep (exit 124)
   { name: "cwv", file: "scripts/cwv-audit-s16.mjs", runtime: "node" },
@@ -201,7 +204,7 @@ let cwvPreconditionFailed = false;
 try {
   // Stage 0 — the S31 preflight FIRST, enforced (the suite never starts on an
   // unstable boot; the remedy rides the verdict).
-  log(`[standing-suite] stage 0/23 — dev-server-preflight (the S31 boot-stability precondition)`);
+  log(`[standing-suite] stage 0/24 — dev-server-preflight (the S31 boot-stability precondition)`);
   const pre = await run("bun", [join(REPO, "scripts/dev-server-preflight.mjs")], 90_000);
   writeFileSync(join(RAW_DIR, "dev-server-preflight.json"), pre.stdout);
   const preParsed = parseAuditStdout(pre.stdout);
@@ -229,17 +232,17 @@ try {
     for (let i = 0; i < STAGES.length; i += 1) {
       const spec = STAGES[i];
       if (spec.name === "cwv" && cwvPreconditionFailed) {
-        log(`[standing-suite] stage ${i + 1}/23 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
+        log(`[standing-suite] stage ${i + 1}/24 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
         continue;
       }
-      log(`[standing-suite] stage ${i + 1}/23 — ${spec.name}`);
+      log(`[standing-suite] stage ${i + 1}/24 — ${spec.name}`);
       const r = await runAuditStage(spec);
       rows.push({ name: r.name, verdict: r.verdict });
       await new Promise((res) => setTimeout(res, SETTLE_MS));
     }
 
     // The closing guard.
-    log(`[standing-suite] stage 23/23 — theme-restore (the demo-theme closing guard)`);
+    log(`[standing-suite] stage 24/24 — theme-restore (the demo-theme closing guard)`);
     rows.push(await themeGuard());
   }
 } finally {

@@ -1752,6 +1752,267 @@ describe("classifyAudit accent-landscape-sweep (S40 — the accent × landscape 
   });
 });
 
+// --- accent-desktop-sweep (S41 — the desktop light-accent sidebar-navigation sweep)
+
+// The full-shape generator: 7 accents × 20 views navigated through the
+// SIDEBAR (the desktop vehicle) at 1280×800 in LIGHT mode + the sidebar
+// record per accent, with the per-view interaction keys (activeTint — the
+// inner span's accent gradient while THIS view was active; activeLabel —
+// the sidebar's aria-current link when read, MUST equal the view's own
+// label) AND the desktop-own keys (headingOffset — the content clears the
+// fixed 260px sidebar; sidebarVisible — the vehicle persists through
+// navigation).
+const S41_ACCENTS = ["violet", "blue", "green", "orange", "pink", "red", "teal"] as const;
+// The 20 canonical views by DISPLAY labels — the sidebar links' accessible
+// names, the S34/S39/S40 vehicle-family envelope convention; the
+// per-view activeLabel reading is the same label.
+const S41_VIEWS = [
+  "Dashboard", "My Day", "Tasks", "Calendar", "Events", "Timetable",
+  "Assignments", "Exams", "Notes", "Flashcards", "Practice Tests",
+  "Study Groups", "Grade Tracker", "Analytics", "Files", "Calculator",
+  "Math Solver", "AI Assistant", "Focus Timer", "Settings",
+];
+const S41_TINT = "linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))";
+
+type S41Rec = Record<string, unknown>;
+
+function s41ViewRec(o: S41Rec = {}): S41Rec {
+  return {
+    heading: "ok", scrollWidth: 1280, sidebarVisible: true, headingOffset: true,
+    unreadable: [] as unknown[], lowcontrast: [] as unknown[], consoleErrors: [] as unknown[],
+    activeTint: S41_TINT, activeLabel: "",
+    ...o,
+  };
+}
+function s41SidebarRec(o: S41Rec = {}): S41Rec {
+  return { linkCount: 20, unreadable: [] as unknown[], lowcontrast: [] as unknown[], activeView: "Settings", activeTint: S41_TINT, ...o };
+}
+
+/** The full accent-desktop envelope: 7 accents × 20 views + the sidebar
+ *  per accent at 1280×800, with per-view overrides merged in (the
+ *  activeLabel defaults are filled to the view's own label — the
+ *  interaction contract). */
+function s41Envelope(viewOverrides: Record<string, Record<string, S41Rec>> = {}): S41Rec {
+  const accents: S41Rec = {};
+  for (const a of S41_ACCENTS) {
+    const views: S41Rec = {};
+    for (const v of S41_VIEWS) {
+      const base = s41ViewRec(viewOverrides[a]?.[v]);
+      if (base.activeLabel === "") base.activeLabel = v; // the interaction contract default
+      views[v] = base;
+    }
+    accents[a] = { applied: a, views, sidebar: s41SidebarRec() };
+  }
+  return {
+    source: "accent-desktop-sweep", mode: "light",
+    viewport: { width: 1280, height: 800 },
+    chrome: { sidebarVisible: true, hamburgerVisible: false, sidebarNavScrollable: true },
+    accents, findings: [] as unknown[],
+  };
+}
+
+describe("classifyAudit accent-desktop-sweep (S41 — the desktop light-accent sidebar-navigation sweep)", () => {
+  it("the GREEN shape: 7 accents × 20 views navigated through the sidebar at 1280×800 + the sidebar per accent → green with the swept counts", () => {
+    const v = classifyAudit("accent-desktop-sweep", s41Envelope());
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/140 view renderings/);
+    expect(v.note).toMatch(/140 active-tint readings/);
+    expect(v.note).toMatch(/7 sidebar records/);
+    expect(v.note).toMatch(/1280×800/);
+  });
+
+  it("the ALL-VIEWS guard: an accent map missing ONE view reads shape-error — a view that silently did not run must never read green-by-omission", () => {
+    const env = s41Envelope() as { accents: Record<string, { views: Record<string, unknown> }> };
+    delete env.accents.violet.views.Notes;
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the ALL-ACCENTS guard: the accents map missing ONE accent reads shape-error", () => {
+    const env = s41Envelope() as { accents: Record<string, unknown> };
+    delete env.accents.red;
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S38-shape envelope (an accent-dark desktop pass — the exact pre-S41 state: flat desktop/mobile maps, no per-view interaction keys) reads shape-error, never green-by-resemblance", () => {
+    const s38Shape = {
+      source: "accent-dark-sweep", mode: "dark", mobileViewport: { width: 390, height: 844 },
+      applied: Object.fromEntries(S41_ACCENTS.map((a) => [a, a])),
+      desktop: Object.fromEntries(S41_ACCENTS.map((a) => [a, Object.fromEntries(S41_VIEWS.map((v) => [v, { heading: "ok", unreadable: [], lowcontrast: [], flashbulbs: [] }]))])),
+      mobile: {},
+      findings: [],
+    };
+    const v = classifyAudit("accent-desktop-sweep", s38Shape);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the missing sidebar record reads shape-error (the sidebar is part of the per-accent contract)", () => {
+    const env = s41Envelope() as { accents: Record<string, Record<string, unknown>> };
+    delete (env.accents.pink as Record<string, unknown>).sidebar;
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("mode is part of the contract: an envelope without mode reads shape-error", () => {
+    const env = s41Envelope() as Record<string, unknown>;
+    delete env.mode;
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the viewport guard: the 390×844 mobile, 768×1024 mid-band, AND 844×390 landscape envelopes fed here read shape-error, never a silent re-scope (the sibling families own those surfaces)", () => {
+    const mobile = classifyAudit("accent-desktop-sweep", { ...s41Envelope(), viewport: { width: 390, height: 844 } });
+    expect(isErr(mobile)).toBe(true);
+    const midband = classifyAudit("accent-desktop-sweep", { ...s41Envelope(), viewport: { width: 768, height: 1024 } });
+    expect(isErr(midband)).toBe(true);
+    const landscape = classifyAudit("accent-desktop-sweep", { ...s41Envelope(), viewport: { width: 844, height: 390 } });
+    expect(isErr(landscape)).toBe(true);
+  });
+
+  it("the mode rot guard: mode=dark reads NON-green (the desktop DARK accent family belongs to accent-dark-sweep — this audit owns the desktop LIGHT accent surface)", () => {
+    const v = classifyAudit("accent-desktop-sweep", { ...s41Envelope(), mode: "dark" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=dark/);
+  });
+
+  it("the applied-mismatch family: an accent whose self-verified reading differs from its key is a finding", () => {
+    const env = s41Envelope() as { accents: Record<string, Record<string, unknown>> };
+    (env.accents.teal as Record<string, unknown>).applied = "violet";
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the INVERTED vehicle-contract family: a hidden sidebar at 1280 is the finding class (the lg contract broke — the sidebar is the desktop vehicle), and a visible hamburger is the same class (the app bar is lg:hidden)", () => {
+    const hidden = classifyAudit("accent-desktop-sweep", { ...s41Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: false, sidebarNavScrollable: true } });
+    expect(hidden.green).toBe(false);
+    expect(hidden.note).toMatch(/vehicle/i);
+    const burger = classifyAudit("accent-desktop-sweep", { ...s41Envelope(), chrome: { sidebarVisible: true, hamburgerVisible: true, sidebarNavScrollable: true } });
+    expect(burger.green).toBe(false);
+    expect(burger.note).toMatch(/vehicle/i);
+  });
+
+  it("the scroll-contract family: sidebarNavScrollable=false is the S41-own finding class (links ~13–20 would be unreachable at 800 height — the nav's scroll is the only path below the fold)", () => {
+    const v = classifyAudit("accent-desktop-sweep", { ...s41Envelope(), chrome: { sidebarVisible: true, hamburgerVisible: false, sidebarNavScrollable: false } });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/sidebarNavScrollable|scroll/i);
+  });
+
+  it("the tint-rot family: an activeTint that computed to none is a FINDING (the S8 no-var rot class — the NAV_ACTIVE_GRADIENT_STOPS pair did not resolve)", () => {
+    const v = classifyAudit("accent-desktop-sweep", s41Envelope({ green: { Notes: { activeTint: "none" } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/active-link gradient/);
+  });
+
+  it("the interaction family: an activeLabel that does not equal the view's own label is a FINDING (the active state did not follow the navigation)", () => {
+    const v = classifyAudit("accent-desktop-sweep", s41Envelope({ blue: { Notes: { activeLabel: "Dashboard" } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/did not follow the navigation/);
+  });
+
+  it("the overflow family: scrollWidth > 1280 is a finding (the S16/S34 overflow class — the Timetable canvas must live inside its container)", () => {
+    const v = classifyAudit("accent-desktop-sweep", s41Envelope({ orange: { Timetable: { scrollWidth: 1400 } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the strict record shape: a view record missing lowcontrast reads shape-error", () => {
+    const env = s41Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.red.views.Tasks.lowcontrast;
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the strict record shape: a view record missing activeTint reads shape-error (the interaction evidence is part of the record)", () => {
+    const env = s41Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.violet.views.Files.activeTint;
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the strict record shape: a view record missing headingOffset reads shape-error (the desktop clearance is part of the record)", () => {
+    const env = s41Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.green.views.Calendar.headingOffset;
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the strict record shape: a view record missing sidebarVisible reads shape-error (the vehicle-persistence evidence is part of the record)", () => {
+    const env = s41Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.blue.views.Exams.sidebarVisible;
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the sidebar-error family: a sidebar record carrying an error is a FINDING (never a swallow)", () => {
+    const env = s41Envelope() as { accents: Record<string, { sidebar: Record<string, unknown> }> };
+    env.accents.blue.sidebar = { linkCount: 0, unreadable: [], lowcontrast: [], activeView: null, activeTint: null, error: "TypeError: Cannot read properties of null" };
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the counting semantics: a non-exempt unreadable entry with an EMPTY findings array still reads NON-green (the independent counting doctrine)", () => {
+    const env = s41Envelope({ teal: { Analytics: { unreadable: [
+      { text: "streak", color: "rgb(148, 163, 184)", contrast: 1.9 },
+    ] } } });
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the CTA-face exemption is SIGNATURE-STRICT: white-on-accent rides the note; a non-white unreadable text still counts", () => {
+    const exempt = classifyAudit("accent-desktop-sweep", s41Envelope({ violet: { Calendar: { unreadable: [
+      { text: "Calendar", color: "rgb(255, 255, 255)", contrast: 2.1 },
+    ] } } }));
+    expect(exempt.green).toBe(true);
+    expect(exempt.note).toMatch(/1 CTA-face exempt/);
+    const other = classifyAudit("accent-desktop-sweep", s41Envelope({ violet: { Calendar: { unreadable: [
+      { text: "27", color: "rgb(100, 116, 139)", contrast: 1.8 },
+    ] } } }));
+    expect(other.green).toBe(false);
+    expect(other.findings).toBe(1);
+  });
+
+  it("the calendar adjacent-day exemption (slate-300 1-2-digit) and the yellow-pill exemption ({high,medium,low}) ride the note — but a slate-300 PARAGRAPH or yellow-500 heading still counts", () => {
+    const exempt = classifyAudit("accent-desktop-sweep", s41Envelope({ pink: { Calendar: { unreadable: [
+      { text: "27", color: "rgb(203, 213, 225)", contrast: 1.6 },
+      { text: "30", color: "rgb(203, 213, 225)", contrast: 1.7 },
+    ], lowcontrast: [] }, "My Day": { unreadable: [
+      { text: "high", color: "rgb(234, 179, 8)", contrast: 2.0 },
+    ] } } }));
+    expect(exempt.green).toBe(true);
+    expect(exempt.note).toMatch(/2 calendar adjacent-day exempt/);
+    expect(exempt.note).toMatch(/1 yellow-pill exempt/);
+    const strict1 = classifyAudit("accent-desktop-sweep", s41Envelope({ pink: { Calendar: { unreadable: [
+      { text: "September 2026", color: "rgb(203, 213, 225)", contrast: 1.6 },
+    ] } } }));
+    expect(strict1.green).toBe(false);
+    const strict2 = classifyAudit("accent-desktop-sweep", s41Envelope({ pink: { Exams: { unreadable: [
+      { text: "Biology Midterm", color: "rgb(234, 179, 8)", contrast: 2.0 },
+    ] } } }));
+    expect(strict2.green).toBe(false);
+  });
+
+  it("the lowcontrast WARN family rides the note, never the findings (the S11 non-gap family)", () => {
+    const env = s41Envelope({ green: { Assignments: { lowcontrast: [
+      { text: "essay", color: "rgb(217, 119, 6)", contrast: 3.07 },
+    ] } } });
+    const v = classifyAudit("accent-desktop-sweep", env);
+    expect(v.green).toBe(true);
+    expect(v.note).toMatch(/1 WARN/);
+  });
+
+  it("the unknown-audit guard still holds: a misspelled name is a shape-error even with a perfect envelope", () => {
+    const v = classifyAudit("accent-desktop-swep", s41Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {

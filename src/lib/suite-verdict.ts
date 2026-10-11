@@ -34,6 +34,7 @@ export const AUDIT_NAMES = [
   "accent-light-sweep",
   "accent-midband-sweep",
   "accent-landscape-sweep",
+  "accent-desktop-sweep",
   "dark-sweep",
   "accent-dark-sweep",
   "cwv",
@@ -1109,6 +1110,272 @@ function classifyAccentLandscapeSweep(env: unknown): StageVerdict {
   };
 }
 
+// --- accent-desktop-sweep (S41) ----------------------------------------------
+// The desktop light-accent sidebar-navigation sweep — the desktop family's
+// light half (1280×800), navigated THROUGH THE SIDEBAR (the desktop vehicle
+// — the only chrome ≥1024; the S33–S40 vehicle contract INVERTS here: the
+// sidebar MUST be visible and the lg:hidden app bar MUST be hidden), in
+// LIGHT mode: the combo the S40 summary named first among its next steps
+// ("the desktop light-accent family — currently the documented bracketed
+// non-gap"). The per-view records carry the INTERACTION evidence —
+// activeTint (the SIDEBAR's active-link inner-span gradient while THIS view
+// was active; the desktop vehicle's tint was verified at ZERO views, ZERO
+// accents, in either mode before this audit — the e2e pins read the tint on
+// the Dashboard link only, violet only; accent-dark's desktop pass
+// navigates by direct goto and never reads it) and activeLabel (the
+// aria-current link when read — MUST equal the view's own label: the active
+// state must follow the navigation) — AND the desktop-own keys
+// (headingOffset — the identity heading's box left at/right of the fixed
+// 260px sidebar, the desktop clearance contract; sidebarVisible — the
+// vehicle persists through navigation). The chrome carries the
+// sidebar-own scroll contract (sidebarNavScrollable — the nav's scroll is
+// the ONLY path to links ~13–20 at 800 height [measured: scrollHeight 1068
+// vs clientHeight 534]; the S35-family contract on the DESKTOP vehicle).
+// The desktop DARK accent family belongs to accent-dark-sweep (its own
+// standing surface at 1280×800 dark).
+
+const ACCENT_DESKTOP_ALL_ACCENTS = new Set(["violet", "blue", "green", "orange", "pink", "red", "teal"]);
+// The 20 canonical views by their DISPLAY labels — the sidebar links'
+// accessible names ("My Day", "Practice Tests", …), the same convention as
+// the S34/S35/S39/S40 vehicle-family envelopes; the per-view `activeLabel`
+// reading is the same display label, so the interaction check compares
+// like-for-like.
+const ACCENT_DESKTOP_ALL_VIEWS = [
+  "Dashboard", "My Day", "Tasks", "Calendar", "Events", "Timetable",
+  "Assignments", "Exams", "Notes", "Flashcards", "Practice Tests",
+  "Study Groups", "Grade Tracker", "Analytics", "Files", "Calculator",
+  "Math Solver", "AI Assistant", "Focus Timer", "Settings",
+];
+
+function classifyAccentDesktopSweep(env: unknown): StageVerdict {
+  if (!isObj(env)) return shapeError("envelope must be an object");
+  if (typeof env.mode !== "string") return shapeError("mode must be a string");
+  if (!isObj(env.viewport) || env.viewport.width !== 1280 || env.viewport.height !== 800) {
+    return shapeError(
+      "viewport must be the desktop 1280×800 (the canonical desktop width the dark family already sweeps) — the LIGHT-mode desktop accent surface is this audit's contract (the mobile accent family belongs to accent-light-sweep; the mid-band to accent-midband-sweep; the landscape to accent-landscape-sweep; the desktop dark accent family to accent-dark-sweep)",
+    );
+  }
+  if (
+    !isObj(env.chrome) ||
+    typeof env.chrome.sidebarVisible !== "boolean" ||
+    typeof env.chrome.hamburgerVisible !== "boolean" ||
+    typeof env.chrome.sidebarNavScrollable !== "boolean"
+  ) {
+    return shapeError("chrome must carry boolean sidebarVisible + hamburgerVisible + sidebarNavScrollable (the INVERTED vehicle contract + the sidebar-own scroll contract)");
+  }
+  if (!isObj(env.accents)) return shapeError("accents must be an object of per-accent records");
+  if (!isArr(env.findings)) return shapeError("findings must be an Array");
+  const accentKeys = Object.keys(env.accents);
+  for (const a of ACCENT_DESKTOP_ALL_ACCENTS) {
+    if (!(a in env.accents)) {
+      return shapeError(
+        `accents must carry all 7 (violet, blue, green, orange, pink, red, teal) — "${a}" is missing: an accent that silently did not run must never read green-by-omission`,
+      );
+    }
+  }
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec)) return shapeError(`accents.${a} must be a record`);
+    if (typeof rec.applied !== "string") return shapeError(`accents.${a}.applied must be a string (the self-verified <html data-accent> reading)`);
+    if (!isObj(rec.views)) return shapeError(`accents.${a}.views must be an object of per-view records`);
+    for (const v of ACCENT_DESKTOP_ALL_VIEWS) {
+      if (!(v in rec.views)) {
+        return shapeError(
+          `accents.${a}.views must carry all 20 canonical views — "${v}" is missing: a view that silently did not run must never read green-by-omission (the omission-means-clean recording is RETIRED)`,
+        );
+      }
+    }
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (!isObj(vr)) return shapeError(`accents.${a}.views.${v} must be a record`);
+      if (typeof vr.heading !== "string" || vr.heading.length === 0) {
+        return shapeError(`accents.${a}.views.${v}.heading must be a non-empty string`);
+      }
+      if (typeof vr.scrollWidth !== "number") return shapeError(`accents.${a}.views.${v}.scrollWidth must be a number`);
+      if (typeof vr.sidebarVisible !== "boolean") return shapeError(`accents.${a}.views.${v}.sidebarVisible must be a boolean (the sidebar persists through navigation — the desktop vehicle contract per view)`);
+      if (typeof vr.headingOffset !== "boolean") {
+        return shapeError(`accents.${a}.views.${v}.headingOffset must be a boolean (the content clears the fixed 260px sidebar — the lg:ml-[260px] contract, the desktop clearance)`);
+      }
+      if (!isArr(vr.unreadable)) return shapeError(`accents.${a}.views.${v}.unreadable must be an Array (the light contrast detector family)`);
+      if (!isArr(vr.lowcontrast)) return shapeError(`accents.${a}.views.${v}.lowcontrast must be an Array (the light contrast detector family)`);
+      if (!isArr(vr.consoleErrors)) return shapeError(`accents.${a}.views.${v}.consoleErrors must be an Array`);
+      if (typeof vr.activeTint !== "string") return shapeError(`accents.${a}.views.${v}.activeTint must be a string (the active-link gradient reading — the interaction evidence is part of the record)`);
+      if (typeof vr.activeLabel !== "string") return shapeError(`accents.${a}.views.${v}.activeLabel must be a string (the aria-current link when the tint was read)`);
+    }
+    if (
+      !isObj(rec.sidebar) ||
+      typeof rec.sidebar.linkCount !== "number" ||
+      !isArr(rec.sidebar.unreadable) ||
+      !isArr(rec.sidebar.lowcontrast)
+    ) {
+      return shapeError(`accents.${a}.sidebar must carry linkCount + unreadable + lowcontrast Arrays (the sidebar's own accent rendering)`);
+    }
+  }
+  if (env.mode !== "light") {
+    return {
+      green: false,
+      findings: env.findings.length,
+      note: `mode=${env.mode} — the sweep ran in the wrong mode (the S27 rot class; the LIGHT-mode desktop accent surface is this audit's contract — the desktop DARK accent family belongs to accent-dark-sweep)`,
+    };
+  }
+  if (!env.chrome.sidebarVisible || env.chrome.hamburgerVisible) {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `the INVERTED chrome contract broke at 1280×800 — sidebarVisible=${env.chrome.sidebarVisible}, hamburgerVisible=${env.chrome.hamburgerVisible} (the lg contract: the sidebar is the desktop vehicle and renders ≥1024; the app bar is lg:hidden — the vehicle-contract finding class)`,
+    };
+  }
+  if (!env.chrome.sidebarNavScrollable) {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `the sidebar-own scroll contract broke — sidebarNavScrollable=false at 800 height under at least one accent (the nav geometry: the 20 reference-measured rows cannot fit the ~534px nav area, so a non-scrolling nav means the sidebar geometry changed — links beyond the fold would be unreachable at desktop; the sidebarNavScrollable finding class)`,
+    };
+  }
+  // The applied check: every accent's self-verified reading must match its key.
+  const notApplied: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (isObj(rec) && rec.applied !== a) notApplied.push(`${a}→${String(rec.applied)}`);
+  }
+  if (notApplied.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + notApplied.length,
+      note: `${notApplied.length} accent(s) did not apply through the real lifecycle (applied ${notApplied.join(", ")}) — the accent-application finding class`,
+    };
+  }
+  // The sidebar-error check: a sidebar record carrying an error is a FINDING
+  // (never a swallow — the S38 doctrine).
+  const sidebarErrors: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (isObj(rec) && isObj(rec.sidebar) && typeof rec.sidebar.error === "string") sidebarErrors.push(a);
+  }
+  if (sidebarErrors.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + sidebarErrors.length,
+      note: `${sidebarErrors.length} sidebar record(s) carry an error (${sidebarErrors.join(", ")}) — a sidebar whose detectors failed is a finding, never a swallow`,
+    };
+  }
+  // The interaction checks — the S41 finding classes this audit OWNS (the
+  // DESKTOP vehicle's own proof — the drawer's was S39/S40's):
+  //   (a) the tint rot: an activeTint that computed to "none"/empty is the
+  //       S8 no-var rot class (a camelCase token silently resolves to no
+  //       var and the gradient computes to none);
+  //   (b) the active-state mismatch: the sidebar's active link must be the
+  //       view that was active when the tint was read — the active state
+  //       must follow the navigation.
+  const tintRots: string[] = [];
+  const activeMismatches: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec) || !isObj(rec.views)) continue;
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (!isObj(vr)) continue;
+      if (vr.activeTint === "" || vr.activeTint === "none") tintRots.push(`${a}/${v}`);
+      if (vr.activeLabel !== v) activeMismatches.push(`${a}/${v}→${String(vr.activeLabel)}`);
+    }
+  }
+  if (tintRots.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + tintRots.length,
+      note: `${tintRots.length} active-link gradient reading(s) computed to none/empty (${tintRots.slice(0, 4).join(", ")}) — the S8 no-var rot class (the NAV_ACTIVE_GRADIENT_STOPS pair did not resolve)`,
+    };
+  }
+  if (activeMismatches.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + activeMismatches.length,
+      note: `${activeMismatches.length} active-state mismatch(es) (${activeMismatches.slice(0, 4).join(", ")}) — the sidebar's active link did not follow the navigation (the interaction contract: while view V is active, V's link carries aria-current=page)`,
+    };
+  }
+  // The overflow check (the S16/S34 class — the Timetable's min-w-[900px]
+  // canvas fits the 956px desktop content area at 1280; it must live inside
+  // its container, never widen the document).
+  const overflows: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec) || !isObj(rec.views)) continue;
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (isObj(vr) && typeof vr.scrollWidth === "number" && vr.scrollWidth > 1280) overflows.push(`${a}/${v}:${vr.scrollWidth}`);
+    }
+  }
+  if (overflows.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + overflows.length,
+      note: `${overflows.length} view rendering(s) overflow the 1280px canvas (${overflows.slice(0, 4).join(", ")}) — the S16/S34 overflow class`,
+    };
+  }
+  // The independent contrast-detection count (the anti-phantom doctrine),
+  // with the documented non-gap exemptions, each SIGNATURE-STRICT (the
+  // S37-exact semantics): the CTA-face, the calendar adjacent-month days,
+  // and the yellow priority-pill vocabulary. Any OTHER unreadable
+  // combination is a genuine finding (counted).
+  let detections = 0;
+  let ctaFace = 0;
+  let calendarDays = 0;
+  let yellowPills = 0;
+  let warns = 0;
+  let renderings = 0;
+  const isCalendarAdjacentDay = (e: unknown) =>
+    isObj(e) && e.color === "rgb(203, 213, 225)" && typeof e.text === "string" && /^\d{1,2}$/.test(e.text.trim());
+  const isYellowPriorityPill = (e: unknown) =>
+    isObj(e) && e.color === "rgb(234, 179, 8)" && typeof e.text === "string" && /^(high|medium|low)$/i.test(e.text.trim());
+  const countEntries = (arr: unknown) => {
+    if (!isArr(arr)) return;
+    for (const e of arr) {
+      if (isObj(e) && e.color === "rgb(255, 255, 255)") {
+        ctaFace += 1;
+        continue;
+      }
+      if (isCalendarAdjacentDay(e)) {
+        calendarDays += 1;
+        continue;
+      }
+      if (isYellowPriorityPill(e)) {
+        yellowPills += 1;
+        continue;
+      }
+      detections += 1;
+    }
+  };
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec)) continue; // already shape-checked; defensive only
+    if (isObj(rec.views)) {
+      for (const v of Object.keys(rec.views)) {
+        const vr = rec.views[v];
+        if (!isObj(vr)) continue;
+        renderings += 1;
+        countEntries(vr.unreadable);
+        if (isArr(vr.lowcontrast)) warns += vr.lowcontrast.length;
+      }
+    }
+    if (isObj(rec.sidebar)) {
+      countEntries(rec.sidebar.unreadable);
+      if (isArr(rec.sidebar.lowcontrast)) warns += rec.sidebar.lowcontrast.length;
+    }
+  }
+  if (detections > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + detections,
+      note: `${detections} unreadable detection(s) across ${renderings} view renderings + 7 sidebar records (the light contrast detector family; counted independently of the findings array; the CTA-face entries are exempt)`,
+    };
+  }
+  return {
+    green: env.findings.length === 0,
+    findings: env.findings.length,
+    note: `7 accents swept × ${renderings} view renderings + ${renderings} active-tint readings + 7 sidebar records at 1280×800 in MODE light, navigated through the sidebar (the desktop vehicle); every accent self-verified applied; the sidebar-own contracts hold (nav scrollable, heading offset); ${ctaFace} CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); ${calendarDays} calendar adjacent-day exempt (slate-300 — the S6-G reference-measured pin); ${yellowPills} yellow-pill exempt (yellow-500 — the S6/S8 reference-measured pin); ${warns} WARN (lowcontrast — the S11 non-gap family)`,
+  };
+}
+
 // --- cwv -----------------------------------------------------------------------
 // Ratings GOOD/NI/POOR/BAD. FINDINGS = clone-* scenarios rated POOR/BAD;
 // NI = the documented S16 state (not a finding); ref-* scenarios are
@@ -1421,6 +1688,7 @@ export function classifyAudit(name: string, envelope: unknown): StageVerdict {
   if (name === "accent-light-sweep") return classifyAccentLightSweep(envelope);
   if (name === "accent-midband-sweep") return classifyAccentMidbandSweep(envelope);
   if (name === "accent-landscape-sweep") return classifyAccentLandscapeSweep(envelope);
+  if (name === "accent-desktop-sweep") return classifyAccentDesktopSweep(envelope);
   if (name === "dark-sweep") return classifyDarkSweep(envelope);
   if (name === "accent-dark-sweep") return classifyAccentDarkSweep(envelope);
   if (name === "cwv") return classifyCwv(envelope);
