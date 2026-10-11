@@ -882,6 +882,203 @@ describe("classifyAudit dark-mobile-sweep (S36)", () => {
   });
 });
 
+// --- accent-light-sweep (S37) --------------------------------------------------
+// The ACCENT axis in LIGHT mode — the theme dimension the standing surface
+// never varies in light (the AP-82 lesson: the accent-dark-sweep varies the
+// accent ONLY in dark — its own name is the blind spot; every light pin
+// rides the default violet; the only light × non-violet rendering in any
+// standing artifact is ONE desktop calculator view). The reference's accent
+// picker saves but never re-themes (re-verified live in session 3) — the
+// clone's working accent system is the functional superset, so its
+// light-mode correctness is a superset-quality contract. Per-accent shape:
+// applied (the self-verified <html data-accent> reading) + views (heading /
+// scrollWidth / unreadable / lowcontrast / consoleErrors — the contrast
+// detector family ported to the light canvas; the flashbulb class does not
+// apply in light mode) + the drawer record (the active-link tint is
+// accent-driven). The ALL-ACCENTS guard: an accent that silently did not
+// run must never read green-by-omission. The CTA-face exemption (the S11
+// family-2 non-gap in light: white on accent-500 is the reference's own
+// accent-CTA choice) counts into the note, never the findings.
+
+function s37AccentRecord(applied: string, views: Record<string, unknown> = {}) {
+  const defaultViews = {
+    Dashboard: { heading: "Good evening, Demo Student 👋", scrollWidth: 390, unreadable: [], lowcontrast: [], consoleErrors: [] },
+    Notes: { heading: "Notes", scrollWidth: 390, unreadable: [], lowcontrast: [], consoleErrors: [] },
+  };
+  return {
+    applied,
+    views: { ...defaultViews, ...views },
+    drawer: { linkCount: 20, unreadable: [], lowcontrast: [], activeTint: "linear-gradient(to right, rgb(139, 92, 246), rgb(99, 102, 241))" },
+  };
+}
+
+const ACCENT_LIGHT_SWEEP_GREEN = {
+  mode: "light",
+  viewport: { width: 390, height: 844 },
+  chrome: { sidebarVisible: false, hamburgerVisible: true },
+  accents: {
+    violet: s37AccentRecord("violet"),
+    blue: s37AccentRecord("blue"),
+    green: s37AccentRecord("green"),
+    orange: s37AccentRecord("orange", {
+      Dashboard: { heading: "Good evening, Demo Student 👋", scrollWidth: 390, unreadable: [{ text: "Add Task", color: "rgb(255, 255, 255)", contrast: 2.15 }], lowcontrast: [], consoleErrors: [] },
+    }),
+    pink: s37AccentRecord("pink"),
+    red: s37AccentRecord("red"),
+    teal: s37AccentRecord("teal"),
+  },
+  findings: [],
+};
+
+describe("classifyAudit accent-light-sweep (S37)", () => {
+  it("the GREEN shape: all 7 accents, clean detectors → green with the swept count", () => {
+    const v = classifyAudit("accent-light-sweep", ACCENT_LIGHT_SWEEP_GREEN);
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/7 accents/);
+    expect(v.note).toMatch(/CTA-face exempt/);
+  });
+
+  it("mode rot: a dark run is the wrong mode (the accent × dark family belongs to accent-dark-sweep)", () => {
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, mode: "dark" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=dark/);
+    expect(v.note).toMatch(/accent-dark-sweep/);
+  });
+
+  it("shape-error: a missing findings Array", () => {
+    const { findings: _drop, ...noFindings } = ACCENT_LIGHT_SWEEP_GREEN;
+    const v = classifyAudit("accent-light-sweep", noFindings);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("shape-error: a missing accent (the ALL-ACCENTS guard — an accent that silently did not run)", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, unknown>;
+    delete accents.teal;
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents });
+    expect(isErr(v)).toBe(true);
+    expect(v.note).toMatch(/all 7/);
+    expect(v.note).toMatch(/teal/);
+  });
+
+  it("shape-error: a view record missing unreadable", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    accents.violet = { ...accents.violet, views: { Notes: { heading: "Notes", scrollWidth: 390, lowcontrast: [], consoleErrors: [] } } };
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("shape-error: a view record missing lowcontrast", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    accents.blue = { ...accents.blue, views: { Notes: { heading: "Notes", scrollWidth: 390, unreadable: [], consoleErrors: [] } } };
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("shape-error: an accent record missing its drawer", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    const { drawer: _d, ...greenNoDrawer } = accents.green;
+    accents.green = greenNoDrawer;
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("shape-error: the 1280×800 desktop envelope fed to the mobile classifier", () => {
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, viewport: { width: 1280, height: 800 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("shape-error: the 768×1024 mid-band envelope fed to the mobile classifier", () => {
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, viewport: { width: 768, height: 1024 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("findings-present: a non-CTA unreadable entry under teal is a genuine finding", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    accents.teal = s37AccentRecord("teal", {
+      Notes: { heading: "Notes", scrollWidth: 390, unreadable: [{ text: "pinned note", color: "rgb(148, 163, 184)", contrast: 1.9 }], lowcontrast: [], consoleErrors: [] },
+    });
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents, findings: [{ accent: "teal", view: "Notes", kind: "unreadable", detail: "1 unreadable text node(s)" }] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBeGreaterThanOrEqual(1);
+  });
+
+  it("the CTA-face exemption: white-on-accent unreadable entries stay GREEN (the S11 family-2 non-gap)", () => {
+    const v = classifyAudit("accent-light-sweep", ACCENT_LIGHT_SWEEP_GREEN);
+    expect(v.green).toBe(true);
+    expect(v.note).toMatch(/1 CTA-face exempt/);
+  });
+
+  it("the calendar adjacent-day exemption: slate-300 day numbers stay GREEN (the S6-G reference-measured pin, re-verified live)", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    accents.violet = s37AccentRecord("violet", {
+      Calendar: { heading: "Calendar", scrollWidth: 390, unreadable: [{ text: "27", color: "rgb(203, 213, 225)", contrast: 1.48 }, { text: "30", color: "rgb(203, 213, 225)", contrast: 1.48 }], lowcontrast: [], consoleErrors: [] },
+    });
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents, findings: [] });
+    expect(v.green).toBe(true);
+    expect(v.note).toMatch(/2 calendar adjacent-day exempt/);
+  });
+
+  it("the calendar exemption is signature-strict: slate-300 NON-day-number text is still a genuine finding", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    accents.violet = s37AccentRecord("violet", {
+      Calendar: { heading: "Calendar", scrollWidth: 390, unreadable: [{ text: "some paragraph text", color: "rgb(203, 213, 225)", contrast: 1.48 }], lowcontrast: [], consoleErrors: [] },
+    });
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents, findings: [] });
+    expect(v.green).toBe(false);
+  });
+
+  it("the yellow-pill exemption: yellow-500 priority vocabulary stays GREEN (the S6/S8 reference-measured pin)", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    accents.orange = s37AccentRecord("orange", {
+      Dashboard: { heading: "Good evening, Demo Student 👋", scrollWidth: 390, unreadable: [{ text: "high", color: "rgb(234, 179, 8)", contrast: 1.85 }, { text: "medium", color: "rgb(234, 179, 8)", contrast: 1.85 }], lowcontrast: [], consoleErrors: [] },
+    });
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents, findings: [] });
+    expect(v.green).toBe(true);
+    expect(v.note).toMatch(/2 yellow-pill exempt/);
+  });
+
+  it("the yellow-pill exemption is signature-strict: yellow-500 text OUTSIDE the priority vocabulary is still a finding", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    accents.pink = s37AccentRecord("pink", {
+      Assignments: { heading: "Assignments", scrollWidth: 390, unreadable: [{ text: "Urgent heading text", color: "rgb(234, 179, 8)", contrast: 1.85 }], lowcontrast: [], consoleErrors: [] },
+    });
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents, findings: [] });
+    expect(v.green).toBe(false);
+  });
+
+  it("the independent counting: a NON-EMPTY unreadable array with an EMPTY findings array still reads non-green", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    accents.red = s37AccentRecord("red", {
+      Notes: { heading: "Notes", scrollWidth: 390, unreadable: [{ text: "note title", color: "rgb(100, 116, 139)", contrast: 2.0 }], lowcontrast: [], consoleErrors: [] },
+    });
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents, findings: [] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBeGreaterThanOrEqual(1);
+    expect(v.note).toMatch(/unreadable/);
+  });
+
+  it("the applied-mismatch: an accent whose self-verified applied reading differs from its key reads non-green", () => {
+    const accents = { ...ACCENT_LIGHT_SWEEP_GREEN.accents } as Record<string, Record<string, unknown>>;
+    accents.teal = s37AccentRecord("violet");
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, accents });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/teal/);
+    expect(v.note).toMatch(/appl/);
+  });
+
+  it("the vehicle contract: a visible sidebar at 390 reads non-green (the lg contract)", () => {
+    const v = classifyAudit("accent-light-sweep", { ...ACCENT_LIGHT_SWEEP_GREEN, chrome: { sidebarVisible: true, hamburgerVisible: false }, findings: [] });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/lg contract/);
+  });
+
+  it("the unknown-audit guard still holds: a name outside AUDIT_NAMES is a shape-error", () => {
+    const v = classifyAudit("accent-light-sweeep", ACCENT_LIGHT_SWEEP_GREEN);
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {

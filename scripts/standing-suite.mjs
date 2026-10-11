@@ -10,14 +10,15 @@
 //   0. dev-server-preflight  (the S31 convention, ENFORCED: abort the suite
 //      loudly on any non-green verdict, remedy included — the boot-stability
 //      precondition is executable, not advisory)
-//   1-19. security, settings-roundtrip, connectivity, upload-edge,
+//   1-20. security, settings-roundtrip, connectivity, upload-edge,
 //      data-volume, forced-colors, print, focus-order, mobile-sweep,
-//      midband-sweep, landscape-sweep, dark-mobile-sweep, dark-sweep,
-//      accent-dark-sweep, cwv, ai-error, ai-a11y, pre15-preflight, dep-audit
-//      (the light-mode mobile family, then the light-mode mid-band family,
-//      then the light-mode phone-landscape family, then the DARK-mode mobile
-//      family, then the dark-mode desktop families — the S36 order)
-//   20. the demo-theme closing guard (light/violet via Prisma — a mid-suite
+//      midband-sweep, landscape-sweep, dark-mobile-sweep, accent-light-sweep,
+//      dark-sweep, accent-dark-sweep, cwv, ai-error, ai-a11y, pre15-preflight,
+//      dep-audit (the light-mode mobile family, then the light-mode mid-band
+//      family, then the light-mode phone-landscape family, then the DARK-mode
+//      mobile family, then the LIGHT-mode accent family, then the dark-mode
+//      desktop families — the S37 order)
+//   21. the demo-theme closing guard (light/violet via Prisma — a mid-suite
 //      crash must not leave the demo user dark/teal, the documented
 //      poisoning class)
 //
@@ -59,6 +60,7 @@ const STAGES = [
   { name: "midband-sweep", file: "scripts/midband-sweep.mjs", runtime: "node" },
   { name: "landscape-sweep", file: "scripts/landscape-sweep.mjs", runtime: "node" },
   { name: "dark-mobile-sweep", file: "scripts/dark-mobile-sweep.mjs", runtime: "node" },
+  { name: "accent-light-sweep", file: "scripts/accent-light-sweep.mjs", runtime: "node" },
   { name: "dark-sweep", file: "scripts/dark-sweep.mjs", runtime: "node" },
   { name: "accent-dark-sweep", file: "scripts/accent-dark-sweep.mjs", runtime: "node" },
   { name: "cwv", file: "scripts/cwv-audit-s16.mjs", runtime: "node" },
@@ -193,7 +195,7 @@ let cwvPreconditionFailed = false;
 try {
   // Stage 0 — the S31 preflight FIRST, enforced (the suite never starts on an
   // unstable boot; the remedy rides the verdict).
-  log(`[standing-suite] stage 0/20 — dev-server-preflight (the S31 boot-stability precondition)`);
+  log(`[standing-suite] stage 0/21 — dev-server-preflight (the S31 boot-stability precondition)`);
   const pre = await run("bun", [join(REPO, "scripts/dev-server-preflight.mjs")], 90_000);
   writeFileSync(join(RAW_DIR, "dev-server-preflight.json"), pre.stdout);
   const preParsed = parseAuditStdout(pre.stdout);
@@ -221,17 +223,17 @@ try {
     for (let i = 0; i < STAGES.length; i += 1) {
       const spec = STAGES[i];
       if (spec.name === "cwv" && cwvPreconditionFailed) {
-        log(`[standing-suite] stage ${i + 1}/20 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
+        log(`[standing-suite] stage ${i + 1}/21 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
         continue;
       }
-      log(`[standing-suite] stage ${i + 1}/20 — ${spec.name}`);
+      log(`[standing-suite] stage ${i + 1}/21 — ${spec.name}`);
       const r = await runAuditStage(spec);
       rows.push({ name: r.name, verdict: r.verdict });
       await new Promise((res) => setTimeout(res, SETTLE_MS));
     }
 
     // The closing guard.
-    log(`[standing-suite] stage 20/20 — theme-restore (the demo-theme closing guard)`);
+    log(`[standing-suite] stage 21/21 — theme-restore (the demo-theme closing guard)`);
     rows.push(await themeGuard());
   }
 } finally {

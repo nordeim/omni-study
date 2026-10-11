@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-// Unit-test layer for the pure domain seams — 20 files / 383 tests:
+// Unit-test layer for the pure domain seams — 20 files / 402 tests:
 // router, theme, theme-cache, date, calculator, auth, validation, db-path,
 // site, api-timeout, api-offline, files (content-disposition),
 // rum-diagnostics, data-export, data-import, env-check, view-collections,
@@ -21,7 +21,17 @@ import path from "node:path";
 // the mobile viewport the standing surface never varied — with the
 // per-view flashbulbs/unreadable detector keys, the drawer dark record,
 // and the INDEPENDENT dark-detection counting [a non-empty detector array
-// with an empty findings array still reads non-green]).
+// with an empty findings array still reads non-green]; extended in S37
+// with the accent-light-sweep classifier pins: the ACCENT axis in LIGHT
+// mode — the theme dimension the standing surface never varies in light
+// [the accent-dark-sweep varies the accent ONLY in dark; every light pin
+// rides the default violet] — with the ALL-ACCENTS guard [a missing
+// accent key is a shape-error, never green-by-omission], the per-accent
+// applied self-verification, the per-view contrast detector keys
+// [unreadable / lowcontrast — the flashbulb class does not apply on the
+// light canvas], the drawer record per accent, and the three
+// signature-strict non-gap exemptions [the CTA-face, the calendar
+// adjacent-month days, and the yellow priority-pill vocabulary]).
 // Browser/E2E coverage lives in tests/e2e/*.spec.ts (Playwright — never
 // picked up by this config, which matches *.test.ts only; the standalone
 // server is booted by playwright.config.ts's webServer).

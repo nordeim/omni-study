@@ -31,6 +31,7 @@ export const AUDIT_NAMES = [
   "midband-sweep",
   "landscape-sweep",
   "dark-mobile-sweep",
+  "accent-light-sweep",
   "dark-sweep",
   "accent-dark-sweep",
   "cwv",
@@ -496,6 +497,180 @@ function classifyDarkMobileSweep(env: unknown): StageVerdict {
   };
 }
 
+// --- accent-light-sweep (S37) ---------------------------------------------------
+// The ACCENT axis in LIGHT mode — the theme dimension the standing surface
+// never varies in light (the AP-82 lesson: the accent-dark-sweep varies the
+// accent ONLY in dark — its own name is the blind spot; every light pin
+// rides the default violet; the only light × non-violet rendering in any
+// standing artifact is ONE desktop calculator view). The reference's accent
+// picker saves but never re-themes (re-verified live in session 3) — the
+// clone's working accent system is the functional superset, so its
+// light-mode correctness is a superset-quality contract. Per-accent shape:
+// applied (the self-verified <html data-accent> reading — an accent whose
+// applied reading differs from its key did NOT apply and reads non-green)
+// + views (heading/scrollWidth/unreadable/lowcontrast/consoleErrors — the
+// contrast detector family ported to the light canvas; the flashbulb class
+// does not apply in light mode) + the drawer record (the active-link tint
+// is accent-driven). The ALL-ACCENTS guard: accents must carry all 7 — an
+// accent that silently did not run must never read green-by-omission. The
+// CTA-face exemption (the S11 family-2 non-gap in light: white on
+// accent-500 is the reference's own accent-CTA choice) counts into the
+// note, never the findings; lowcontrast entries are WARN (the note, never
+// the findings). The contrast detections are counted INDEPENDENTLY of the
+// findings array (the anti-phantom doctrine).
+
+const ACCENT_LIGHT_ALL_ACCENTS = new Set(["violet", "blue", "green", "orange", "pink", "red", "teal"]);
+
+function classifyAccentLightSweep(env: unknown): StageVerdict {
+  if (!isObj(env)) return shapeError("envelope must be an object");
+  if (typeof env.mode !== "string") return shapeError("mode must be a string");
+  if (!isObj(env.viewport) || env.viewport.width !== 390 || env.viewport.height !== 844) {
+    return shapeError(
+      "viewport must be the mobile portrait 390×844 (the S33 mobile class) — the LIGHT-mode accent surface is this audit's contract (the desktop/mid-band light-accent combos are documented non-gaps)",
+    );
+  }
+  if (
+    !isObj(env.chrome) ||
+    typeof env.chrome.sidebarVisible !== "boolean" ||
+    typeof env.chrome.hamburgerVisible !== "boolean"
+  ) {
+    return shapeError("chrome must carry boolean sidebarVisible + hamburgerVisible (the vehicle contract)");
+  }
+  if (!isObj(env.accents)) return shapeError("accents must be an object of per-accent records");
+  if (!isArr(env.findings)) return shapeError("findings must be an Array");
+  const accentKeys = Object.keys(env.accents);
+  for (const a of ACCENT_LIGHT_ALL_ACCENTS) {
+    if (!(a in env.accents)) {
+      return shapeError(
+        `accents must carry all 7 (violet, blue, green, orange, pink, red, teal) — "${a}" is missing: an accent that silently did not run must never read green-by-omission`,
+      );
+    }
+  }
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec)) return shapeError(`accents.${a} must be a record`);
+    if (typeof rec.applied !== "string") return shapeError(`accents.${a}.applied must be a string (the self-verified <html data-accent> reading)`);
+    if (!isObj(rec.views)) return shapeError(`accents.${a}.views must be an object of per-view records`);
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (!isObj(vr)) return shapeError(`accents.${a}.views.${v} must be a record`);
+      if (typeof vr.heading !== "string" || vr.heading.length === 0) {
+        return shapeError(`accents.${a}.views.${v}.heading must be a non-empty string`);
+      }
+      if (typeof vr.scrollWidth !== "number") return shapeError(`accents.${a}.views.${v}.scrollWidth must be a number`);
+      if (!isArr(vr.unreadable)) return shapeError(`accents.${a}.views.${v}.unreadable must be an Array (the light contrast detector family)`);
+      if (!isArr(vr.lowcontrast)) return shapeError(`accents.${a}.views.${v}.lowcontrast must be an Array (the light contrast detector family)`);
+      if (!isArr(vr.consoleErrors)) return shapeError(`accents.${a}.views.${v}.consoleErrors must be an Array`);
+    }
+    if (
+      !isObj(rec.drawer) ||
+      typeof rec.drawer.linkCount !== "number" ||
+      !isArr(rec.drawer.unreadable) ||
+      !isArr(rec.drawer.lowcontrast)
+    ) {
+      return shapeError(`accents.${a}.drawer must carry linkCount + unreadable + lowcontrast Arrays (the drawer's own accent rendering)`);
+    }
+  }
+  if (env.mode !== "light") {
+    return {
+      green: false,
+      findings: env.findings.length,
+      note: `mode=${env.mode} — the sweep ran in the wrong mode (the S27 rot class; the LIGHT-mode accent surface is this audit's contract — the accent × dark family belongs to accent-dark-sweep)`,
+    };
+  }
+  if (env.chrome.sidebarVisible || !env.chrome.hamburgerVisible) {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `the chrome contract broke at 390 — sidebarVisible=${env.chrome.sidebarVisible}, hamburgerVisible=${env.chrome.hamburgerVisible} (the lg contract: the sidebar renders only ≥1024; below that the drawer is the vehicle — the vehicle-contract finding class)`,
+    };
+  }
+  // The applied check: every accent's self-verified reading must match its key.
+  const notApplied: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (isObj(rec) && rec.applied !== a) notApplied.push(`${a}→${String(rec.applied)}`);
+  }
+  // The independent contrast-detection count (the anti-phantom doctrine),
+  // with the documented non-gap exemptions, each SIGNATURE-STRICT:
+  //   (a) the CTA-face (the S11 family-2 non-gap in light: white on
+  //       accent-500 is the reference's own accent-CTA choice);
+  //   (b) the calendar adjacent-month day numbers — slate-300
+  //       (rgb(203, 213, 225)) on the light canvas, 1-2 digit text: the
+  //       S6-G measured parity pin, re-verified LIVE on the reference this
+  //       session (the reference's own adjacent days render the identical
+  //       rgb(203, 213, 225));
+  //   (c) the yellow priority pill text — yellow-500 (rgb(234, 179, 8)) on
+  //       the yellow-50 pill, the {high, medium, low} vocabulary: the
+  //       S6/S8 measured parity pin (the reference's own priority-pill
+  //       design, measured with live reference data).
+  // Any OTHER unreadable combination is a genuine finding (counted).
+  let detections = 0;
+  let ctaFace = 0;
+  let calendarDays = 0;
+  let yellowPills = 0;
+  let warns = 0;
+  let renderings = 0;
+  const isCalendarAdjacentDay = (e: unknown) =>
+    isObj(e) && e.color === "rgb(203, 213, 225)" && typeof e.text === "string" && /^\d{1,2}$/.test(e.text.trim());
+  const isYellowPriorityPill = (e: unknown) =>
+    isObj(e) && e.color === "rgb(234, 179, 8)" && typeof e.text === "string" && /^(high|medium|low)$/i.test(e.text.trim());
+  const countEntries = (arr: unknown) => {
+    if (!isArr(arr)) return;
+    for (const e of arr) {
+      if (isObj(e) && e.color === "rgb(255, 255, 255)") {
+        ctaFace += 1;
+        continue;
+      }
+      if (isCalendarAdjacentDay(e)) {
+        calendarDays += 1;
+        continue;
+      }
+      if (isYellowPriorityPill(e)) {
+        yellowPills += 1;
+        continue;
+      }
+      detections += 1;
+    }
+  };
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec)) continue; // already shape-checked; defensive only
+    if (isObj(rec.views)) {
+      for (const v of Object.keys(rec.views)) {
+        const vr = rec.views[v];
+        if (!isObj(vr)) continue;
+        renderings += 1;
+        countEntries(vr.unreadable);
+        if (isArr(vr.lowcontrast)) warns += vr.lowcontrast.length;
+      }
+    }
+    if (isObj(rec.drawer)) {
+      countEntries(rec.drawer.unreadable);
+      if (isArr(rec.drawer.lowcontrast)) warns += rec.drawer.lowcontrast.length;
+    }
+  }
+  if (notApplied.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + notApplied.length,
+      note: `${notApplied.length} accent(s) did not apply through the real lifecycle (applied ${notApplied.join(", ")}) — the accent-application finding class`,
+    };
+  }
+  if (detections > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + detections,
+      note: `${detections} unreadable detection(s) across ${renderings} view renderings + 7 drawer records (the light contrast detector family; counted independently of the findings array; the CTA-face entries are exempt)`,
+    };
+  }
+  return {
+    green: env.findings.length === 0,
+    findings: env.findings.length,
+    note: `7 accents swept × ${renderings} view renderings + 7 drawer records at 390×844 in MODE light; every accent self-verified applied; ${ctaFace} CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); ${calendarDays} calendar adjacent-day exempt (slate-300 — the S6-G reference-measured pin, re-verified live); ${yellowPills} yellow-pill exempt (yellow-500 — the S6/S8 reference-measured pin); ${warns} WARN (lowcontrast — the S11 non-gap family)`,
+  };
+}
+
 // --- dark-sweep ---------------------------------------------------------------
 // The S27 rot guard: `mode` MUST be "dark" — a light-mode sweep with zero
 // findings reads NON-green ("mode=light"), not green. A missing/non-string
@@ -627,6 +802,7 @@ export function classifyAudit(name: string, envelope: unknown): StageVerdict {
   if (name === "midband-sweep") return classifyMidbandSweep(envelope);
   if (name === "landscape-sweep") return classifyLandscapeSweep(envelope);
   if (name === "dark-mobile-sweep") return classifyDarkMobileSweep(envelope);
+  if (name === "accent-light-sweep") return classifyAccentLightSweep(envelope);
   if (name === "dark-sweep") return classifyDarkSweep(envelope);
   if (name === "accent-dark-sweep") return classifyAccentDarkSweep(envelope);
   if (name === "cwv") return classifyCwv(envelope);
