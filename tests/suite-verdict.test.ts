@@ -772,6 +772,116 @@ describe("classifyAudit landscape-sweep (S35)", () => {
   });
 });
 
+// --- dark-mobile-sweep (S36) ---------------------------------------------------
+// The dark-mode 390×844 drawer-navigation sweep — the MODE axis at the mobile
+// viewport the standing surface never varied (the AP-81 lesson: dark × mobile
+// was covered for 6 of 20 views by accent-dark-sweep's mobile pass; 14 views
+// had never been rendered in dark at the stacked mobile layout by any
+// standing audit, and every light mobile sweep is mode-rot-guarded by
+// construction). Dark mode is the clone's SUPERSET feature (the reference's
+// own Dark/System options are a measured Base44 no-op — S10-1). Per-view
+// shape as the landscape sweep + flashbulbs/unreadable (the dark-sweep
+// detector family ported to the mobile layout); the drawer record gains
+// dark (the drawer's own dark rendering: dark:bg-slate-950 panel).
+
+const DARK_MOBILE_SWEEP_GREEN = {
+  mode: "dark",
+  viewport: { width: 390, height: 844 },
+  chrome: { sidebarVisible: false, hamburgerVisible: true },
+  drawer: {
+    linkCount: 20,
+    order: "Dashboard,My Day,Tasks,Calendar,Events,Timetable,Assignments,Exams,Notes,Flashcards,Practice Tests,Study Groups,Grade Tracker,Analytics,Files,Calculator,Math Solver,AI Assistant,Focus Timer,Settings",
+    dark: { flashbulbs: 0, unreadable: 0, panelBg: "rgb(2, 6, 23)" },
+  },
+  views: {
+    Dashboard: { heading: "Good evening, Demo Student 👋", scrollWidth: 390, drawerClosed: true, appBar: true, headingClearance: true, flashbulbs: [], unreadable: [], consoleErrors: [] },
+    Notes: { heading: "Notes", scrollWidth: 390, drawerClosed: true, appBar: true, headingClearance: true, flashbulbs: [], unreadable: [], consoleErrors: [] },
+    Flashcards: { heading: "Flashcards", scrollWidth: 390, drawerClosed: true, appBar: true, headingClearance: true, flashbulbs: [], unreadable: [], consoleErrors: [] },
+    Settings: { heading: "Settings", scrollWidth: 390, drawerClosed: true, appBar: true, headingClearance: true, flashbulbs: [], unreadable: [], consoleErrors: [] },
+  },
+  findings: [],
+};
+
+describe("classifyAudit dark-mobile-sweep (S36)", () => {
+  it("the GREEN shape: dark mode, detector arrays empty, zero findings, contracts hold", () => {
+    const v = classifyAudit("dark-mobile-sweep", DARK_MOBILE_SWEEP_GREEN);
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/4 views/);
+    expect(v.note).toMatch(/390/);
+    expect(v.note).toMatch(/MODE dark/);
+  });
+
+  it("a missing findings key is a LOUD shape-error (the anti-phantom guard)", () => {
+    const { findings, ...noFindings } = DARK_MOBILE_SWEEP_GREEN;
+    const v = classifyAudit("dark-mobile-sweep", noFindings);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("a view record missing flashbulbs is a shape-error (the dark detector keys are this audit's per-view contract)", () => {
+    const views = { ...DARK_MOBILE_SWEEP_GREEN.views, Notes: { heading: "Notes", scrollWidth: 390, drawerClosed: true, appBar: true, headingClearance: true, unreadable: [], consoleErrors: [] } };
+    const v = classifyAudit("dark-mobile-sweep", { ...DARK_MOBILE_SWEEP_GREEN, views });
+    expect(isErr(v)).toBe(true);
+    expect(v.note).toMatch(/Notes/);
+  });
+
+  it("a view record missing unreadable is a shape-error", () => {
+    const views = { ...DARK_MOBILE_SWEEP_GREEN.views, Flashcards: { heading: "Flashcards", scrollWidth: 390, drawerClosed: true, appBar: true, headingClearance: true, flashbulbs: [], consoleErrors: [] } };
+    const v = classifyAudit("dark-mobile-sweep", { ...DARK_MOBILE_SWEEP_GREEN, views });
+    expect(isErr(v)).toBe(true);
+    expect(v.note).toMatch(/Flashcards/);
+  });
+
+  it("the drawer record missing dark is a shape-error (the drawer's own dark rendering rides the envelope)", () => {
+    const { dark, ...drawerNoDark } = DARK_MOBILE_SWEEP_GREEN.drawer;
+    const v = classifyAudit("dark-mobile-sweep", { ...DARK_MOBILE_SWEEP_GREEN, drawer: drawerNoDark });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the 844×390 LANDSCAPE envelope is a shape-error — the portrait mobile class is this audit's contract", () => {
+    const v = classifyAudit("dark-mobile-sweep", { ...DARK_MOBILE_SWEEP_GREEN, viewport: { width: 844, height: 390 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the 768×1024 mid-band envelope is a shape-error — the documented non-gap combos are not this audit's contract", () => {
+    const v = classifyAudit("dark-mobile-sweep", { ...DARK_MOBILE_SWEEP_GREEN, viewport: { width: 768, height: 1024 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("mode=light → non-green with the mode + the S27 class in the note — the INVERSE rot guard (light is the wrong mode here)", () => {
+    const v = classifyAudit("dark-mobile-sweep", { ...DARK_MOBILE_SWEEP_GREEN, mode: "light" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=light/);
+    expect(v.note).toMatch(/S27 rot/);
+  });
+
+  it("a flashbulb finding at Notes → non-green, findings=1", () => {
+    const views = { ...DARK_MOBILE_SWEEP_GREEN.views, Notes: { ...DARK_MOBILE_SWEEP_GREEN.views.Notes, flashbulbs: [{ cls: "bg-white", bg: "rgb(255, 255, 255)" }] } };
+    const v = classifyAudit("dark-mobile-sweep", { ...DARK_MOBILE_SWEEP_GREEN, views, findings: [{ view: "Notes", kind: "flashbulb", detail: "1 light surface(s) in dark mode" }] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBeGreaterThanOrEqual(1);
+  });
+
+  it("a NON-EMPTY flashbulbs array with an EMPTY findings array → STILL non-green (the independent counting — the dark-sweep semantics; a probe that forgets to push the detector hit still fails)", () => {
+    const views = { ...DARK_MOBILE_SWEEP_GREEN.views, Notes: { ...DARK_MOBILE_SWEEP_GREEN.views.Notes, flashbulbs: [{ cls: "bg-white", bg: "rgb(255, 255, 255)" }] } };
+    const v = classifyAudit("dark-mobile-sweep", { ...DARK_MOBILE_SWEEP_GREEN, views, findings: [] });
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/dark detection/);
+  });
+
+  it("the vehicle contract broken (sidebarVisible: true) → NON-GREEN with the lg-contract note", () => {
+    const v = classifyAudit("dark-mobile-sweep", { ...DARK_MOBILE_SWEEP_GREEN, chrome: { sidebarVisible: true, hamburgerVisible: false }, findings: [] });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/lg contract/);
+  });
+
+  it("the unknown-audit guard still holds: a name outside AUDIT_NAMES is a shape-error", () => {
+    const v = classifyAudit("dark-mobile-sweeep", DARK_MOBILE_SWEEP_GREEN);
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {

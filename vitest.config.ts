@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-// Unit-test layer for the pure domain seams — 20 files / 371 tests:
+// Unit-test layer for the pure domain seams — 20 files / 383 tests:
 // router, theme, theme-cache, date, calculator, auth, validation, db-path,
 // site, api-timeout, api-offline, files (content-disposition),
 // rum-diagnostics, data-export, data-import, env-check, view-collections,
@@ -16,7 +16,12 @@ import path from "node:path";
 // classifier pins: the light-mode 844×390 phone-landscape drawer-navigation
 // sweep — the HEIGHT axis the standing surface never varied — with the
 // per-view heading-clearance key and the drawerNavScrollable short-viewport
-// contract class).
+// contract class; extended in S36 with the dark-mobile-sweep classifier
+// pins: the dark-mode 390×844 drawer-navigation sweep — the MODE axis at
+// the mobile viewport the standing surface never varied — with the
+// per-view flashbulbs/unreadable detector keys, the drawer dark record,
+// and the INDEPENDENT dark-detection counting [a non-empty detector array
+// with an empty findings array still reads non-green]).
 // Browser/E2E coverage lives in tests/e2e/*.spec.ts (Playwright — never
 // picked up by this config, which matches *.test.ts only; the standalone
 // server is booted by playwright.config.ts's webServer).
