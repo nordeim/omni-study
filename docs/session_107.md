@@ -1,4 +1,35 @@
-I'll continue from where I left off. The standing suite is running in the background (~80 min). Let me check its progress and study the models for the S44 scope (dark × mobile × volume).
+I'll continue the task. Let me set up a todo list and start with the workspace refresh.
+Workspace has been reset. Cloning the repos now.
+Repo cloned successfully on `main` branch, clean status. Now let me examine the repository structure and documentation.
+The repo contains extensive documentation from many prior sessions. Let me check file sizes and read the latest session docs to understand the current state.
+File sizes are manageable. Let me read the latest session docs and remediation plan first.
+I now understand the S43 state. Let me check the git history for the latest session docs and read the remediation plan and worklog tail.
+Now let me read the worklog tail (the most recent entries).
+The worklog confirms S43 is complete and pushed. Now let me review the core docs. Since they have very long lines, let me check their structure first.
+Now let me quickly review CLAUDE.md and the session doc naming pattern to understand how sessions are numbered.
+Let me check the exact contents of the last commits to understand the session doc conventions.
+Let me check the authorship pattern of the session-log commits to understand the convention.
+The convention is now clear: the agent's feat commit includes the narrative + summary docs; the user adds the process log afterward. Now let me verify the environment state (Phase 1: arrival validation).
+Fresh clone — need to set up the environment. Let me check `.env.example` and `package.json`, then install dependencies.
+环境已设置。现在让我检查一下技能目录（按照指示），然后运行基线检查。
+The catalog is reviewed — relevant skills: `agent-browser`, `tdd`, `clone-app-pat-pro`, `tailwind-patterns`. Now running the baseline gates (the documented 841-green state).
+lint ✓ tsc ✓ 550 unit ✓. Now the production build.
+The e2e run exited code 1 — let me find the failure.
+All tests failing instantly at 1-2ms — an infrastructure failure. Let me check the actual error.
+Setup passes but all tests fail instantly. Let me get the actual error message from a single test.
+The Playwright browser binary is missing in this fresh environment. Installing it now.
+**Baseline 841-green confirmed** (lint ✓ tsc ✓ 550 unit ✓ build ✓ cold-db 291 e2e ✓ 4.3 min). Now starting the dev server via the S32 daemon recipe and running the preflight.
+Preflight GREEN, drawer check GREEN. Now the live agent-browser 390×844 mobile walkthrough — the owner's standing emphasis.
+Logged in, dashboard at scrollWidth 390. Now the drawer walkthrough.
+Drawer opens with all 20 links in documented order, no footer. Now navigate to Notes and verify the interaction contract.
+**Mobile walkthrough GREEN** — 20 links in order, drawer closes on nav, active link carries the violet gradient. Now the reference re-sweep at omni-study1.base44.app.
+Reference dashboard greeting matches the documented record. Now checking the Settings tabs.
+**Reference UNCHANGED since S19–S43** (login title, greeting, 20 views, 5 Settings tabs). Closing the browser session (OOM lesson) and running the copy sweep.
+**Copy sweep: 14/20 MATCH** — the 6 diffs are the documented S17 data-state non-gap family. Now the clean-window protocol: kill :3200, restart the dev server by PID, and launch the standing suite.
+Clean window established. Launching the standing suite (27 rows, ~80 min) detached.
+Suite is running. While it runs (~80 min), let me verify the coverage map for the S44 scope — the dark × mobile × volume cell.
+**Coverage map confirmed: the dark × mobile × volume cell is ZERO-coverage** — S13 runs 1280×800 light+violet only; the mobile sweeps run seed volume; S42/S43 run desktop only. This is the S44 scope. Let me update my todos and study the models.
+
 The log file is gone — the suite may have died when the session stopped. Let me check the process state.
 All processes died with the session stop. Restarting the dev server and re-launching the standing suite.
 The workspace was reset again (the documented pattern). Re-cloning and redoing the setup — I have the complete picture from the prior incarnation, so I can move fast.
