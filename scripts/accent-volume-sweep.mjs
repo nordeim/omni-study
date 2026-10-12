@@ -443,6 +443,14 @@ try {
 
   for (const accent of ACCENTS) {
     // --- precondition: the accent through the REAL lifecycle (S27) ----------
+    // NOTE (the S43 shell-presence lesson, back-ported): `data-accent ===
+    // accent` alone is NOT a shell gate — the theme boot script applies the
+    // CACHED accent pre-hydration, so the wait can pass at first paint while
+    // the auth gate has not yet mounted the shell (the aside) — and the
+    // immediate nav-geometry evaluate then reads `aside nav` as null. The
+    // gate folds the SHELL-PRESENCE condition in (the aside nav exists only
+    // after the shell mounts). Latent in this dark probe (never fired in
+    // three suite runs) but the same race the S43 light probe crashed on.
     const patch = await page.request.patch(`${BASE}/api/settings/preferences`, { data: { themeMode: "dark", accentColor: accent } });
     if (!patch.ok()) {
       fail(`the settings PATCH answered ${patch.status()} for accent ${accent} — the sweep refuses to measure an unverified accent.`);
@@ -451,7 +459,10 @@ try {
     let applied = "";
     try {
       await page.waitForFunction(
-        (a) => document.documentElement.dataset.accent === a && document.documentElement.classList.contains("dark"),
+        (a) =>
+          document.documentElement.dataset.accent === a &&
+          document.documentElement.classList.contains("dark") &&
+          !!document.querySelector("aside nav"),
         accent,
         { timeout: 30000 },
       );

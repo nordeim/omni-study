@@ -23,8 +23,10 @@
 //      the LIGHT-mode accent family at the landscape 844×390 — the vehicle at
 //      the short viewport — the S40 stage, then the LIGHT-mode accent family
 //      at the desktop 1280×800 — the SIDEBAR vehicle — the S41 stage, then
-//      the dark-mode desktop families — the S37/S39/S40/S41 order)
-//   24. the demo-theme closing guard (light/violet via Prisma — a mid-suite
+//      the volume family: the DARK-mode data-volume × accent stress — the
+//      S42 stage — then its LIGHT sibling — the S43 stage, then the
+//      dark-mode desktop families — the S37/S39/S40/S41 order)
+//   25. the demo-theme closing guard (light/violet via Prisma — a mid-suite
 //      crash must not leave the demo user dark/teal, the documented
 //      poisoning class)
 //
@@ -73,6 +75,7 @@ const STAGES = [
   { name: "dark-sweep", file: "scripts/dark-sweep.mjs", runtime: "node" },
   { name: "accent-dark-sweep", file: "scripts/accent-dark-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S38: the mobile 20-view matrix — 7 accents × (20 desktop + 20 mobile + the drawer) ≈ 17–18 min measured; the default 10-min budget would SIGKILL it mid-sweep (exit 124)
   { name: "accent-volume-sweep", file: "scripts/accent-volume-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S42: the data-volume × dark × accent stress — 7 accents × the 7 volume views under the 300/200/250 profile (the Prisma insert + the volume checker over 4000–8000-node DOMs) ≈ 10–15 min measured; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40/S41 lesson)
+  { name: "accent-volume-light-sweep", file: "scripts/accent-volume-light-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S43: the data-volume × LIGHT × accent stress — the S42 dark half's light sibling (the documented bracketed non-gap, now closed): 7 accents × the 7 volume views under the same COUNT-verified 300/200/250 profile at 1280×800 in light, navigated through the sidebar ≈ 10–15 min expected (the S42 dark half measured ~2.6 min); the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40/S41/S42 lesson)
   { name: "cwv", file: "scripts/cwv-audit-s16.mjs", runtime: "node" },
   { name: "ai-error", file: "scripts/ai-error-audit.mjs", runtime: "node" },
   { name: "ai-a11y", file: "scripts/ai-a11y-audit.mjs", runtime: "node" },
@@ -205,7 +208,7 @@ let cwvPreconditionFailed = false;
 try {
   // Stage 0 — the S31 preflight FIRST, enforced (the suite never starts on an
   // unstable boot; the remedy rides the verdict).
-  log(`[standing-suite] stage 0/24 — dev-server-preflight (the S31 boot-stability precondition)`);
+  log(`[standing-suite] stage 0/25 — dev-server-preflight (the S31 boot-stability precondition)`);
   const pre = await run("bun", [join(REPO, "scripts/dev-server-preflight.mjs")], 90_000);
   writeFileSync(join(RAW_DIR, "dev-server-preflight.json"), pre.stdout);
   const preParsed = parseAuditStdout(pre.stdout);
@@ -233,17 +236,17 @@ try {
     for (let i = 0; i < STAGES.length; i += 1) {
       const spec = STAGES[i];
       if (spec.name === "cwv" && cwvPreconditionFailed) {
-        log(`[standing-suite] stage ${i + 1}/24 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
+        log(`[standing-suite] stage ${i + 1}/25 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
         continue;
       }
-      log(`[standing-suite] stage ${i + 1}/24 — ${spec.name}`);
+      log(`[standing-suite] stage ${i + 1}/25 — ${spec.name}`);
       const r = await runAuditStage(spec);
       rows.push({ name: r.name, verdict: r.verdict });
       await new Promise((res) => setTimeout(res, SETTLE_MS));
     }
 
     // The closing guard.
-    log(`[standing-suite] stage 24/24 — theme-restore (the demo-theme closing guard)`);
+    log(`[standing-suite] stage 25/25 — theme-restore (the demo-theme closing guard)`);
     rows.push(await themeGuard());
   }
 } finally {

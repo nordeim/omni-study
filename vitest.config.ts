@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-// Unit-test layer for the pure domain seams — 20 files / 518 tests:
+// Unit-test layer for the pure domain seams — 20 files / 550 tests:
 // router, theme, theme-cache, date, calculator, auth, validation, db-path,
 // site, api-timeout, api-offline, files (content-disposition),
 // rum-diagnostics, data-export, data-import, env-check, view-collections,
