@@ -1,0 +1,182 @@
+{
+ "ranAt": "2026-10-12T08:20:32.491Z",
+ "source": "standing-suite",
+ "stages": [
+  {
+   "name": "dev-server-preflight",
+   "green": true,
+   "findings": 0,
+   "note": "hydrated and navigation-stable"
+  },
+  {
+   "name": "security",
+   "green": true,
+   "findings": 0,
+   "note": "7 nonGaps"
+  },
+  {
+   "name": "settings-roundtrip",
+   "green": true,
+   "findings": 0,
+   "note": "5 nonGaps"
+  },
+  {
+   "name": "connectivity",
+   "green": true,
+   "findings": 0,
+   "note": "7 nonGaps"
+  },
+  {
+   "name": "upload-edge",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "data-volume",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "forced-colors",
+   "green": true,
+   "findings": 0,
+   "note": "4 views probed; 1 sr-only controls exempt (visually hidden by design); reference rides the envelope"
+  },
+  {
+   "name": "print",
+   "green": true,
+   "findings": 0,
+   "note": "40 view-counts checked; overflow probe data preserved (20 entries)"
+  },
+  {
+   "name": "focus-order",
+   "green": true,
+   "findings": 0,
+   "note": "dialogs=1; 2 dev-portal artifacts excluded (NEXTJS-PORTAL — dev-mode only); drawer/skipLink ride the envelope (n/a/n/a)"
+  },
+  {
+   "name": "mobile-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 390×844 (light); drawer carried 20 links"
+  },
+  {
+   "name": "midband-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 768×1024 (light, the md breakpoint); drawer carried 20 links; chrome contract holds (sidebar hidden, hamburger visible)"
+  },
+  {
+   "name": "landscape-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 844×390 (light, the iPhone-class landscape); drawer carried 20 links; vehicle + nav-scroll contracts hold (sidebar hidden, hamburger visible, nav scrollable)"
+  },
+  {
+   "name": "dark-mobile-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 390×844 in MODE dark; drawer carried 20 links; vehicle contract holds (sidebar hidden, hamburger visible); 0 dark detections"
+  },
+  {
+   "name": "accent-light-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept × 140 view renderings + 7 drawer records at 390×844 in MODE light; every accent self-verified applied; 108 CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 — the S6-G reference-measured pin, re-verified live); 21 yellow-pill exempt (yellow-500 — the S6/S8 reference-measured pin); 449 WARN (lowcontrast — the S11 non-gap family)"
+  },
+  {
+   "name": "accent-midband-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept × 140 view renderings + 140 active-tint readings + 7 drawer records at 768×1024 in MODE light, navigated through the drawer; every accent self-verified applied; 108 CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 — the S6-G reference-measured pin); 21 yellow-pill exempt (yellow-500 — the S6/S8 reference-measured pin); 588 WARN (lowcontrast — the S11 non-gap family)"
+  },
+  {
+   "name": "accent-landscape-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept × 140 view renderings + 140 active-tint readings + 7 drawer records at 844×390 in MODE light, navigated through the drawer (the iPhone-class landscape); every accent self-verified applied; the short-viewport contracts hold (nav scrollable, heading clearance); 108 CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 — the S6-G reference-measured pin); 21 yellow-pill exempt (yellow-500 — the S6/S8 reference-measured pin); 588 WARN (lowcontrast — the S11 non-gap family)"
+  },
+  {
+   "name": "accent-desktop-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept × 140 view renderings + 140 active-tint readings + 7 sidebar records at 1280×800 in MODE light, navigated through the sidebar (the desktop vehicle); every accent self-verified applied; the sidebar-own contracts hold (nav scrollable, heading offset); 94 CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 — the S6-G reference-measured pin); 21 yellow-pill exempt (yellow-500 — the S6/S8 reference-measured pin); 596 WARN (lowcontrast — the S11 non-gap family)"
+  },
+  {
+   "name": "dark-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views probed in MODE dark"
+  },
+  {
+   "name": "accent-dark-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "280 view renderings probed (7 accents × 20 views × desktop+mobile) + 7 drawer records; 6 CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); 138 WARN (lowcontrast — the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept × 49 view renderings + 49 active-tint readings + 7 sidebar records at 1280×800 in MODE dark under the 300/200/250 volume profile, navigated through the sidebar (the desktop vehicle); every accent self-verified applied; the volume budgets hold (long tasks ≤ 1500ms, clicks ≤ 1500ms, the /api/tasks payload 112960 bytes ≤ 500000); 2 CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); 32 WARN (lowcontrast — the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-light-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept × 49 view renderings + 49 active-tint readings + 7 sidebar records at 1280×800 in MODE light under the 300/200/250 volume profile, navigated through the sidebar (the desktop vehicle); every accent self-verified applied; the volume budgets hold (long tasks ≤ 1500ms, clicks ≤ 1500ms, the /api/tasks payload 112960 bytes ≤ 500000); 16 CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 — the S6-G reference-measured pin); 14 yellow-pill exempt (yellow-500 — the S6/S8 reference-measured pin); 3404 WARN (lowcontrast — the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-dark-mobile-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept × 49 view renderings + 49 active-tint readings + 7 drawer records at 390×844 in MODE dark under the 300/200/250 volume profile, navigated through the drawer (the mobile vehicle); every accent self-verified applied; the volume budgets hold (long tasks ≤ 1500ms, clicks ≤ 1500ms, the /api/tasks payload 112960 bytes ≤ 500000); 2 CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); 32 WARN (lowcontrast — the S11 non-gap family)"
+  },
+  {
+   "name": "cwv",
+   "green": true,
+   "findings": 0,
+   "note": "ref POOR informational; 3 ref POOR (the reference's own documented state — informational, not a clone finding)"
+  },
+  {
+   "name": "ai-error",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "ai-a11y",
+   "green": true,
+   "findings": 0,
+   "note": "4 nonGaps"
+  },
+  {
+   "name": "pre15-preflight",
+   "green": true,
+   "findings": 0,
+   "note": "GREEN — deps pinned by design (majors), client bundle lean, no action"
+  },
+  {
+   "name": "dep-audit",
+   "green": true,
+   "findings": 0,
+   "note": "GREEN — 2 advisory(ies) documented as non-production (dev/CLI surface), 0 runtime-reachable"
+  },
+  {
+   "name": "theme-restore",
+   "green": true,
+   "findings": 0,
+   "note": "demo theme = light/violet (expected light/violet — a mid-suite crash must not leave the demo user mutated)"
+  }
+ ],
+ "rawDir": "/tmp/standing-suite",
+ "standalone": {
+  "startedHere": true
+ },
+ "aborted": false,
+ "green": true,
+ "failed": [],
+ "summary": "28/28 green"
+}
