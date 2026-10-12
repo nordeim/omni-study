@@ -2013,6 +2013,322 @@ describe("classifyAudit accent-desktop-sweep (S41 — the desktop light-accent s
   });
 });
 
+// --- accent-volume-sweep (S42 — the data-volume × dark × accent stress)
+
+// The full-shape generator: 7 accents × the 7 volume-affected views
+// navigated through the SIDEBAR (the desktop vehicle) at 1280×800 in DARK
+// mode under the S13 volume profile (300 tasks / 200 notes / 250 events),
+// with the per-view interaction keys (activeTint/activeLabel — the FIRST
+// dark-mode readings of the sidebar's active-link tint through the
+// navigation lifecycle) AND the volume keys (nodes/mainNodes/
+// longTaskTotal/clickLatencyMs — the S13 measurement family) AND the S38
+// dark detector family (flashbulbs/unreadable/lowcontrast).
+const S42_ACCENTS = ["violet", "blue", "green", "orange", "pink", "red", "teal"] as const;
+// The 7 volume-affected views by DISPLAY labels — the S13 data-volume
+// audit's own view set (the views that render task/note/event rows; the
+// other 13 are volume-invariant and stay covered by the S38/S41 seed
+// sweeps).
+const S42_VIEWS = ["Dashboard", "My Day", "Tasks", "Calendar", "Events", "Notes", "Analytics"];
+const S42_TINT = "linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))";
+
+type S42Rec = Record<string, unknown>;
+
+function s42ViewRec(o: S42Rec = {}): S42Rec {
+  return {
+    heading: "ok", scrollWidth: 1280, sidebarVisible: true, headingOffset: true,
+    flashbulbs: [] as unknown[], unreadable: [] as unknown[], lowcontrast: [] as unknown[],
+    consoleErrors: [] as unknown[],
+    activeTint: S42_TINT, activeLabel: "",
+    nodes: 4200, mainNodes: 3100, longTaskTotal: 420, clickLatencyMs: 610,
+    ...o,
+  };
+}
+function s42SidebarRec(o: S42Rec = {}): S42Rec {
+  return { linkCount: 20, unreadable: [] as unknown[], lowcontrast: [] as unknown[], activeView: "Analytics", activeTint: S42_TINT, ...o };
+}
+
+/** The full accent-volume envelope: 7 accents × 7 views + the sidebar per
+ *  accent at 1280×800 dark under the S13 volume profile, with per-view
+ *  overrides merged in (the activeLabel defaults are filled to the view's
+ *  own label — the interaction contract). */
+function s42Envelope(viewOverrides: Record<string, Record<string, S42Rec>> = {}): S42Rec {
+  const accents: S42Rec = {};
+  for (const a of S42_ACCENTS) {
+    const views: S42Rec = {};
+    for (const v of S42_VIEWS) {
+      const base = s42ViewRec(viewOverrides[a]?.[v]);
+      if (base.activeLabel === "") base.activeLabel = v; // the interaction contract default
+      views[v] = base;
+    }
+    accents[a] = { applied: a, views, sidebar: s42SidebarRec() };
+  }
+  return {
+    source: "accent-volume-sweep", mode: "dark",
+    viewport: { width: 1280, height: 800 },
+    volume: { tasks: 300, notes: 200, events: 250 },
+    chrome: { sidebarVisible: true, hamburgerVisible: false, sidebarNavScrollable: true },
+    api: {
+      "/api/tasks": { ms: 140, bytes: 190_000, status: 200 },
+      "/api/notes": { ms: 90, bytes: 210_000, status: 200 },
+      "/api/events": { ms: 110, bytes: 150_000, status: 200 },
+    },
+    accents, findings: [] as unknown[],
+  };
+}
+
+describe("classifyAudit accent-volume-sweep (S42 — the data-volume × dark × accent stress)", () => {
+  it("the GREEN shape: 7 accents × 7 volume views navigated through the sidebar at 1280×800 dark under the 300/200/250 profile → green with the swept counts", () => {
+    const v = classifyAudit("accent-volume-sweep", s42Envelope());
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/49 view renderings/);
+    expect(v.note).toMatch(/49 active-tint readings/);
+    expect(v.note).toMatch(/7 sidebar records/);
+    expect(v.note).toMatch(/1280×800/);
+    expect(v.note).toMatch(/300\/200\/250/);
+  });
+
+  it("the ALL-VIEWS guard: an accent map missing ONE volume view reads shape-error — a view that silently did not run must never read green-by-omission", () => {
+    const env = s42Envelope() as { accents: Record<string, { views: Record<string, unknown> }> };
+    delete env.accents.violet.views.Tasks;
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the ALL-ACCENTS guard: the accents map missing ONE accent reads shape-error", () => {
+    const env = s42Envelope() as { accents: Record<string, unknown> };
+    delete env.accents.red;
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S13-shape envelope (the data-volume audit's own flat findings/nonGaps shape — the exact pre-S42 state) reads shape-error, never green-by-resemblance", () => {
+    const s13Shape = {
+      source: "data-volume-audit", findings: [], nonGaps: [{ surface: "Tasks render", longTaskTotal: 400 }],
+      inserted: { tasks: 300, notes: 200, events: 250 },
+    };
+    const v = classifyAudit("accent-volume-sweep", s13Shape);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the volume contract is part of the shape: an envelope without volume reads shape-error", () => {
+    const env = s42Envelope() as Record<string, unknown>;
+    delete env.volume;
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the missing sidebar record reads shape-error (the sidebar is part of the per-accent contract)", () => {
+    const env = s42Envelope() as { accents: Record<string, Record<string, unknown>> };
+    delete (env.accents.pink as Record<string, unknown>).sidebar;
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("mode is part of the contract: an envelope without mode reads shape-error", () => {
+    const env = s42Envelope() as Record<string, unknown>;
+    delete env.mode;
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the viewport guard: the 390×844 mobile, 768×1024 mid-band, AND 844×390 landscape envelopes fed here read shape-error, never a silent re-scope (the sibling families own those surfaces)", () => {
+    const mobile = classifyAudit("accent-volume-sweep", { ...s42Envelope(), viewport: { width: 390, height: 844 } });
+    expect(isErr(mobile)).toBe(true);
+    const midband = classifyAudit("accent-volume-sweep", { ...s42Envelope(), viewport: { width: 768, height: 1024 } });
+    expect(isErr(midband)).toBe(true);
+    const landscape = classifyAudit("accent-volume-sweep", { ...s42Envelope(), viewport: { width: 844, height: 390 } });
+    expect(isErr(landscape)).toBe(true);
+  });
+
+  it("the mode rot guard: mode=light reads NON-green (the volume × LIGHT family is the documented bracketed non-gap — this audit owns the volume × DARK × accent surface)", () => {
+    const v = classifyAudit("accent-volume-sweep", { ...s42Envelope(), mode: "light" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=light/);
+  });
+
+  it("the volume rot guard: a seed-volume envelope (tasks 0) reads NON-green — the sweep measured the wrong density and must never read green (the S38 omission-means-clean retirement, applied to the volume axis)", () => {
+    const v = classifyAudit("accent-volume-sweep", { ...s42Envelope(), volume: { tasks: 0, notes: 200, events: 250 } });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/volume/);
+  });
+
+  it("the volume rot guard: each leg of the profile is pinned — notes 199 and events 0 each read NON-green", () => {
+    const notes = classifyAudit("accent-volume-sweep", { ...s42Envelope(), volume: { tasks: 300, notes: 199, events: 250 } });
+    expect(notes.green).toBe(false);
+    expect(notes.note).toMatch(/volume/);
+    const events = classifyAudit("accent-volume-sweep", { ...s42Envelope(), volume: { tasks: 300, notes: 200, events: 0 } });
+    expect(events.green).toBe(false);
+    expect(events.note).toMatch(/volume/);
+  });
+
+  it("the applied-mismatch family: an accent whose self-verified reading differs from its key is a finding", () => {
+    const env = s42Envelope() as { accents: Record<string, Record<string, unknown>> };
+    (env.accents.teal as Record<string, unknown>).applied = "violet";
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the INVERTED vehicle-contract family: a hidden sidebar at 1280 is the finding class (the lg contract broke — the sidebar is the desktop vehicle), and a visible hamburger is the same class (the app bar is lg:hidden)", () => {
+    const hidden = classifyAudit("accent-volume-sweep", { ...s42Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: false, sidebarNavScrollable: true } });
+    expect(hidden.green).toBe(false);
+    expect(hidden.note).toMatch(/vehicle/i);
+    const burger = classifyAudit("accent-volume-sweep", { ...s42Envelope(), chrome: { sidebarVisible: true, hamburgerVisible: true, sidebarNavScrollable: true } });
+    expect(burger.green).toBe(false);
+    expect(burger.note).toMatch(/vehicle/i);
+  });
+
+  it("the scroll-contract family: sidebarNavScrollable=false is the finding class (links ~13–20 would be unreachable at 800 height — the nav's scroll is the only path below the fold)", () => {
+    const v = classifyAudit("accent-volume-sweep", { ...s42Envelope(), chrome: { sidebarVisible: true, hamburgerVisible: false, sidebarNavScrollable: false } });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/sidebarNavScrollable|scroll/i);
+  });
+
+  it("the tint-rot family: an activeTint that computed to none is a FINDING (the S8 no-var rot class — the NAV_ACTIVE_GRADIENT_STOPS pair did not resolve)", () => {
+    const v = classifyAudit("accent-volume-sweep", s42Envelope({ green: { Notes: { activeTint: "none" } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/active-link gradient/);
+  });
+
+  it("the interaction family: an activeLabel that does not equal the view's own label is a FINDING (the active state did not follow the navigation)", () => {
+    const v = classifyAudit("accent-volume-sweep", s42Envelope({ blue: { Tasks: { activeLabel: "Dashboard" } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/did not follow the navigation/);
+  });
+
+  it("the overflow family: scrollWidth > 1280 is a finding (the S16/S34 overflow class — a 300-row list must never widen the document)", () => {
+    const v = classifyAudit("accent-volume-sweep", s42Envelope({ orange: { Tasks: { scrollWidth: 1400 } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the S13 B3 volume budget: longTaskTotal > 1500 per view is a FINDING (main-thread blocking under stress); the boundary value 1500 stays green", () => {
+    const hot = classifyAudit("accent-volume-sweep", s42Envelope({ violet: { Tasks: { longTaskTotal: 1600 } } }));
+    expect(hot.green).toBe(false);
+    expect(hot.findings).toBe(1);
+    expect(hot.note).toMatch(/long-task/i);
+    const boundary = classifyAudit("accent-volume-sweep", s42Envelope({ violet: { Tasks: { longTaskTotal: 1500 } } }));
+    expect(boundary.green).toBe(true);
+  });
+
+  it("the S13 B2 volume budget: clickLatencyMs > 1500 per view is a FINDING (nav interactivity under stress); the boundary value 1500 stays green", () => {
+    const hot = classifyAudit("accent-volume-sweep", s42Envelope({ teal: { Events: { clickLatencyMs: 1600 } } }));
+    expect(hot.green).toBe(false);
+    expect(hot.findings).toBe(1);
+    expect(hot.note).toMatch(/click/i);
+    const boundary = classifyAudit("accent-volume-sweep", s42Envelope({ teal: { Events: { clickLatencyMs: 1500 } } }));
+    expect(boundary.green).toBe(true);
+  });
+
+  it("the flashbulb family: a flashbulb entry is ALWAYS a finding in dark mode (the dark doctrine — a light surface on the dark canvas), independent of the findings array", () => {
+    const v = classifyAudit("accent-volume-sweep", s42Envelope({ red: { "My Day": { flashbulbs: [{ cls: "bg-white rounded-xl", bg: "rgb(255, 255, 255)", tag: "DIV" }] } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/flashbulb/i);
+  });
+
+  it("the strict record shape: a view record missing longTaskTotal reads shape-error (the volume measurement is part of the record)", () => {
+    const env = s42Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.red.views.Tasks.longTaskTotal;
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the strict record shape: a view record missing clickLatencyMs reads shape-error", () => {
+    const env = s42Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.violet.views.Calendar.clickLatencyMs;
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the strict record shape: a view record missing flashbulbs reads shape-error (the S38 dark detector family is part of the record)", () => {
+    const env = s42Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.green.views.Events.flashbulbs;
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the sidebar-error family: a sidebar record carrying an error is a FINDING (never a swallow)", () => {
+    const env = s42Envelope() as { accents: Record<string, { sidebar: Record<string, unknown> }> };
+    env.accents.blue.sidebar = { linkCount: 0, unreadable: [], lowcontrast: [], activeView: null, activeTint: null, error: "TypeError: Cannot read properties of null" };
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the sidebar link census: linkCount !== 20 is a finding (the navigation census broke — the sidebar always carries all 20 links)", () => {
+    const env = s42Envelope() as { accents: Record<string, { sidebar: Record<string, unknown> }> };
+    env.accents.orange.sidebar = { linkCount: 19, unreadable: [], lowcontrast: [], activeView: "Analytics", activeTint: S42_TINT };
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/19|link/i);
+  });
+
+  it("the counting semantics: a non-exempt unreadable entry with an EMPTY findings array still reads NON-green (the independent counting doctrine)", () => {
+    const env = s42Envelope({ teal: { Analytics: { unreadable: [
+      { text: "streak", color: "rgb(148, 163, 184)", contrast: 1.9 },
+    ] } } });
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the CTA-face exemption is SIGNATURE-STRICT: white-on-accent rides the note; a non-white unreadable text still counts", () => {
+    const exempt = classifyAudit("accent-volume-sweep", s42Envelope({ violet: { Dashboard: { unreadable: [
+      { text: "New Task", color: "rgb(255, 255, 255)", contrast: 2.1 },
+    ] } } }));
+    expect(exempt.green).toBe(true);
+    expect(exempt.note).toMatch(/1 CTA-face exempt/);
+    const other = classifyAudit("accent-volume-sweep", s42Envelope({ violet: { Dashboard: { unreadable: [
+      { text: "STRESS-S42-task 42", color: "rgb(100, 116, 139)", contrast: 1.8 },
+    ] } } }));
+    expect(other.green).toBe(false);
+    expect(other.findings).toBe(1);
+  });
+
+  it("the LIGHT-mode exemptions do NOT apply in dark: a slate-300 numeric entry (the light calendar-day signature) and a yellow-500 priority-pill entry (the light pill signature) still COUNT — in dark those surfaces re-theme, so any unreadable hit is genuine", () => {
+    const v = classifyAudit("accent-volume-sweep", s42Envelope({ pink: { Calendar: { unreadable: [
+      { text: "27", color: "rgb(203, 213, 225)", contrast: 1.6 },
+      { text: "high", color: "rgb(234, 179, 8)", contrast: 2.0 },
+    ] } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(2);
+  });
+
+  it("the lowcontrast WARN family rides the note, never the findings (the S11 non-gap family)", () => {
+    const env = s42Envelope({ green: { Notes: { lowcontrast: [
+      { text: "STRESS-S42-note 7", color: "rgb(167, 139, 250)", contrast: 3.07 },
+    ] } } });
+    const v = classifyAudit("accent-volume-sweep", env);
+    expect(v.green).toBe(true);
+    expect(v.note).toMatch(/1 WARN/);
+  });
+
+  it("the S13 B1 API bound: /api/tasks bytes > 500000 is a FINDING (the unbounded-payload guard); the boundary 500000 stays green", () => {
+    const fat = classifyAudit("accent-volume-sweep", { ...s42Envelope(), api: {
+      "/api/tasks": { ms: 400, bytes: 512_000, status: 200 },
+      "/api/notes": { ms: 90, bytes: 210_000, status: 200 },
+      "/api/events": { ms: 110, bytes: 150_000, status: 200 },
+    } });
+    expect(fat.green).toBe(false);
+    expect(fat.note).toMatch(/payload/i);
+    const boundary = classifyAudit("accent-volume-sweep", { ...s42Envelope(), api: {
+      "/api/tasks": { ms: 400, bytes: 500_000, status: 200 },
+      "/api/notes": { ms: 90, bytes: 210_000, status: 200 },
+      "/api/events": { ms: 110, bytes: 150_000, status: 200 },
+    } });
+    expect(boundary.green).toBe(true);
+  });
+
+  it("the unknown-audit guard still holds: a misspelled name is a shape-error even with a perfect envelope", () => {
+    const v = classifyAudit("accent-volume-swep", s42Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {

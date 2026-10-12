@@ -72,6 +72,7 @@ const STAGES = [
   { name: "accent-desktop-sweep", file: "scripts/accent-desktop-sweep.mjs", runtime: "node", timeoutMs: 20 * 60_000 }, // S41: 7 accents × 20 sidebar-navigated views at 1280×800 + the sidebar-own scroll contract + the sidebar record ≈ 8-11 min measured; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40 lesson)
   { name: "dark-sweep", file: "scripts/dark-sweep.mjs", runtime: "node" },
   { name: "accent-dark-sweep", file: "scripts/accent-dark-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S38: the mobile 20-view matrix — 7 accents × (20 desktop + 20 mobile + the drawer) ≈ 17–18 min measured; the default 10-min budget would SIGKILL it mid-sweep (exit 124)
+  { name: "accent-volume-sweep", file: "scripts/accent-volume-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S42: the data-volume × dark × accent stress — 7 accents × the 7 volume views under the 300/200/250 profile (the Prisma insert + the volume checker over 4000–8000-node DOMs) ≈ 10–15 min measured; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40/S41 lesson)
   { name: "cwv", file: "scripts/cwv-audit-s16.mjs", runtime: "node" },
   { name: "ai-error", file: "scripts/ai-error-audit.mjs", runtime: "node" },
   { name: "ai-a11y", file: "scripts/ai-a11y-audit.mjs", runtime: "node" },

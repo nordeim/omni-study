@@ -35,6 +35,7 @@ export const AUDIT_NAMES = [
   "accent-midband-sweep",
   "accent-landscape-sweep",
   "accent-desktop-sweep",
+  "accent-volume-sweep",
   "dark-sweep",
   "accent-dark-sweep",
   "cwv",
@@ -1376,6 +1377,326 @@ function classifyAccentDesktopSweep(env: unknown): StageVerdict {
   };
 }
 
+// --- accent-volume-sweep (S42) ---------------------------------------------------
+// The data-volume × dark × accent stress — the S13 volume profile (300 tasks
+// / 200 notes / 250 events) swept through the theme space's dark-accent half
+// (the S41 summary's own named next step): 7 accents × the 7 volume-affected
+// views (the S13 audit's own view set — the views that render task/note/
+// event rows; the other 13 are volume-invariant) at 1280×800 in DARK mode,
+// navigated through the SIDEBAR (the desktop vehicle). The per-view records
+// carry the INTERACTION evidence (activeTint/activeLabel — the FIRST
+// dark-mode readings of the sidebar's active-link tint through the
+// navigation lifecycle; the S41 proof was light-only, and accent-dark's
+// desktop pass navigates by direct goto and never reads the sidebar's
+// active link), the S38 DARK detector family (flashbulbs — always findings;
+// unreadable < 2.2 with the CTA-face exemption ONLY — the light-mode
+// calendar-day + yellow-pill exemptions do NOT apply in dark, those
+// surfaces re-theme; lowcontrast < 3.2 = WARN), AND the S13 volume
+// measurement family (nodes/mainNodes/longTaskTotal ≤ 1500ms/clickLatencyMs
+// ≤ 1500ms). The volume counts are EXACT (300/200/250 — a seed-volume
+// envelope is its own rot class: the sweep measured the wrong density and
+// must never read green). The volume × LIGHT family is the documented
+// bracketed non-gap (the S13 data-volume audit owns light × violet ×
+// volume; the S37–S41 light-accent sweeps own light × accent × seed).
+
+const ACCENT_VOLUME_ALL_ACCENTS = new Set(["violet", "blue", "green", "orange", "pink", "red", "teal"]);
+// The 7 volume-affected views by DISPLAY labels — the S13 data-volume
+// audit's own view set; the per-view activeLabel reading is the same label.
+const ACCENT_VOLUME_ALL_VIEWS = ["Dashboard", "My Day", "Tasks", "Calendar", "Events", "Notes", "Analytics"];
+
+function classifyAccentVolumeSweep(env: unknown): StageVerdict {
+  if (!isObj(env)) return shapeError("envelope must be an object");
+  if (typeof env.mode !== "string") return shapeError("mode must be a string (the S27 rot-guard metadata)");
+  if (!isObj(env.viewport) || env.viewport.width !== 1280 || env.viewport.height !== 800) {
+    return shapeError(
+      "viewport must be the desktop 1280×800 (the S13 volume audit's own viewport) — the volume × dark × accent surface is this audit's contract (the mobile/mid-band/landscape volume cells are future cross-axis candidates, documented in the session-42 plan's non-gaps)",
+    );
+  }
+  if (
+    !isObj(env.volume) ||
+    typeof env.volume.tasks !== "number" ||
+    typeof env.volume.notes !== "number" ||
+    typeof env.volume.events !== "number"
+  ) {
+    return shapeError("volume must carry numeric tasks + notes + events (the S13 profile — the density the sweep measured)");
+  }
+  if (
+    !isObj(env.chrome) ||
+    typeof env.chrome.sidebarVisible !== "boolean" ||
+    typeof env.chrome.hamburgerVisible !== "boolean" ||
+    typeof env.chrome.sidebarNavScrollable !== "boolean"
+  ) {
+    return shapeError("chrome must carry boolean sidebarVisible + hamburgerVisible + sidebarNavScrollable (the INVERTED vehicle contract + the sidebar-own scroll contract)");
+  }
+  if (!isObj(env.api) || !isObj(env.api["/api/tasks"]) || typeof env.api["/api/tasks"].bytes !== "number") {
+    return shapeError("api must carry the /api/tasks record with a numeric bytes (the S13 B1 payload bound's own surface)");
+  }
+  if (!isObj(env.accents)) return shapeError("accents must be an object of per-accent records");
+  if (!isArr(env.findings)) return shapeError("findings must be an Array");
+  const accentKeys = Object.keys(env.accents);
+  for (const a of ACCENT_VOLUME_ALL_ACCENTS) {
+    if (!(a in env.accents)) {
+      return shapeError(
+        `accents must carry all 7 (violet, blue, green, orange, pink, red, teal) — "${a}" is missing: an accent that silently did not run must never read green-by-omission`,
+      );
+    }
+  }
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec)) return shapeError(`accents.${a} must be a record`);
+    if (typeof rec.applied !== "string") return shapeError(`accents.${a}.applied must be a string (the self-verified <html data-accent> reading)`);
+    if (!isObj(rec.views)) return shapeError(`accents.${a}.views must be an object of per-view records`);
+    for (const v of ACCENT_VOLUME_ALL_VIEWS) {
+      if (!(v in rec.views)) {
+        return shapeError(
+          `accents.${a}.views must carry all 7 volume views — "${v}" is missing: a view that silently did not run must never read green-by-omission (the omission-means-clean recording is RETIRED)`,
+        );
+      }
+    }
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (!isObj(vr)) return shapeError(`accents.${a}.views.${v} must be a record`);
+      if (typeof vr.heading !== "string" || vr.heading.length === 0) return shapeError(`accents.${a}.views.${v}.heading must be a non-empty string`);
+      if (typeof vr.scrollWidth !== "number") return shapeError(`accents.${a}.views.${v}.scrollWidth must be a number`);
+      if (typeof vr.sidebarVisible !== "boolean") return shapeError(`accents.${a}.views.${v}.sidebarVisible must be a boolean (the vehicle persists through navigation — the desktop vehicle contract per view)`);
+      if (typeof vr.headingOffset !== "boolean") {
+        return shapeError(`accents.${a}.views.${v}.headingOffset must be a boolean (the content clears the fixed 260px sidebar — the lg:ml-[260px] contract)`);
+      }
+      if (!isArr(vr.flashbulbs)) return shapeError(`accents.${a}.views.${v}.flashbulbs must be an Array (the S38 dark detector family)`);
+      if (!isArr(vr.unreadable)) return shapeError(`accents.${a}.views.${v}.unreadable must be an Array (the S38 dark detector family)`);
+      if (!isArr(vr.lowcontrast)) return shapeError(`accents.${a}.views.${v}.lowcontrast must be an Array (the S38 dark detector family)`);
+      if (!isArr(vr.consoleErrors)) return shapeError(`accents.${a}.views.${v}.consoleErrors must be an Array`);
+      if (typeof vr.activeTint !== "string") return shapeError(`accents.${a}.views.${v}.activeTint must be a string (the active-link gradient reading — the interaction evidence is part of the record)`);
+      if (typeof vr.activeLabel !== "string") return shapeError(`accents.${a}.views.${v}.activeLabel must be a string (the aria-current link when the tint was read)`);
+      if (typeof vr.nodes !== "number") return shapeError(`accents.${a}.views.${v}.nodes must be a number (the S13 DOM census)`);
+      if (typeof vr.mainNodes !== "number") return shapeError(`accents.${a}.views.${v}.mainNodes must be a number (the S13 DOM census)`);
+      if (typeof vr.longTaskTotal !== "number") return shapeError(`accents.${a}.views.${v}.longTaskTotal must be a number (the S13 B3 main-thread budget's own measurement)`);
+      if (typeof vr.clickLatencyMs !== "number") return shapeError(`accents.${a}.views.${v}.clickLatencyMs must be a number (the S13 B2 interactivity budget's own measurement)`);
+    }
+    if (
+      !isObj(rec.sidebar) ||
+      typeof rec.sidebar.linkCount !== "number" ||
+      !isArr(rec.sidebar.unreadable) ||
+      !isArr(rec.sidebar.lowcontrast)
+    ) {
+      return shapeError(`accents.${a}.sidebar must carry linkCount + unreadable + lowcontrast Arrays (the sidebar's own accent rendering at volume)`);
+    }
+  }
+  // The mode rot guard (the S27 family): the volume × LIGHT family is the
+  // documented bracketed non-gap (S13 light × violet × volume + S37–S41
+  // light × accent × seed) — this audit owns the DARK half.
+  if (env.mode !== "dark") {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `mode=${env.mode} — the sweep ran in the wrong mode (the S27 rot class; the volume × DARK × accent surface is this audit's contract — the volume × light family is the documented bracketed non-gap)`,
+    };
+  }
+  // The volume rot guard: the S13 profile is EXACT — a seed-volume
+  // envelope measured the wrong density and must never read green.
+  if (env.volume.tasks !== 300 || env.volume.notes !== 200 || env.volume.events !== 250) {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `volume=${env.volume.tasks}/${env.volume.notes}/${env.volume.events} — the sweep measured the wrong density (the S13 profile is 300 tasks / 200 notes / 250 events; the S38 omission-means-clean retirement applied to the volume axis)`,
+    };
+  }
+  if (!env.chrome.sidebarVisible || env.chrome.hamburgerVisible) {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `the INVERTED chrome contract broke at 1280×800 — sidebarVisible=${env.chrome.sidebarVisible}, hamburgerVisible=${env.chrome.hamburgerVisible} (the lg contract: the sidebar is the desktop vehicle and renders ≥1024; the app bar is lg:hidden — the vehicle-contract finding class)`,
+    };
+  }
+  if (!env.chrome.sidebarNavScrollable) {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `the sidebar-own scroll contract broke — sidebarNavScrollable=false at 800 height under at least one accent (the nav geometry: the 20 reference-measured rows cannot fit the ~534px nav area, so a non-scrolling nav means the sidebar geometry changed — links beyond the fold would be unreachable at desktop)`,
+    };
+  }
+  // The applied check: every accent's self-verified reading must match its key.
+  const notApplied: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (isObj(rec) && rec.applied !== a) notApplied.push(`${a}→${String(rec.applied)}`);
+  }
+  if (notApplied.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + notApplied.length,
+      note: `${notApplied.length} accent(s) did not apply through the real lifecycle (applied ${notApplied.join(", ")}) — the accent-application finding class`,
+    };
+  }
+  // The sidebar checks: an error string is a FINDING (never a swallow — the
+  // S38 doctrine) and the link census is 20 (the navigation census).
+  const sidebarErrors: string[] = [];
+  const linkCensus: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec)) continue;
+    if (isObj(rec.sidebar)) {
+      if (typeof rec.sidebar.error === "string" && rec.sidebar.error.length > 0) sidebarErrors.push(a);
+      if (rec.sidebar.linkCount !== 20) linkCensus.push(`${a}:${rec.sidebar.linkCount}`);
+    }
+  }
+  if (sidebarErrors.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + sidebarErrors.length,
+      note: `${sidebarErrors.length} sidebar record(s) carry an error (${sidebarErrors.join(", ")}) — a sidebar whose detectors failed is a finding, never a swallow`,
+    };
+  }
+  if (linkCensus.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + linkCensus.length,
+      note: `${linkCensus.length} sidebar link census break(s) (${linkCensus.join(", ")} — the sidebar always carries all 20 links; a broken census means the navigation surface changed under volume)`,
+    };
+  }
+  // The interaction checks — the S42 finding classes this audit OWNS in
+  // DARK (the never-read cell): the tint rot + the active-state mismatch.
+  const tintRots: string[] = [];
+  const activeMismatches: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec) || !isObj(rec.views)) continue;
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (!isObj(vr)) continue;
+      if (vr.activeTint === "" || vr.activeTint === "none") tintRots.push(`${a}/${v}`);
+      if (vr.activeLabel !== v) activeMismatches.push(`${a}/${v}→${String(vr.activeLabel)}`);
+    }
+  }
+  if (tintRots.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + tintRots.length,
+      note: `${tintRots.length} active-link gradient reading(s) computed to none/empty (${tintRots.slice(0, 4).join(", ")}) — the S8 no-var rot class (the NAV_ACTIVE_GRADIENT_STOPS pair did not resolve)`,
+    };
+  }
+  if (activeMismatches.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + activeMismatches.length,
+      note: `${activeMismatches.length} active-state mismatch(es) (${activeMismatches.slice(0, 4).join(", ")}) — the sidebar's active link did not follow the navigation (the interaction contract: while view V is active, V's link carries aria-current=page)`,
+    };
+  }
+  // The overflow check (the S16/S34 class — a 300-row list must never
+  // widen the document).
+  const overflows: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec) || !isObj(rec.views)) continue;
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (isObj(vr) && typeof vr.scrollWidth === "number" && vr.scrollWidth > 1280) overflows.push(`${a}/${v}:${vr.scrollWidth}`);
+    }
+  }
+  if (overflows.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + overflows.length,
+      note: `${overflows.length} view rendering(s) overflow the 1280px canvas (${overflows.slice(0, 4).join(", ")}) — the S16/S34 overflow class`,
+    };
+  }
+  // The S13 volume budgets — the B3 main-thread class + the B2
+  // interactivity class (per view per accent; the boundary value 1500
+  // stays green on both).
+  const longTaskBudgets: string[] = [];
+  const clickBudgets: string[] = [];
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec) || !isObj(rec.views)) continue;
+    for (const v of Object.keys(rec.views)) {
+      const vr = rec.views[v];
+      if (!isObj(vr)) continue;
+      if (typeof vr.longTaskTotal === "number" && vr.longTaskTotal > 1500) longTaskBudgets.push(`${a}/${v}:${vr.longTaskTotal}ms`);
+      if (typeof vr.clickLatencyMs === "number" && vr.clickLatencyMs > 1500) clickBudgets.push(`${a}/${v}:${vr.clickLatencyMs}ms`);
+    }
+  }
+  if (longTaskBudgets.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + longTaskBudgets.length,
+      note: `${longTaskBudgets.length} view rendering(s) exceed the 1500ms long-task budget under stress (${longTaskBudgets.slice(0, 4).join(", ")}) — the S13 B3 main-thread-blocking class (the volume contract broke under the theme variation)`,
+    };
+  }
+  if (clickBudgets.length > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + clickBudgets.length,
+      note: `${clickBudgets.length} nav click(s) exceed the 1500ms interactivity budget under stress (${clickBudgets.slice(0, 4).join(", ")}) — the S13 B2 interactivity class (the navigation went unresponsive under volume)`,
+    };
+  }
+  // The independent contrast-detection count (the anti-phantom doctrine),
+  // with the DARK doctrine's single exemption: the CTA-face (white on
+  // accent-500 — the S11 family-2 non-gap). The LIGHT-mode exemptions
+  // (the calendar adjacent-day slate-300 + the yellow priority-pill
+  // yellow-500) do NOT apply — in dark those surfaces re-theme, so any
+  // unreadable hit is genuine. Flashbulbs are ALWAYS findings.
+  let detections = 0;
+  let flashbulbs = 0;
+  let ctaFace = 0;
+  let warns = 0;
+  let renderings = 0;
+  const countEntries = (arr: unknown) => {
+    if (!isArr(arr)) return;
+    for (const e of arr) {
+      if (isObj(e) && e.color === "rgb(255, 255, 255)") {
+        ctaFace += 1;
+        continue;
+      }
+      detections += 1;
+    }
+  };
+  for (const a of accentKeys) {
+    const rec = env.accents[a];
+    if (!isObj(rec)) continue; // already shape-checked; defensive only
+    if (isObj(rec.views)) {
+      for (const v of Object.keys(rec.views)) {
+        const vr = rec.views[v];
+        if (!isObj(vr)) continue;
+        renderings += 1;
+        if (isArr(vr.flashbulbs)) flashbulbs += vr.flashbulbs.length;
+        countEntries(vr.unreadable);
+        if (isArr(vr.lowcontrast)) warns += vr.lowcontrast.length;
+      }
+    }
+    if (isObj(rec.sidebar)) {
+      countEntries(rec.sidebar.unreadable);
+      if (isArr(rec.sidebar.lowcontrast)) warns += rec.sidebar.lowcontrast.length;
+    }
+  }
+  if (flashbulbs > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + flashbulbs,
+      note: `${flashbulbs} flashbulb detection(s) across ${renderings} view renderings (a light surface on the dark canvas — ALWAYS a finding in dark mode, the S38 doctrine)`,
+    };
+  }
+  if (detections > 0) {
+    return {
+      green: false,
+      findings: env.findings.length + detections,
+      note: `${detections} unreadable detection(s) across ${renderings} view renderings + 7 sidebar records at volume (the S38 dark contrast detector family; counted independently of the findings array; the CTA-face entries are exempt)`,
+    };
+  }
+  // The S13 B1 payload bound: /api/tasks must stay bounded at 300 rows.
+  if (env.api["/api/tasks"].bytes > 500_000) {
+    return {
+      green: false,
+      findings: env.findings.length + 1,
+      note: `the /api/tasks payload measured ${env.api["/api/tasks"].bytes} bytes at 300 rows — the S13 B1 unbounded-payload class (the list endpoints must stay bounded under stress)`,
+    };
+  }
+  return {
+    green: env.findings.length === 0,
+    findings: env.findings.length,
+    note: `7 accents swept × ${renderings} view renderings + ${renderings} active-tint readings + 7 sidebar records at 1280×800 in MODE dark under the 300/200/250 volume profile, navigated through the sidebar (the desktop vehicle); every accent self-verified applied; the volume budgets hold (long tasks ≤ 1500ms, clicks ≤ 1500ms, the /api/tasks payload ${env.api["/api/tasks"].bytes} bytes ≤ 500000); ${ctaFace} CTA-face exempt (white on accent-500 — the S11 family-2 non-gap); ${warns} WARN (lowcontrast — the S11 non-gap family)`,
+  };
+}
+
 // --- cwv -----------------------------------------------------------------------
 // Ratings GOOD/NI/POOR/BAD. FINDINGS = clone-* scenarios rated POOR/BAD;
 // NI = the documented S16 state (not a finding); ref-* scenarios are
@@ -1689,6 +2010,7 @@ export function classifyAudit(name: string, envelope: unknown): StageVerdict {
   if (name === "accent-midband-sweep") return classifyAccentMidbandSweep(envelope);
   if (name === "accent-landscape-sweep") return classifyAccentLandscapeSweep(envelope);
   if (name === "accent-desktop-sweep") return classifyAccentDesktopSweep(envelope);
+  if (name === "accent-volume-sweep") return classifyAccentVolumeSweep(envelope);
   if (name === "dark-sweep") return classifyDarkSweep(envelope);
   if (name === "accent-dark-sweep") return classifyAccentDarkSweep(envelope);
   if (name === "cwv") return classifyCwv(envelope);
