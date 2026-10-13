@@ -38,9 +38,13 @@
 //      — the S48 stage (the drawer vehicle under the 300/200/250 profile
 //      at 844×390 in dark — the S47 summary's named next candidate, the
 //      LAST viewport band, the dark half first; the light mirror is the
-//      documented S49 candidate), then the dark-mode desktop families —
+//      documented S49 candidate), then the LIGHT sibling at the SAME
+//      LANDSCAPE viewport — the S49 stage (the S49 mirror: the drawer
+//      vehicle under the 300/200/250 profile at 844×390 in light, the THREE
+//      light exemptions — completing the volume × theme × viewport
+//      cross-axis's last band), then the dark-mode desktop families —
 //      the S37/S39/S40/S41 order)
-//   30. the demo-theme closing guard (light/violet via Prisma — a mid-suite
+//   31. the demo-theme closing guard (light/violet via Prisma — a mid-suite
 //      crash must not leave the demo user dark/teal, the documented
 //      poisoning class)
 //
@@ -95,6 +99,7 @@ const STAGES = [
   { name: "accent-volume-dark-midband-sweep", file: "scripts/accent-volume-dark-midband-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S46: the dark × mid-band × volume stress — the S45 summary's first named next candidate (the mid-band/landscape × volume cells, the dark half first: the S42→S43 / S44→S45 family pattern): 7 accents × the 7 volume views under the COUNT-verified 300/200/250 profile at 768×1024 in DARK, navigated through the drawer (the only vehicle below 1024), with the S42/S44 dark checker (flashbulbs always findings; the CTA-face exemption ONLY) + the drawer-own nav-scroll contract at the mid-band geometry (scrollHeight ~1068 vs the ~935px nav area at 1024 height — measured) + the shell-presence guard from birth; the S44/S45 mobile halves measured ~2.9 min; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40/S41/S42/S43/S44/S45 lesson)
   { name: "accent-volume-light-midband-sweep", file: "scripts/accent-volume-light-midband-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S47: the light × mid-band × volume stress — the S46 summary's own first named next candidate (the S47 mirror — the S42→S43 / S44→S45 / S46→S47 family pattern): 7 accents × the 7 volume views under the COUNT-verified 300/200/250 profile at 768×1024 in LIGHT, navigated through the drawer (the only vehicle below 1024), with the S43/S45 light checker (NO flashbulbs — the class exists only in dark; the THREE signature-strict light exemptions: the CTA-face + the calendar adjacent-day + the yellow priority-pill) + the light-mode hydration gate (the greeting heading — the S43/S45 lesson: !html.dark is TRUE at first paint) + the drawer-own nav-scroll contract at the mid-band geometry + the shell-presence guard from birth; the S44/S45 mobile halves and the S46 dark mid-band half measured ~2.9–3.0 min; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40/S41/S42/S43/S44/S45/S46 lesson)
   { name: "accent-volume-dark-landscape-sweep", file: "scripts/accent-volume-dark-landscape-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S48: the dark × landscape × volume stress — the S47 summary's own named next candidate (the landscape × volume cells, the dark half first: the S42→S43 / S44→S45 / S46→S47 / S48→S49 family pattern — the LAST viewport band): 7 accents × the 7 volume views under the COUNT-verified 300/200/250 profile at 844×390 in DARK, navigated through the drawer (the only vehicle below 1024), with the S42/S44/S46 dark checker (flashbulbs always findings; the CTA-face exemption ONLY) + the drawer-own nav-scroll contract at the LANDSCAPE geometry (scrollHeight ~1068 vs the ~301px nav area at 390 height — links ~8–20 below the fold, measured) + the shell-presence guard from birth (the S47 initial-gate field correction folded in); the S44–S47 volume halves measured ~2.9–3.0 min; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40/S41/S42/S43/S44/S45/S46/S47 lesson)
+  { name: "accent-volume-light-landscape-sweep", file: "scripts/accent-volume-light-landscape-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S49: the light × landscape × volume stress — the S48 summary's own named next candidate (the S49 mirror, completing the volume × theme × viewport cross-axis's last band): 7 accents × the 7 volume views under the COUNT-verified 300/200/250 profile at 844×390 in LIGHT, navigated through the drawer (the only vehicle below 1024), with the S43/S45/S47 light checker (NO flashbulbs — the class exists only in dark; the THREE signature-strict light exemptions: the CTA-face + the calendar adjacent-day + the yellow priority-pill) + the light-mode hydration gate (the greeting heading — the S43/S45/S47 lesson: !html.dark is TRUE at first paint) + the drawer-own nav-scroll contract at the LANDSCAPE geometry (scrollHeight ~1068 vs the ~301px nav area at 390 height — links ~8–20 below the fold, measured) + the shell-presence guard from birth (the AP-90 lesson applied to the landscape vehicle); the S44–S48 volume halves measured ~2.9–3.0 min; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40/S41/S42/S43/S44/S45/S46/S47/S48 lesson)
   { name: "cwv", file: "scripts/cwv-audit-s16.mjs", runtime: "node" },
   { name: "ai-error", file: "scripts/ai-error-audit.mjs", runtime: "node" },
   { name: "ai-a11y", file: "scripts/ai-a11y-audit.mjs", runtime: "node" },
@@ -227,7 +232,7 @@ let cwvPreconditionFailed = false;
 try {
   // Stage 0 — the S31 preflight FIRST, enforced (the suite never starts on an
   // unstable boot; the remedy rides the verdict).
-  log(`[standing-suite] stage 0/30 — dev-server-preflight (the S31 boot-stability precondition)`);
+  log(`[standing-suite] stage 0/31 — dev-server-preflight (the S31 boot-stability precondition)`);
   const pre = await run("bun", [join(REPO, "scripts/dev-server-preflight.mjs")], 90_000);
   writeFileSync(join(RAW_DIR, "dev-server-preflight.json"), pre.stdout);
   const preParsed = parseAuditStdout(pre.stdout);
@@ -255,17 +260,17 @@ try {
     for (let i = 0; i < STAGES.length; i += 1) {
       const spec = STAGES[i];
       if (spec.name === "cwv" && cwvPreconditionFailed) {
-        log(`[standing-suite] stage ${i + 1}/30 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
+        log(`[standing-suite] stage ${i + 1}/31 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
         continue;
       }
-      log(`[standing-suite] stage ${i + 1}/30 — ${spec.name}`);
+      log(`[standing-suite] stage ${i + 1}/31 — ${spec.name}`);
       const r = await runAuditStage(spec);
       rows.push({ name: r.name, verdict: r.verdict });
       await new Promise((res) => setTimeout(res, SETTLE_MS));
     }
 
     // The closing guard.
-    log(`[standing-suite] stage 30/30 — theme-restore (the demo-theme closing guard)`);
+    log(`[standing-suite] stage 31/31 — theme-restore (the demo-theme closing guard)`);
     rows.push(await themeGuard());
   }
 } finally {
