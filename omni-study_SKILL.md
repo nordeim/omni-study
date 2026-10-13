@@ -25,7 +25,7 @@ tags:
 
 > **What this is:** the single-source-of-truth reference for working in
 > `nordeim/omni-study`. Every fact below is verified against the codebase
-> (984 tests green at last update: 693 Vitest unit + 291 Playwright e2e incl. 1 setup).
+> (1024 tests green at last update: 733 Vitest unit + 291 Playwright e2e incl. 1 setup).
 > Sections marked with ⚠️ encode non-obvious contracts — violating them has
 > historically produced silent visual or data-path bugs.
 
@@ -531,7 +531,7 @@ tail -40 dev.log                            # request traces + prisma queries
 ```bash
 bun run lint && bun run typecheck && bun run test && bun run build && bun run test:e2e
 ```
-Current green state: lint ✓ · tsc ✓ · 693 unit ✓ · build ✓ · 291 e2e ✓ (984 green).
+Current green state: lint ✓ · tsc ✓ · 733 unit ✓ · build ✓ · 291 e2e ✓ (1024 green).
 
 **Pre-deployment:** set a real `AUTH_SECRET` (`openssl rand -hex 32`); use an
 ABSOLUTE `DATABASE_URL` (see `docs/DEPLOYMENT.md` §4); never ship `.env`,
