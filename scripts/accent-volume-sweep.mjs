@@ -419,7 +419,23 @@ try {
     fail(`the settings PATCH answered ${patch0.status()} — the sweep refuses to measure an unverified mode.`);
   }
   await page.goto(`${BASE}/Dashboard`);
-  await page.waitForFunction(() => document.documentElement.classList.contains("dark"), undefined, { timeout: 30000 });
+  // NOTE (the S47 field correction — the AP-90 shell-presence race applied to
+  // the INITIAL gate): `html.dark` alone is NOT a shell gate — the theme
+  // lifecycle's applyToDocument can flip the dark class when /api/auth/me
+  // resolves while React has not yet COMMITTED the shell DOM, so the chrome
+  // read below can race the aside mount (observed ONCE in the S47 arrival
+  // suite after the 17-min accent-dark stage had heated the server: the
+  // sidebar read absent → the precondition fired; green standalone, zero
+  // app bytes changed — the race, not a regression). The gate folds the
+  // SHELL-PRESENCE condition in: the aside nav exists only after the auth
+  // gate mounts the shell (the S43 per-accent-gate correction, applied to
+  // this probe's initial gate — the same fix S43 back-ported to the
+  // per-accent gates).
+  await page.waitForFunction(
+    () => document.documentElement.classList.contains("dark") && !!document.querySelector("aside nav"),
+    undefined,
+    { timeout: 30000 },
+  );
   const mode = await page.evaluate(() => (document.documentElement.classList.contains("dark") ? "dark" : "light"));
   if (mode !== "dark") {
     fail(`the applied mode is ${mode}, expected dark — the sweep refuses to measure the wrong mode.`);
