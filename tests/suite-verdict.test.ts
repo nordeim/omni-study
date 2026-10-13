@@ -3378,6 +3378,370 @@ describe("classifyAudit accent-volume-light-mobile-sweep (S45 — the light × m
   });
 });
 
+// --- S46: the dark × mid-band × volume stress ------------------------------------
+// The s46 envelope generator's record shape: the S44/S45 mobile-volume
+// family re-anchored to the MID-BAND viewport (768×1024, the md breakpoint —
+// the S34/S39 mid-band class): the per-view records carry the mid-band
+// structural family (drawerClosed/appBar/headingClearance — the below-lg
+// chrome is IDENTICAL at 768: the fixed glass app bar + the pt-20 offset)
+// AND the volume keys (nodes/mainNodes/longTaskTotal/clickLatencyMs — the
+// S13 measurement family) AND the DARK detector family
+// (flashbulbs/unreadable/lowcontrast — the S38/S42/S44 dark doctrine:
+// flashbulbs are ALWAYS findings; the unreadable CTA-face exemption ONLY —
+// the calendar-day and yellow-pill light exemptions do NOT apply in dark,
+// those surfaces re-theme). The drawer-own nav-scroll contract at the
+// mid-band geometry: the nav scrollHeight ~1068 vs the ~934px clientHeight
+// at 1024 height (the 1024 viewport minus the ~90px brand header) — the nav
+// MUST scroll; links ~17–20 sit below the fold.
+const S46_ACCENTS = ["violet", "blue", "green", "orange", "pink", "red", "teal"] as const;
+// The 7 volume-affected views by DISPLAY labels — the S13 data-volume
+// audit's own view set (the views that render task/note/event rows; the
+// other 13 are volume-invariant and stay covered by the S34/S39 seed
+// sweeps).
+const S46_VIEWS = ["Dashboard", "My Day", "Tasks", "Calendar", "Events", "Notes", "Analytics"];
+const S46_TINT = "linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))";
+
+type S46Rec = Record<string, unknown>;
+
+function s46ViewRec(o: S46Rec = {}): S46Rec {
+  return {
+    heading: "ok", scrollWidth: 768, drawerClosed: true, appBar: true, headingClearance: true,
+    flashbulbs: [] as unknown[], unreadable: [] as unknown[], lowcontrast: [] as unknown[],
+    consoleErrors: [] as unknown[],
+    activeTint: S46_TINT, activeLabel: "",
+    nodes: 4200, mainNodes: 3100, longTaskTotal: 420, clickLatencyMs: 610,
+    ...o,
+  };
+}
+function s46DrawerRec(o: S46Rec = {}): S46Rec {
+  return { linkCount: 20, flashbulbs: [] as unknown[], unreadable: [] as unknown[], lowcontrast: [] as unknown[], activeView: "Analytics", activeTint: S46_TINT, ...o };
+}
+
+/** The full accent-volume-dark-midband envelope: 7 accents × 7 views + the
+ *  drawer record per accent at 768×1024 dark under the S13 volume profile,
+ *  with per-view overrides merged in (the activeLabel defaults are filled to
+ *  the view's own label — the interaction contract). */
+function s46Envelope(viewOverrides: Record<string, Record<string, S46Rec>> = {}): S46Rec {
+  const accents: S46Rec = {};
+  for (const a of S46_ACCENTS) {
+    const views: S46Rec = {};
+    for (const v of S46_VIEWS) {
+      const base = s46ViewRec(viewOverrides[a]?.[v]);
+      if (base.activeLabel === "") base.activeLabel = v; // the interaction contract default
+      views[v] = base;
+    }
+    accents[a] = { applied: a, views, drawer: s46DrawerRec() };
+  }
+  return {
+    source: "accent-volume-dark-midband-sweep", mode: "dark",
+    viewport: { width: 768, height: 1024 },
+    volume: { tasks: 300, notes: 200, events: 250 },
+    chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: true },
+    api: {
+      "/api/tasks": { ms: 140, bytes: 190_000, status: 200 },
+      "/api/notes": { ms: 90, bytes: 210_000, status: 200 },
+      "/api/events": { ms: 110, bytes: 150_000, status: 200 },
+    },
+    accents, findings: [] as unknown[],
+  };
+}
+
+describe("classifyAudit accent-volume-dark-midband-sweep (S46 — the dark × mid-band × volume stress)", () => {
+  it("the GREEN shape: 7 accents × 7 volume views navigated through the drawer at 768×1024 dark under the 300/200/250 profile → green with the swept counts (the dark detector family — flashbulbs + the CTA-face-only exemption)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope());
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/49 view renderings/);
+    expect(v.note).toMatch(/49 active-tint readings/);
+    expect(v.note).toMatch(/7 drawer records/);
+    expect(v.note).toMatch(/768×1024/);
+    expect(v.note).toMatch(/300\/200\/250/);
+    expect(v.note).toMatch(/MODE dark/);
+  });
+
+  it("the ALL-VIEWS guard: an accent map missing ONE volume view reads shape-error — a view that silently did not run must never read green-by-omission", () => {
+    const env = s46Envelope() as { accents: Record<string, { views: Record<string, unknown> }> };
+    delete env.accents.violet.views.Tasks;
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the ALL-ACCENTS guard: the accents map missing ONE accent reads shape-error", () => {
+    const env = s46Envelope() as { accents: Record<string, unknown> };
+    delete env.accents.red;
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S13-shape envelope (the data-volume audit's own flat findings/nonGaps shape — the exact pre-S46 state) reads shape-error, never green-by-resemblance", () => {
+    const s13Shape = {
+      source: "data-volume-audit", findings: [], nonGaps: [{ surface: "Tasks render", longTaskTotal: 400 }],
+      inserted: { tasks: 300, notes: 200, events: 250 },
+    };
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s13Shape);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S42 DARK DESKTOP envelope (viewport 1280×800) reads shape-error here — the viewport is this seam's own contract (the S42/S43 desktop pair own 1280×800; this seam owns 768×1024)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s42Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S43 LIGHT DESKTOP envelope (viewport 1280×800) reads shape-error here — the same viewport guard", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s43Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S44 DARK MOBILE envelope (viewport 390×844) reads shape-error here — the mobile pair own 390×844; this seam owns the mid-band 768×1024", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s44Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S45 LIGHT MOBILE envelope (viewport 390×844) reads shape-error here — the same viewport guard", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s45Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the S44 dark envelope re-scoped to 768×1024 reads GREEN here — the same dark family shape (the seams discriminate on the VIEWPORT, not the shape: the mobile sibling owns 390×844, this seam owns 768×1024)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", { ...s44Envelope(), viewport: { width: 768, height: 1024 } });
+    expect(v.green).toBe(true);
+  });
+
+  it("the volume contract is part of the shape: an envelope without volume reads shape-error", () => {
+    const env = s46Envelope() as Record<string, unknown>;
+    delete env.volume;
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the missing drawer record reads shape-error (the drawer is part of the per-accent contract — the mid-band vehicle's own rendering)", () => {
+    const env = s46Envelope() as { accents: Record<string, Record<string, unknown>> };
+    delete (env.accents.pink as Record<string, unknown>).drawer;
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("mode is part of the contract: an envelope without mode reads shape-error", () => {
+    const env = s46Envelope() as Record<string, unknown>;
+    delete env.mode;
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the viewport guard: the 1280×800 desktop, 390×844 mobile, AND 844×390 landscape envelopes fed here read shape-error, never a silent re-scope (the sibling families own those surfaces)", () => {
+    const desktop = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), viewport: { width: 1280, height: 800 } });
+    expect(isErr(desktop)).toBe(true);
+    const mobile = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), viewport: { width: 390, height: 844 } });
+    expect(isErr(mobile)).toBe(true);
+    const landscape = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), viewport: { width: 844, height: 390 } });
+    expect(isErr(landscape)).toBe(true);
+  });
+
+  it("the mode rot guard: mode=light reads NON-green (the light × mid-band × volume family is the documented future cross-axis candidate — this seam owns the DARK half)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), mode: "light" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=light/);
+  });
+
+  it("the volume rot guard: a seed-volume envelope (tasks 0) reads NON-green — the sweep measured the wrong density and must never read green (the S38 omission-means-clean retirement, applied to the volume axis)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), volume: { tasks: 0, notes: 200, events: 250 } });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/volume/);
+  });
+
+  it("the volume rot guard: each leg of the profile is pinned — notes 199 and events 0 each read NON-green", () => {
+    const notes = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), volume: { tasks: 300, notes: 199, events: 250 } });
+    expect(notes.green).toBe(false);
+    expect(notes.note).toMatch(/volume/);
+    const events = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), volume: { tasks: 300, notes: 200, events: 0 } });
+    expect(events.green).toBe(false);
+    expect(events.note).toMatch(/volume/);
+  });
+
+  it("the applied-mismatch family: an accent whose self-verified reading differs from its key is a finding", () => {
+    const env = s46Envelope() as { accents: Record<string, Record<string, unknown>> };
+    (env.accents.teal as Record<string, unknown>).applied = "violet";
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the MID-BAND vehicle-contract family (the below-lg contract, the S34/S39 mid-band doctrine at volume): a VISIBLE sidebar at 768 is the finding class (the sidebar is hidden lg:flex — below 1024 the drawer is the only vehicle), and a HIDDEN hamburger is the same class (the app bar's hamburger is the vehicle's handle)", () => {
+    const sidebar = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), chrome: { sidebarVisible: true, hamburgerVisible: true, drawerNavScrollable: true } });
+    expect(sidebar.green).toBe(false);
+    expect(sidebar.note).toMatch(/vehicle/i);
+    const burger = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: false, drawerNavScrollable: true } });
+    expect(burger.green).toBe(false);
+    expect(burger.note).toMatch(/vehicle/i);
+  });
+
+  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 1024 height the 20 nav rows measure scrollHeight ~1068 vs the ~934px nav area — links ~17–20 sit below the fold; the nav's scroll is the only path to them, the S44/S45 contract carried to the mid-band geometry)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: false } });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/drawerNavScrollable|scroll/i);
+  });
+
+  it("the tint-rot family: an activeTint that computed to none is a FINDING (the S8 no-var rot class — the NAV_ACTIVE_GRADIENT_STOPS pair did not resolve at volume)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ green: { Notes: { activeTint: "none" } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/active-link gradient/);
+  });
+
+  it("the interaction family: an activeLabel that does not equal the view's own label is a FINDING (the active state did not follow the navigation — the dark × mid-band × volume interaction cell)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ blue: { Tasks: { activeLabel: "Dashboard" } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/did not follow the navigation/);
+  });
+
+  it("the overflow family: scrollWidth > 768 is a finding (the S16 mobile-only-gap class at the mid-band width — a 300-row list must never widen the 768px document)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ orange: { Tasks: { scrollWidth: 778 } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the structural mobile family at the mid-band: a drawer that did not close on navigation, a missing app bar, and a heading under the fixed bar are each findings (the S33/S35/S36 structural contracts at volume — the below-lg chrome is identical at 768)", () => {
+    const stuck = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ violet: { Tasks: { drawerClosed: false } } }));
+    expect(stuck.green).toBe(false);
+    expect(stuck.findings).toBe(1);
+    expect(stuck.note).toMatch(/drawer/i);
+    const noBar = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ blue: { Events: { appBar: false } } }));
+    expect(noBar.green).toBe(false);
+    expect(noBar.findings).toBe(1);
+    expect(noBar.note).toMatch(/app bar/i);
+    const under = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ teal: { Notes: { headingClearance: false } } }));
+    expect(under.green).toBe(false);
+    expect(under.findings).toBe(1);
+    expect(under.note).toMatch(/clearance/i);
+  });
+
+  it("the S13 B3 volume budget: longTaskTotal > 1500 per view is a FINDING (main-thread blocking under stress); the boundary value 1500 stays green", () => {
+    const hot = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ violet: { Tasks: { longTaskTotal: 1600 } } }));
+    expect(hot.green).toBe(false);
+    expect(hot.findings).toBe(1);
+    expect(hot.note).toMatch(/long-task/i);
+    const boundary = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ violet: { Tasks: { longTaskTotal: 1500 } } }));
+    expect(boundary.green).toBe(true);
+  });
+
+  it("the S13 B2 volume budget: clickLatencyMs > 1500 per view is a FINDING (the drawer-click → heading path — nav interactivity under stress); the boundary value 1500 stays green", () => {
+    const hot = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ teal: { Events: { clickLatencyMs: 1600 } } }));
+    expect(hot.green).toBe(false);
+    expect(hot.findings).toBe(1);
+    expect(hot.note).toMatch(/click/i);
+    const boundary = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ teal: { Events: { clickLatencyMs: 1500 } } }));
+    expect(boundary.green).toBe(true);
+  });
+
+  it("the strict record shape: a view record missing longTaskTotal reads shape-error (the volume measurement is part of the record)", () => {
+    const env = s46Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.red.views.Tasks.longTaskTotal;
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the strict record shape: a view record missing clickLatencyMs reads shape-error", () => {
+    const env = s46Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.violet.views.Calendar.clickLatencyMs;
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the DARK shape carries the flashbulbs family: a flashbulb detection (a light surface on the dark canvas) is ALWAYS a FINDING in dark mode — the S38/S42/S44 doctrine at the mid-band layout", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ pink: { "My Day": { flashbulbs: [
+      { cls: "bg-white rounded-xl", bg: "rgb(255, 255, 255)", tag: "DIV", w: 340, h: 80, text: "light card on the dark canvas" },
+    ] } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/flashbulb/i);
+  });
+
+  it("the drawer-error family: a drawer record carrying an error is a FINDING (never a swallow)", () => {
+    const env = s46Envelope() as { accents: Record<string, { drawer: Record<string, unknown> }> };
+    env.accents.blue.drawer = { linkCount: 0, flashbulbs: [], unreadable: [], lowcontrast: [], activeView: null, activeTint: null, error: "TypeError: Cannot read properties of null" };
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the drawer link census: linkCount !== 20 is a finding (the navigation census broke — the drawer always carries all 20 links)", () => {
+    const env = s46Envelope() as { accents: Record<string, { drawer: Record<string, unknown> }> };
+    env.accents.orange.drawer = { linkCount: 19, flashbulbs: [], unreadable: [], lowcontrast: [], activeView: "Analytics", activeTint: S46_TINT };
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/19|link/i);
+  });
+
+  it("the counting semantics: a non-exempt unreadable entry with an EMPTY findings array still reads NON-green (the independent counting doctrine)", () => {
+    const env = s46Envelope({ teal: { Analytics: { unreadable: [
+      { text: "streak", color: "rgb(148, 163, 184)", contrast: 1.9 },
+    ] } } });
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the CTA-face exemption is SIGNATURE-STRICT: white-on-accent rides the note; a non-white unreadable text still counts", () => {
+    const exempt = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ violet: { Dashboard: { unreadable: [
+      { text: "New Task", color: "rgb(255, 255, 255)", contrast: 2.1 },
+    ] } } }));
+    expect(exempt.green).toBe(true);
+    expect(exempt.note).toMatch(/1 CTA-face/);
+    const other = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ violet: { Dashboard: { unreadable: [
+      { text: "STRESS-S46-task 42", color: "rgb(100, 116, 139)", contrast: 1.8 },
+    ] } } }));
+    expect(other.green).toBe(false);
+    expect(other.findings).toBe(1);
+  });
+
+  it("the DARK doctrine: the light-mode calendar adjacent-day exemption does NOT apply in dark — a slate-300 day number still counts (those surfaces re-theme in dark, the S42/S44 lesson applied to the mid-band)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ pink: { Calendar: { unreadable: [
+      { text: "27", color: "rgb(203, 213, 225)", contrast: 1.6 },
+    ] } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the DARK doctrine: the light-mode yellow priority-pill exemption does NOT apply in dark — a yellow-500 pill still counts (those surfaces re-theme in dark)", () => {
+    const v = classifyAudit("accent-volume-dark-midband-sweep", s46Envelope({ green: { Tasks: { unreadable: [
+      { text: "high", color: "rgb(234, 179, 8)", contrast: 2.0 },
+    ] } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the lowcontrast WARN family rides the note, never the findings (the S11 non-gap family)", () => {
+    const env = s46Envelope({ green: { Notes: { lowcontrast: [
+      { text: "STRESS-S46-note 7", color: "rgb(167, 139, 250)", contrast: 3.07 },
+    ] } } });
+    const v = classifyAudit("accent-volume-dark-midband-sweep", env);
+    expect(v.green).toBe(true);
+    expect(v.note).toMatch(/1 WARN/);
+  });
+
+  it("the S13 B1 API bound: /api/tasks bytes > 500000 is a FINDING (the unbounded-payload guard); the boundary 500000 stays green", () => {
+    const fat = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), api: {
+      "/api/tasks": { ms: 400, bytes: 512_000, status: 200 },
+      "/api/notes": { ms: 90, bytes: 210_000, status: 200 },
+      "/api/events": { ms: 110, bytes: 150_000, status: 200 },
+    } });
+    expect(fat.green).toBe(false);
+    expect(fat.note).toMatch(/payload/i);
+    const boundary = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), api: {
+      "/api/tasks": { ms: 400, bytes: 500_000, status: 200 },
+      "/api/notes": { ms: 90, bytes: 210_000, status: 200 },
+      "/api/events": { ms: 110, bytes: 150_000, status: 200 },
+    } });
+    expect(boundary.green).toBe(true);
+  });
+
+  it("the unknown-audit guard still holds: a misspelled name is a shape-error even with a perfect envelope", () => {
+    const v = classifyAudit("accent-volume-dark-midband-swep", s46Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {
