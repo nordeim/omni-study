@@ -85,7 +85,9 @@ test.describe("sidebar navigation (desktop)", () => {
   test("the sidebar can collapse and expand", async ({ page }) => {
     await page.getByRole("button", { name: "Collapse sidebar" }).click();
     const aside = page.locator("aside");
-    await expect(aside).toHaveCSS("width", "76px");
+    // S52: the reference's collapsed rail measures w-20 (80px) — the
+    // session-8-era 76px pin was corrected to the live measurement.
+    await expect(aside).toHaveCSS("width", "80px");
     await page.getByRole("button", { name: "Expand sidebar" }).click();
     await expect(aside).toHaveCSS("width", "260px");
   });

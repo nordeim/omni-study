@@ -77,13 +77,19 @@ export function NavItemLink({ id, collapsed = false }: { id: ViewId; collapsed?:
         navigate(id);
       }}
       aria-current={active ? "page" : undefined}
+      // S52 — the icon-only links keep an accessible name (the reference's
+      // own icon-only links carry NO title/aria-label — a measured a11y gap
+      // there; the tooltip + label are the clone's superset).
+      aria-label={collapsed ? item.label : undefined}
       title={collapsed ? item.label : undefined}
       className="group block cursor-pointer"
     >
       <span
         className={cn(
+          // S52 — the icons stay LEFT-ALIGNED at px-4 in BOTH states (the
+          // reference's collapsed rail + icon-only drawer measured svg x=32,
+          // centerOffset −102 — NOT centered).
           "flex items-center rounded-xl px-4 py-3 transition-all duration-200",
-          collapsed && "justify-center px-0",
           // S11-2 — the active text color lives in the .sf-nav-active class
           // (globals.css): an inline color cannot re-theme in dark mode, and
           // violet-600 on the dark glass measured 3.13:1 — dark follows the

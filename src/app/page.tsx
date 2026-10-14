@@ -77,6 +77,10 @@ export default function StudyFlowApp() {
   const view = useAppStore((s) => s.view);
   const hydrate = useAppStore((s) => s.hydrate);
   const syncFromPath = useAppStore((s) => s.syncFromPath);
+  // S52 — the collapsed sidebar reflows the content: the main offset tracks
+  // the store's sidebarCollapsed (the reference's collapsed rail measures
+  // w-20/80px with main ml-20 — the content fills the freed 180px).
+  const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed);
   const loadFromUser = useThemeStore((s) => s.loadFromUser);
   const resetData = useDataStore((s) => s.reset);
 
@@ -157,7 +161,14 @@ export default function StudyFlowApp() {
           16px the reference's content keeps below it (its main is pt-16 and
           an inner p-4 wrapper adds the rest — measured: first heading at
           y=80 on BOTH apps). At lg the bar is hidden and lg:pt-8 applies. */}
-      <main id="main-content" tabIndex={-1} className="sf-scroll min-h-screen overflow-x-clip p-4 pt-20 transition-all duration-300 lg:ml-[260px] lg:p-8 lg:pt-8">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className={
+          "sf-scroll min-h-screen overflow-x-clip p-4 pt-20 transition-all duration-300 lg:p-8 lg:pt-8 " +
+          (sidebarCollapsed ? "lg:ml-20" : "lg:ml-[260px]")
+        }
+      >
         <CurrentView />
       </main>
     </div>

@@ -69,6 +69,12 @@ function MobileHeader() {
 function MobileDrawer() {
   const open = useAppStore((s) => s.mobileMenuOpen);
   const setMobileMenu = useAppStore((s) => s.setMobileMenu);
+  // S52 — the drawer SHARES the sidebar's collapsed state (measured on the
+  // reference: with sidebarOpen=false the drawer's 20 links render
+  // ICON-ONLY in the same 288px panel — no labels, no trailing dot; the
+  // labeled rendering is the default expanded state). The drawer header,
+  // backdrop, and panel geometry are identical in both states.
+  const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed);
 
   React.useEffect(() => {
     if (!open) return;
@@ -126,7 +132,7 @@ function MobileDrawer() {
           <ul className="flex flex-col gap-1">
             {NAV.map((item) => (
               <li key={item.id}>
-                <NavItemLink id={item.id} />
+                <NavItemLink id={item.id} collapsed={sidebarCollapsed} />
               </li>
             ))}
           </ul>

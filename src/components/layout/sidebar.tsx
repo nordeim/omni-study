@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight, GraduationCap } from "lucide-react";
+import { ChevronLeft, GraduationCap } from "lucide-react";
 import { NAV, useAppStore, useThemeStore } from "@/lib/store";
 import { formatShortWithYear, formatTime12h } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -39,23 +39,28 @@ export function Sidebar() {
     <aside
       className={cn(
         "glass hidden lg:flex fixed left-0 top-0 z-40 h-screen flex-col shadow-xl shadow-slate-200/50 transition-all duration-300 dark:shadow-black/30",
-        collapsed ? "w-[76px]" : "w-[260px]",
+        // S52 — the reference's collapsed rail measures w-20 (80px, live
+        // 2026-10-14); the session-8-era 76px corrected.
+        collapsed ? "w-20" : "w-[260px]",
       )}
     >
-      {/* Brand header */}
+      {/* Brand header — S52: the toggle button lives in the header row in
+          BOTH states (the reference's collapsed header renders ONLY the
+          chevron — the brand block is unmounted, the button sits left); no
+          separate expand row below the header. */}
       <div className="flex items-center justify-between border-b border-slate-100 p-6 dark:border-slate-800">
-        <div className="flex min-w-0 items-center gap-3">
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
-            style={{
-              backgroundImage: "linear-gradient(to bottom right, rgb(var(--sf-primary)), rgb(var(--sf-primary-gradient-to)))",
-              boxShadow: "0 10px 15px -3px rgb(var(--sf-primary) / 0.3)",
-            }}
-            aria-hidden="true"
-          >
-            <GraduationCap className="h-5 w-5" strokeWidth={2} />
-          </span>
-          {!collapsed && (
+        {!collapsed && (
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg"
+              style={{
+                backgroundImage: "linear-gradient(to bottom right, rgb(var(--sf-primary)), rgb(var(--sf-primary-gradient-to)))",
+                boxShadow: "0 10px 15px -3px rgb(var(--sf-primary) / 0.3)",
+              }}
+              aria-hidden="true"
+            >
+              <GraduationCap className="h-5 w-5" strokeWidth={2} />
+            </span>
             <div className="min-w-0">
               <h1 className="truncate text-lg font-bold text-slate-800 dark:text-slate-100">StudyFlow</h1>
               {/* S8-A: the reference's tagline never truncates (measured
@@ -63,34 +68,24 @@ export function Sidebar() {
                   h1 keeps the truncate guard. */}
               <p className="text-xs text-slate-400">Your study companion</p>
             </div>
-          )}
-        </div>
-        {!collapsed && (
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            aria-label="Collapse sidebar"
-            className="sf-focus flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-          >
-            {/* Reference (measured): a bare h-9 w-9 rounded-lg ghost with a
-                chevron-left glyph (icon renders 16px via the shadcn
-                [&_svg]:size-4 override). */}
-            <ChevronLeft className="h-4 w-4" />
-          </button>
+          </div>
         )}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="sf-focus flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        >
+          {/* Reference (measured): a bare h-9 w-9 rounded-lg ghost with a
+              chevron-left glyph (icon renders 16px via the shadcn
+              [&_svg]:size-4 override). S52: the SAME glyph rotates 180°
+              when collapsed (chevron-left rotate-180 points right =
+              expand — the reference's exact glyph behavior). */}
+          <ChevronLeft
+            className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")}
+          />
+        </button>
       </div>
-      {collapsed && (
-        <div className="flex justify-center py-2">
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            aria-label="Expand sidebar"
-            className="sf-focus flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
 
       {/* Navigation */}
       <nav aria-label="Primary" className="sf-scroll flex-1 overflow-y-auto p-4">
@@ -103,21 +98,25 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      {/* Footer: clock + user */}
-      <div className="border-t border-slate-100 p-4 dark:border-slate-800">
-        {!collapsed && <SidebarClock />}
-        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <UserAvatar size="sm" />
-          {!collapsed && (
+      {/* Footer: clock + user — S52: the reference's collapsed footer is
+          COMPLETELY empty (<div class="mt-auto"></div> — the clock AND the
+          user row are unmounted); the content renders only when expanded. */}
+      {collapsed ? (
+        <div className="mt-auto" />
+      ) : (
+        <div className="border-t border-slate-100 p-4 dark:border-slate-800">
+          <SidebarClock />
+          <div className="flex items-center gap-3">
+            <UserAvatar size="sm" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {userName || "Student"}
               </p>
               <p className="truncate text-xs text-slate-400">{email}</p>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </aside>
   );
 }
