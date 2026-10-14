@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-// Unit-test layer for the pure domain seams — 20 files / 773 tests:
+// Unit-test layer for the pure domain seams — 20 files / 805 tests:
 // router, theme, theme-cache, date, calculator, auth, validation, db-path,
 // site, api-timeout, api-offline, files (content-disposition),
 // rum-diagnostics, data-export, data-import, env-check, view-collections,
@@ -43,6 +43,14 @@ import path from "node:path";
 // guard [mode MUST be dark — the INVERSE of accent-light's], the
 // mobileViewport 390×844 contract, the per-accent applied
 // self-verification, and the mobile scrollWidth overflow class].
+// Extended in S50 with the accent-dark-landscape-seed-sweep classifier
+// pins: the dark × landscape × SEED sweep for the 13 volume-invariant
+// views — the views that render no task/note/event rows had never been
+// rendered in dark at 844×390 under any accent (the S46 plan's carried
+// note + the S49 plan's own non-gap entry) — with the mode rot guard
+// [mode MUST be dark — the light half at seed is the S40 audit's own], the
+// 13-view ALL-VIEWS guard, the drawer 20-link census, and the dark detector
+// family [flashbulbs always findings; the CTA-face exemption ONLY].
 // Browser/E2E coverage lives in tests/e2e/*.spec.ts (Playwright — never
 // picked up by this config, which matches *.test.ts only; the standalone
 // server is booted by playwright.config.ts's webServer).

@@ -4883,6 +4883,324 @@ describe("classifyAudit accent-volume-light-landscape-sweep (S49 — the light �
   });
 });
 
+// --- S50: the dark × landscape × SEED sweep for the 13 volume-invariant views --------
+// The S40 landscape seed-family shape re-anchored to the DARK half on the
+// 13 volume-invariant views (Timetable, Assignments, Exams, Flashcards,
+// Practice Tests, Study Groups, Grade Tracker, Files, Calculator, Math
+// Solver, AI Assistant, Focus Timer, Settings — they render no task/note/
+// event rows, so the S48/S49 volume sweeps never navigated them): the
+// per-view records carry the below-lg structural family (drawerClosed/
+// appBar/headingClearance — the fixed glass app bar covers 16% of the
+// 390px viewport, so the heading-clearance contract is at its tightest)
+// AND the DARK detector family (flashbulbs — a light surface on the dark
+// canvas is ALWAYS a finding; unreadable < 2.2 with the CTA-face exemption
+// ONLY — the light-mode calendar-day + yellow-pill exemptions do NOT apply
+// in dark, those surfaces re-theme; lowcontrast < 3.2 = WARN). The
+// drawer-own nav-scroll contract at the LANDSCAPE geometry: the nav
+// scrollHeight ~1068 vs the ~301px clientHeight at 390 height — the nav
+// MUST scroll; links ~8–20 sit below the fold.
+const S50_ACCENTS = ["violet", "blue", "green", "orange", "pink", "red", "teal"] as const;
+// The 13 volume-invariant views by DISPLAY labels — the views the S13
+// data-volume audit's own set EXCLUDES (they render no task/note/event
+// rows); the 7 volume-affected views at dark × landscape are the S48
+// audit's own (at volume), and the light half at seed is the S40
+// accent-landscape-sweep's own (all 20 views).
+const S50_VIEWS = [
+  "Timetable", "Assignments", "Exams", "Flashcards", "Practice Tests",
+  "Study Groups", "Grade Tracker", "Files", "Calculator", "Math Solver",
+  "AI Assistant", "Focus Timer", "Settings",
+];
+const S50_TINT = "linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))";
+
+type S50Rec = Record<string, unknown>;
+
+function s50ViewRec(o: S50Rec = {}): S50Rec {
+  return {
+    heading: "ok", scrollWidth: 844, drawerClosed: true, appBar: true, headingClearance: true,
+    flashbulbs: [] as unknown[], unreadable: [] as unknown[], lowcontrast: [] as unknown[],
+    consoleErrors: [] as unknown[],
+    activeTint: S50_TINT, activeLabel: "",
+    ...o,
+  };
+}
+function s50DrawerRec(o: S50Rec = {}): S50Rec {
+  return { linkCount: 20, flashbulbs: [] as unknown[], unreadable: [] as unknown[], lowcontrast: [] as unknown[], activeView: "Settings", activeTint: S50_TINT, ...o };
+}
+
+/** The full accent-dark-landscape-seed envelope: 7 accents × the 13
+ *  volume-invariant views + the drawer record per accent at 844×390 DARK at
+ *  SEED volume, with per-view overrides merged in (the activeLabel defaults
+ *  are filled to the view's own label — the interaction contract). */
+function s50Envelope(viewOverrides: Record<string, Record<string, S50Rec>> = {}): S50Rec {
+  const accents: S50Rec = {};
+  for (const a of S50_ACCENTS) {
+    const views: S50Rec = {};
+    for (const v of S50_VIEWS) {
+      const base = s50ViewRec(viewOverrides[a]?.[v]);
+      if (base.activeLabel === "") base.activeLabel = v; // the interaction contract default
+      views[v] = base;
+    }
+    accents[a] = { applied: a, views, drawer: s50DrawerRec() };
+  }
+  return {
+    source: "accent-dark-landscape-seed-sweep", mode: "dark",
+    viewport: { width: 844, height: 390 },
+    chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: true },
+    accents, findings: [] as unknown[],
+  };
+}
+
+describe("classifyAudit accent-dark-landscape-seed-sweep (S50 — the dark × landscape × SEED sweep for the 13 volume-invariant views)", () => {
+  it("the GREEN shape: 7 accents × 13 volume-invariant views navigated through the drawer at 844×390 dark at seed → green with the swept counts (the dark detector family — flashbulbs always findings; the CTA-face exemption ONLY)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope());
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/91 view renderings/);
+    expect(v.note).toMatch(/91 active-tint readings/);
+    expect(v.note).toMatch(/7 drawer records/);
+    expect(v.note).toMatch(/844×390/);
+    expect(v.note).toMatch(/MODE dark/);
+  });
+
+  it("the ALL-VIEWS guard: an accent map missing ONE of the 13 views reads shape-error — a view that silently did not run must never read green-by-omission", () => {
+    const env = s50Envelope() as { accents: Record<string, { views: Record<string, unknown> }> };
+    delete env.accents.violet.views.Timetable;
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the ALL-ACCENTS guard: the accents map missing ONE accent reads shape-error", () => {
+    const env = s50Envelope() as { accents: Record<string, unknown> };
+    delete env.accents.red;
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S13-shape envelope (the data-volume audit's own flat findings/nonGaps shape) reads shape-error, never green-by-resemblance", () => {
+    const s13Shape = {
+      source: "data-volume-audit", findings: [], nonGaps: [{ surface: "Tasks render", longTaskTotal: 400 }],
+      inserted: { tasks: 300, notes: 200, events: 250 },
+    };
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s13Shape);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S48 DARK-landscape VOLUME envelope reads shape-error here — the 7 volume views are the S48 audit's own; this seam owns the 13 volume-invariant views (the view sets are disjoint discriminators on the same cell)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s48Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S49 LIGHT-landscape volume envelope reads shape-error here — the viewport matches but the view set AND the mode differ (the shape checks run before the mode guard)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s49Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S42 DARK DESKTOP envelope (viewport 1280×800) reads shape-error here — the desktop pair own 1280×800; this seam owns 844×390", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s42Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S44 DARK MOBILE envelope (viewport 390×844) reads shape-error here — the mobile pair own 390×844; this seam owns the landscape 844×390 (the TRANSPOSED pair of axes is a different device class)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s44Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S46 DARK MIDBAND envelope (viewport 768×1024) reads shape-error here — the mid-band pair own 768×1024; this seam owns the landscape 844×390", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s46Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the mode discriminator on this very cell: the S40 LIGHT-landscape envelope re-scoped to the 13-view dark shape with mode=dark reads NON-green via the mode rot when the shape matches (the mirror pattern — the mode is the discriminator on this very cell)", () => {
+    // Build the S40 light envelope re-scoped: same viewport family, mode flipped.
+    const env = s50Envelope() as Record<string, unknown>;
+    env.mode = "light";
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=light/);
+  });
+
+  it("the viewport guard: the 1280×800 desktop, 390×844 mobile, AND 768×1024 mid-band envelopes fed here read shape-error, never a silent re-scope (the sibling families own those surfaces; the landscape is the TRANSPOSED 844×390 — BOTH axes)", () => {
+    const desktop = classifyAudit("accent-dark-landscape-seed-sweep", { ...s50Envelope(), viewport: { width: 1280, height: 800 } });
+    expect(isErr(desktop)).toBe(true);
+    const mobile = classifyAudit("accent-dark-landscape-seed-sweep", { ...s50Envelope(), viewport: { width: 390, height: 844 } });
+    expect(isErr(mobile)).toBe(true);
+    const midband = classifyAudit("accent-dark-landscape-seed-sweep", { ...s50Envelope(), viewport: { width: 768, height: 1024 } });
+    expect(isErr(midband)).toBe(true);
+  });
+
+  it("the missing drawer record reads shape-error (the drawer is part of the per-accent contract — the landscape vehicle's own rendering)", () => {
+    const env = s50Envelope() as { accents: Record<string, Record<string, unknown>> };
+    delete (env.accents.pink as Record<string, unknown>).drawer;
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("mode is part of the contract: an envelope without mode reads shape-error", () => {
+    const env = s50Envelope() as Record<string, unknown>;
+    delete env.mode;
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the applied-mismatch family: an accent whose self-verified reading differs from its key is a finding", () => {
+    const env = s50Envelope() as { accents: Record<string, Record<string, unknown>> };
+    (env.accents.teal as Record<string, unknown>).applied = "violet";
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the LANDSCAPE vehicle-contract family (the below-lg contract, the S35/S40/S48/S49 landscape doctrine at seed): a VISIBLE sidebar at 844 is the finding class (the sidebar is hidden lg:flex — below 1024 the drawer is the only vehicle), and a HIDDEN hamburger is the same class (the app bar's hamburger is the vehicle's handle)", () => {
+    const sidebar = classifyAudit("accent-dark-landscape-seed-sweep", { ...s50Envelope(), chrome: { sidebarVisible: true, hamburgerVisible: true, drawerNavScrollable: true } });
+    expect(sidebar.green).toBe(false);
+    expect(sidebar.note).toMatch(/vehicle/i);
+    const burger = classifyAudit("accent-dark-landscape-seed-sweep", { ...s50Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: false, drawerNavScrollable: true } });
+    expect(burger.green).toBe(false);
+    expect(burger.note).toMatch(/vehicle/i);
+  });
+
+  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 390 height the 20 nav rows measure scrollHeight ~1068 vs the ~301px nav area — links ~8–20 sit below the fold; the nav's scroll is the only path to them, the S35/S40/S48/S49 short-viewport contract at seed)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", { ...s50Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: false } });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/drawerNavScrollable|scroll/i);
+  });
+
+  it("the tint-rot family: an activeTint that computed to none is a FINDING (the S8 no-var rot class — the NAV_ACTIVE_GRADIENT_STOPS pair did not resolve in dark at the landscape layout)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ green: { Files: { activeTint: "none" } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/active-link gradient/);
+  });
+
+  it("the interaction family: an activeLabel that does not equal the view's own label is a FINDING (the active state did not follow the navigation — the dark × landscape × seed interaction cell on the 13 views)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ blue: { Exams: { activeLabel: "Dashboard" } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+    expect(v.note).toMatch(/did not follow the navigation/);
+  });
+
+  it("the overflow family: scrollWidth > 844 is a finding (the S16 mobile-only-gap class at the landscape width — the Timetable canvas must live INSIDE its overflow-x-auto container, never widen the document)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ orange: { Timetable: { scrollWidth: 854 } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the structural below-lg family at the landscape: a drawer that did not close on navigation, a missing app bar, and a heading under the fixed bar are each findings (the S33/S35/S40 structural contracts at seed — the below-lg chrome is identical at 844, the bar 16% of the short viewport)", () => {
+    const stuck = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ violet: { Timetable: { drawerClosed: false } } }));
+    expect(stuck.green).toBe(false);
+    expect(stuck.findings).toBe(1);
+    expect(stuck.note).toMatch(/drawer/i);
+    const noBar = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ blue: { Calculator: { appBar: false } } }));
+    expect(noBar.green).toBe(false);
+    expect(noBar.findings).toBe(1);
+    expect(noBar.note).toMatch(/app bar/i);
+    const under = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ teal: { Settings: { headingClearance: false } } }));
+    expect(under.green).toBe(false);
+    expect(under.findings).toBe(1);
+    expect(under.note).toMatch(/clearance/i);
+  });
+
+  it("the DARK detector family: a flashbulb in a view record is a FINDING counted independently of the findings array (a light surface on the dark canvas — the S10 @theme inline trap's own family at the landscape layout)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ violet: { Files: { flashbulbs: [
+      { cls: "bg-white rounded-xl border", bg: "rgb(255, 255, 255)", tag: "DIV", w: 600, h: 300, text: "" },
+    ] } } }));
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/flashbulb/i);
+  });
+
+  it("the DARK detector family: a flashbulb in the DRAWER record is a FINDING (the drawer's own dark rendering — dark:bg-slate-950)", () => {
+    const env = s50Envelope() as { accents: Record<string, { drawer: Record<string, unknown> }> };
+    env.accents.blue.drawer = { linkCount: 20, flashbulbs: [
+      { cls: "bg-white", bg: "rgb(255, 255, 255)", tag: "DIV", w: 200, h: 80, text: "" },
+    ], unreadable: [], lowcontrast: [], activeView: "Settings", activeTint: S50_TINT };
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/flashbulb/i);
+  });
+
+  it("the counting semantics: a non-exempt unreadable entry with an EMPTY findings array still reads NON-green (the independent counting doctrine)", () => {
+    const env = s50Envelope({ teal: { "Grade Tracker": { unreadable: [
+      { text: "GPA", color: "rgb(148, 163, 184)", contrast: 1.9 },
+    ] } } });
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the CTA-face exemption is SIGNATURE-STRICT: white-on-accent rides the note; a non-white unreadable text still counts", () => {
+    const exempt = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ violet: { Timetable: { unreadable: [
+      { text: "Add Class", color: "rgb(255, 255, 255)", contrast: 2.1 },
+    ] } } }));
+    expect(exempt.green).toBe(true);
+    expect(exempt.note).toMatch(/1 CTA-face/);
+    const other = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ violet: { Timetable: { unreadable: [
+      { text: "Monday", color: "rgb(100, 116, 139)", contrast: 1.8 },
+    ] } } }));
+    expect(other.green).toBe(false);
+    expect(other.findings).toBe(1);
+  });
+
+  it("the DARK doctrine: the light-mode calendar adjacent-day exemption does NOT apply in dark — a slate-300 day number still counts (those surfaces re-theme in dark, the S42/S44/S46/S48 lesson applied to the landscape seed family)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ pink: { Timetable: { unreadable: [
+      { text: "27", color: "rgb(203, 213, 225)", contrast: 1.6 },
+    ] } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the DARK doctrine: the light-mode yellow priority-pill exemption does NOT apply in dark — a yellow-500 pill still counts (those surfaces re-theme in dark)", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", s50Envelope({ green: { Assignments: { unreadable: [
+      { text: "high", color: "rgb(234, 179, 8)", contrast: 2.0 },
+    ] } } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the lowcontrast WARN family rides the note, never the findings (the S11 non-gap family)", () => {
+    const env = s50Envelope({ green: { Flashcards: { lowcontrast: [
+      { text: "deck swatch", color: "rgb(167, 139, 250)", contrast: 3.07 },
+    ] } } });
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(v.green).toBe(true);
+    expect(v.note).toMatch(/1 WARN/);
+  });
+
+  it("the drawer-error family: a drawer record carrying an error is a FINDING (never a swallow)", () => {
+    const env = s50Envelope() as { accents: Record<string, { drawer: Record<string, unknown> }> };
+    env.accents.blue.drawer = { linkCount: 0, flashbulbs: [], unreadable: [], lowcontrast: [], activeView: null, activeTint: null, error: "TypeError: Cannot read properties of null" };
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the drawer link census: linkCount !== 20 is a finding (the navigation census broke — the drawer always carries all 20 links even though only 13 are navigated)", () => {
+    const env = s50Envelope() as { accents: Record<string, { drawer: Record<string, unknown> }> };
+    env.accents.orange.drawer = { linkCount: 19, flashbulbs: [], unreadable: [], lowcontrast: [], activeView: "Settings", activeTint: S50_TINT };
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/19|link/i);
+  });
+
+  it("the strict record shape: a view record missing flashbulbs reads shape-error (the dark detector family is part of the record — the class exists only in dark)", () => {
+    const env = s50Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.red.views.Files.flashbulbs;
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the strict record shape: a view record missing activeTint reads shape-error (the interaction evidence is part of the record)", () => {
+    const env = s50Envelope() as { accents: Record<string, { views: Record<string, Record<string, unknown>> }> };
+    delete env.accents.violet.views.Calculator.activeTint;
+    const v = classifyAudit("accent-dark-landscape-seed-sweep", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the unknown-audit guard still holds: a misspelled name is a shape-error even with a perfect envelope", () => {
+    const v = classifyAudit("accent-dark-landscape-seed-swep", s50Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {
