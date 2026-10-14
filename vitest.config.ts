@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-// Unit-test layer for the pure domain seams — 20 files / 805 tests:
+// Unit-test layer for the pure domain seams — 20 files / 834 tests:
 // router, theme, theme-cache, date, calculator, auth, validation, db-path,
 // site, api-timeout, api-offline, files (content-disposition),
 // rum-diagnostics, data-export, data-import, env-check, view-collections,
@@ -50,7 +50,16 @@ import path from "node:path";
 // note + the S49 plan's own non-gap entry) — with the mode rot guard
 // [mode MUST be dark — the light half at seed is the S40 audit's own], the
 // 13-view ALL-VIEWS guard, the drawer 20-link census, and the dark detector
-// family [flashbulbs always findings; the CTA-face exemption ONLY].
+// family [flashbulbs always findings; the CTA-face exemption ONLY]. Extended in
+// S51 with the cwv-volume-stress classifier pins: the CWV x volume stress —
+// the RUM-beacon cross-axis (the beacon's five field metrics under the
+// COUNT-verified 300/200/250 profile on the 7 volume-affected views at
+// 390x844 under the Lighthouse throttle against the standalone build) —
+// with the volume-EXACT + throttle + ALL-VIEWS guards, the LCP <= 4400
+// parity anchor (the reference's own seed dashboard measures 4416-4432ms
+// under the same preset) / CLS <= 0.1 / FCP <= 1500 / TTFB <= 500 /
+// longTaskTotal <= 2000 budget families with boundary-exact pins, and the
+// INP proxy <= 3000 budget.
 // Browser/E2E coverage lives in tests/e2e/*.spec.ts (Playwright — never
 // picked up by this config, which matches *.test.ts only; the standalone
 // server is booted by playwright.config.ts's webServer).

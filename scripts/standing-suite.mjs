@@ -48,8 +48,14 @@
 //      render no task/note/event rows had never been rendered in dark at
 //      844×390 under any accent — the drawer vehicle at seed volume with
 //      the dark checker), then the dark-mode desktop families —
-//      the S37/S39/S40/S41 order)
-//   32. the demo-theme closing guard (light/violet via Prisma — a mid-suite
+//      the S37/S39/S40/S41 order, then the CWV × volume stress — the S51
+//      stage (the RUM-beacon cross-axis: the beacon's five field metrics
+//      under the 300/200/250 profile on the 7 volume-affected views at
+//      390×844 under the Lighthouse throttle against the :3200 standalone,
+//      right after its seed-volume cwv sibling — the S16 audit runs
+//      login+dashboard at seed; the S13 volume audit never read LCP/CLS/
+//      FCP; the S42–S49 volume sweeps observe longtask entries ONLY)
+//   33. the demo-theme closing guard (light/violet via Prisma — a mid-suite
 //      crash must not leave the demo user dark/teal, the documented
 //      poisoning class)
 //
@@ -107,6 +113,7 @@ const STAGES = [
   { name: "accent-volume-light-landscape-sweep", file: "scripts/accent-volume-light-landscape-sweep.mjs", runtime: "node", timeoutMs: 25 * 60_000 }, // S49: the light × landscape × volume stress — the S48 summary's own named next candidate (the S49 mirror, completing the volume × theme × viewport cross-axis's last band): 7 accents × the 7 volume views under the COUNT-verified 300/200/250 profile at 844×390 in LIGHT, navigated through the drawer (the only vehicle below 1024), with the S43/S45/S47 light checker (NO flashbulbs — the class exists only in dark; the THREE signature-strict light exemptions: the CTA-face + the calendar adjacent-day + the yellow priority-pill) + the light-mode hydration gate (the greeting heading — the S43/S45/S47 lesson: !html.dark is TRUE at first paint) + the drawer-own nav-scroll contract at the LANDSCAPE geometry (scrollHeight ~1068 vs the ~301px nav area at 390 height — links ~8–20 below the fold, measured) + the shell-presence guard from birth (the AP-90 lesson applied to the landscape vehicle); the S44–S48 volume halves measured ~2.9–3.0 min; the default 10-min budget would SIGKILL it (exit 124 — the S38-C/S39/S40/S41/S42/S43/S44/S45/S46/S47/S48 lesson)
   { name: "accent-dark-landscape-seed-sweep", file: "scripts/accent-dark-landscape-seed-sweep.mjs", runtime: "node", timeoutMs: 20 * 60_000 }, // S50: the dark × landscape × SEED sweep for the 13 volume-invariant views — the S46 plan's carried note + the S49 plan's own non-gap entry (the views that render no task/note/event rows had never been rendered in dark at 844×390 under any accent): 7 accents × the 13 views at SEED volume in DARK, navigated through the drawer (the only vehicle below 1024), with the S42/S44/S46/S48 dark checker (flashbulbs always findings; the CTA-face exemption ONLY) + the drawer-own nav-scroll contract at the LANDSCAPE geometry + the shell-presence guard from birth (the AP-90 lesson) + the drawer link census (linkCount === 20 — the full NAV even though only 13 are navigated); the S40 20-view light sweep measured 9–12 min with this same 20-min budget; 13 views ≈ 6–8 min expected
   { name: "cwv", file: "scripts/cwv-audit-s16.mjs", runtime: "node" },
+  { name: "cwv-volume-stress", file: "scripts/cwv-volume-stress.mjs", runtime: "node", timeoutMs: 15 * 60_000 }, // S51: the CWV × volume stress — the RUM-beacon cross-axis (the beacon's five field metrics under the COUNT-verified 300/200/250 profile on the 7 volume-affected views at 390×844 under the Lighthouse throttle, against the :3200 standalone this runner already ensures) ≈ 5–7 min measured (14 throttled mobile loads + the volume lifecycle + the INP proxy); the 15-min budget holds ~2.5× headroom for the throttle variance
   { name: "ai-error", file: "scripts/ai-error-audit.mjs", runtime: "node" },
   { name: "ai-a11y", file: "scripts/ai-a11y-audit.mjs", runtime: "node" },
   { name: "pre15-preflight", file: "scripts/pre15-preflight.mjs", runtime: "node" },
@@ -238,7 +245,7 @@ let cwvPreconditionFailed = false;
 try {
   // Stage 0 — the S31 preflight FIRST, enforced (the suite never starts on an
   // unstable boot; the remedy rides the verdict).
-  log(`[standing-suite] stage 0/32 — dev-server-preflight (the S31 boot-stability precondition)`);
+  log(`[standing-suite] stage 0/33 — dev-server-preflight (the S31 boot-stability precondition)`);
   const pre = await run("bun", [join(REPO, "scripts/dev-server-preflight.mjs")], 90_000);
   writeFileSync(join(RAW_DIR, "dev-server-preflight.json"), pre.stdout);
   const preParsed = parseAuditStdout(pre.stdout);
@@ -266,17 +273,17 @@ try {
     for (let i = 0; i < STAGES.length; i += 1) {
       const spec = STAGES[i];
       if (spec.name === "cwv" && cwvPreconditionFailed) {
-        log(`[standing-suite] stage ${i + 1}/32 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
+        log(`[standing-suite] stage ${i + 1}/33 — cwv SKIPPED (standalone precondition failed — the loud row is already recorded)`);
         continue;
       }
-      log(`[standing-suite] stage ${i + 1}/32 — ${spec.name}`);
+      log(`[standing-suite] stage ${i + 1}/33 — ${spec.name}`);
       const r = await runAuditStage(spec);
       rows.push({ name: r.name, verdict: r.verdict });
       await new Promise((res) => setTimeout(res, SETTLE_MS));
     }
 
     // The closing guard.
-    log(`[standing-suite] stage 32/32 — theme-restore (the demo-theme closing guard)`);
+    log(`[standing-suite] stage 33/33 — theme-restore (the demo-theme closing guard)`);
     rows.push(await themeGuard());
   }
 } finally {

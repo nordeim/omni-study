@@ -5201,6 +5201,269 @@ describe("classifyAudit accent-dark-landscape-seed-sweep (S50 — the dark × la
   });
 });
 
+// --- S51: the CWV × volume stress (the RUM-beacon cross-axis) -----------------------
+// The S16 CWV vehicle re-anchored to the VOLUME axis: the beacon's five
+// field metrics (TTFB/FCP/LCP/CLS + the INP interaction proxy) measured
+// under the COUNT-verified 300/200/250 profile (the S13 data-volume
+// contract) on the 7 volume-affected views (the S13/S42–S49 set — the
+// views that render task/note/event rows), at the S16 canonical stress
+// viewport (390×844 mobile + the Lighthouse throttle preset: 4x CPU +
+// Slow-4G, cache disabled), in LIGHT mode (the volume axis is the
+// discriminator; the S16 matrix's own dark deltas were <100ms — the dark
+// half is the documented non-gap), against the STANDALONE build (the S16
+// doctrine: CWV needs the production bundle — the dev server's Turbopack
+// overhead would inflate every reading). The budget families, calibrated
+// against the recorded S16 seed readings (throttled dashboard LCP 2684ms /
+// FCP 588ms / CLS 0 / TTFB 8ms / longTasks 225ms / INP proxy 397ms):
+// LCP ≤ 4000 (the cwv POOR boundary — findings = POOR only, NI is the
+// documented S16 state), CLS ≤ 0.1 (the ADR-014 load-stability contract
+// extended to volume), FCP ≤ 1500 (the shell-paint volume-invariance),
+// TTFB ≤ 500 (the server sanity bound), longTaskTotal ≤ 2000 (the S13 B3
+// quiet-window 1500ms standing budget's load-window sibling), and the INP
+// proxy ≤ 3000 (Dashboard→Tasks under the full throttle — the 300-row list
+// mount is the heaviest interaction).
+const S51_VIEWS = ["Dashboard", "My Day", "Tasks", "Calendar", "Events", "Notes", "Analytics"];
+
+type S51Rec = Record<string, unknown>;
+
+function s51ViewRec(o: S51Rec = {}): S51Rec {
+  return {
+    lcp: 2684, lcpEl: "H1text-2xl font-bold", fcp: 588, cls: 0, ttfb: 42,
+    longTaskTotal: 225, maxLongTask: 215, mainNodes: 2430, runs: 2,
+    ...o,
+  };
+}
+
+/** The full cwv-volume-stress envelope: the 7 volume-affected views × the
+ *  five field metrics (2-run medians) + the INP proxy + the COUNT-verified
+ *  volume profile, with per-view overrides merged in. */
+function s51Envelope(viewOverrides: Record<string, S51Rec> = {}): S51Rec {
+  const views: S51Rec = {};
+  for (const v of S51_VIEWS) {
+    views[v] = s51ViewRec(viewOverrides[v]);
+  }
+  return {
+    source: "cwv-volume-stress", mode: "light",
+    target: "http://localhost:3200",
+    viewport: { width: 390, height: 844 },
+    throttle: true,
+    volume: { tasks: 300, notes: 200, events: 250 },
+    views,
+    inpProxy: {
+      viewport: { width: 1280, height: 800 }, cpuRate: 4, networkThrottled: true,
+      from: "Dashboard", to: "Tasks", ms: 2100,
+    },
+    findings: [] as unknown[],
+  };
+}
+
+describe("classifyAudit cwv-volume-stress (S51 — the CWV × volume stress, the RUM-beacon cross-axis)", () => {
+  it("the GREEN shape: the 7 volume-affected views × the five field metrics at 390×844 under the Lighthouse throttle in light mode at the 300/200/250 profile against the standalone build → green with the swept counts + the budget summary", () => {
+    const v = classifyAudit("cwv-volume-stress", s51Envelope());
+    expect(v.green).toBe(true);
+    expect(v.findings).toBe(0);
+    expect(v.note).toMatch(/7 volume-affected views/);
+    expect(v.note).toMatch(/390×844/);
+    expect(v.note).toMatch(/Lighthouse throttle/);
+    expect(v.note).toMatch(/MODE light/);
+    expect(v.note).toMatch(/300\/200\/250/);
+    expect(v.note).toMatch(/standalone build/);
+    expect(v.note).toMatch(/INP proxy Dashboard→Tasks/);
+  });
+
+  it("the ALL-VIEWS guard: a views map missing ONE of the 7 volume-affected views reads shape-error — a view that silently did not run must never read green-by-omission (the S38 retirement)", () => {
+    const env = s51Envelope() as { views: Record<string, unknown> };
+    delete env.views.Analytics;
+    const v = classifyAudit("cwv-volume-stress", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the volume-EXACT guard: a 299/200/250 profile reads shape-error — the S13 data-volume contract is 300/200/250 verbatim (a different profile is a different audit, never a silent re-scope)", () => {
+    const v = classifyAudit("cwv-volume-stress", { ...s51Envelope(), volume: { tasks: 299, notes: 200, events: 250 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the volume-EXACT guard: a 300/100/250 profile (the notes axis short) reads shape-error too — every axis is pinned", () => {
+    const v = classifyAudit("cwv-volume-stress", { ...s51Envelope(), volume: { tasks: 300, notes: 100, events: 250 } });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the volume-EXACT guard: a missing volume object reads shape-error (the density evidence is part of the contract)", () => {
+    const env = s51Envelope() as Record<string, unknown>;
+    delete env.volume;
+    const v = classifyAudit("cwv-volume-stress", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the throttle guard: throttle=false reads shape-error — the Lighthouse mobile preset (4x CPU + Slow-4G, cache disabled) is the contract; an unthrottled run reads different values and is a different cell", () => {
+    const v = classifyAudit("cwv-volume-stress", { ...s51Envelope(), throttle: false });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the mode rot guard: mode=dark reads NON-green via the mode rot (the S27 rot class; the CWV × volume LIGHT surface is this audit's contract — the dark half is the documented non-gap: the S16 matrix's own dark deltas were <100ms)", () => {
+    const v = classifyAudit("cwv-volume-stress", { ...s51Envelope(), mode: "dark" });
+    expect(v.green).toBe(false);
+    expect(v.note).toMatch(/mode=dark/);
+  });
+
+  it("mode is part of the contract: an envelope without mode reads shape-error", () => {
+    const env = s51Envelope() as Record<string, unknown>;
+    delete env.mode;
+    const v = classifyAudit("cwv-volume-stress", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the viewport guard: the 1280×800 desktop and the 844×390 landscape (the transposed pair) envelopes fed here read shape-error, never a silent re-scope (the desktop CWV family is the cwv audit's own; the landscape is a different device class)", () => {
+    const desktop = classifyAudit("cwv-volume-stress", { ...s51Envelope(), viewport: { width: 1280, height: 800 } });
+    expect(isErr(desktop)).toBe(true);
+    const landscape = classifyAudit("cwv-volume-stress", { ...s51Envelope(), viewport: { width: 844, height: 390 } });
+    expect(isErr(landscape)).toBe(true);
+  });
+
+  it("the target guard: an empty target string reads shape-error (the standalone-build origin is part of the record — the S16 doctrine)", () => {
+    const v = classifyAudit("cwv-volume-stress", { ...s51Envelope(), target: "" });
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S16 cwv envelope (the verdicts-shape) reads shape-error here — the seed CWV audit's own shape; this seam owns the volume axis", () => {
+    const v = classifyAudit("cwv-volume-stress", CWV_GREEN);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S13 data-volume envelope (the flat findings/nonGaps shape) reads shape-error here, never green-by-resemblance", () => {
+    const s13Shape = {
+      source: "data-volume-audit", findings: [], nonGaps: [{ surface: "Tasks render", longTaskTotal: 400 }],
+      inserted: { tasks: 300, notes: 200, events: 250 },
+    };
+    const v = classifyAudit("cwv-volume-stress", s13Shape);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S42 volume-sweep envelope reads shape-error here — the accent×volume sweeps carry the accents map this seam does not own (the shape discriminates before any budget)", () => {
+    const v = classifyAudit("cwv-volume-stress", s42Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the historical S49 volume-light-landscape envelope reads shape-error here — the landscape viewport AND the accents map both discriminate", () => {
+    const v = classifyAudit("cwv-volume-stress", s49Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the per-view metric shape family: a string lcp reads shape-error (the anti-phantom doctrine — a mistyped metric must never read as a green zero)", () => {
+    const v = classifyAudit("cwv-volume-stress", s51Envelope({ Tasks: { lcp: "2,684" as unknown as number } }));
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the per-view metric shape family: a view record missing mainNodes reads shape-error (the density evidence is part of the record even though it carries no budget)", () => {
+    const env = s51Envelope() as { views: Record<string, Record<string, unknown>> };
+    delete env.views.Notes.mainNodes;
+    const v = classifyAudit("cwv-volume-stress", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the per-view metric shape family: a missing lcpEl reads shape-error (the LCP element attribution rides the record)", () => {
+    const env = s51Envelope() as { views: Record<string, Record<string, unknown>> };
+    delete env.views.Events.lcpEl;
+    const v = classifyAudit("cwv-volume-stress", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the LCP budget family, boundary-exact: 4400 reads green (the PARITY ANCHOR — the reference's own seed-volume mobile dashboard measures LCP 4416–4432ms under the same Lighthouse preset, the standing cwv stage's documented ref scenario: the clone's volume-stressed views must outperform the reference's own seed state; the public 4000ms field-POOR boundary is documented in the note — the Tasks view's genuine ~4000ms boundary-straddling is the recorded NI-to-POOR state) and 4401 is a counted finding", () => {
+    const at = classifyAudit("cwv-volume-stress", s51Envelope({ Tasks: { lcp: 4400 } }));
+    expect(at.green).toBe(true);
+    const over = classifyAudit("cwv-volume-stress", s51Envelope({ Tasks: { lcp: 4401 } }));
+    expect(over.green).toBe(false);
+    expect(over.findings).toBe(1);
+    expect(over.note).toMatch(/lcp=4401/);
+    expect(over.note).toMatch(/>4400/);
+  });
+
+  it("the CLS budget family, boundary-exact: 0.1 reads green (the ADR-014 load-stability contract at volume) and 0.11 is a counted finding", () => {
+    const at = classifyAudit("cwv-volume-stress", s51Envelope({ Dashboard: { cls: 0.1 } }));
+    expect(at.green).toBe(true);
+    const over = classifyAudit("cwv-volume-stress", s51Envelope({ Dashboard: { cls: 0.11 } }));
+    expect(over.green).toBe(false);
+    expect(over.findings).toBe(1);
+    expect(over.note).toMatch(/cls=0\.11/);
+  });
+
+  it("the FCP budget family, boundary-exact: 1500 reads green (the shell-paint volume-invariance — the pre-warm contract) and 1501 is a counted finding", () => {
+    const at = classifyAudit("cwv-volume-stress", s51Envelope({ Notes: { fcp: 1500 } }));
+    expect(at.green).toBe(true);
+    const over = classifyAudit("cwv-volume-stress", s51Envelope({ Notes: { fcp: 1501 } }));
+    expect(over.green).toBe(false);
+    expect(over.findings).toBe(1);
+    expect(over.note).toMatch(/fcp=1501/);
+  });
+
+  it("the TTFB budget family, boundary-exact: 500 reads green (the server sanity bound) and 501 is a counted finding", () => {
+    const at = classifyAudit("cwv-volume-stress", s51Envelope({ Calendar: { ttfb: 500 } }));
+    expect(at.green).toBe(true);
+    const over = classifyAudit("cwv-volume-stress", s51Envelope({ Calendar: { ttfb: 501 } }));
+    expect(over.green).toBe(false);
+    expect(over.findings).toBe(1);
+    expect(over.note).toMatch(/ttfb=501/);
+  });
+
+  it("the longTaskTotal budget family, boundary-exact: 2000 reads green (the S13 B3 quiet-window 1500ms standing budget's load-window sibling) and 2001 is a counted finding", () => {
+    const at = classifyAudit("cwv-volume-stress", s51Envelope({ "My Day": { longTaskTotal: 2000 } }));
+    expect(at.green).toBe(true);
+    const over = classifyAudit("cwv-volume-stress", s51Envelope({ "My Day": { longTaskTotal: 2001 } }));
+    expect(over.green).toBe(false);
+    expect(over.findings).toBe(1);
+    expect(over.note).toMatch(/longTaskTotal=2001/);
+  });
+
+  it("the multi-breach counting: TWO views breaching the SAME family read findings=2 (each breach counted independently)", () => {
+    const v = classifyAudit("cwv-volume-stress", s51Envelope({ Tasks: { lcp: 4600 }, Events: { lcp: 4500 } }));
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(2);
+    expect(v.note).toMatch(/2 budget breach/);
+  });
+
+  it("the INP proxy family, boundary-exact: 3000 reads green and 3001 is a counted finding (the volume-stressed interaction budget — Dashboard→Tasks under the full throttle)", () => {
+    const at = classifyAudit("cwv-volume-stress", { ...s51Envelope(), inpProxy: { viewport: { width: 1280, height: 800 }, cpuRate: 4, networkThrottled: true, from: "Dashboard", to: "Tasks", ms: 3000 } });
+    expect(at.green).toBe(true);
+    const over = classifyAudit("cwv-volume-stress", { ...s51Envelope(), inpProxy: { viewport: { width: 1280, height: 800 }, cpuRate: 4, networkThrottled: true, from: "Dashboard", to: "Tasks", ms: 3001 } });
+    expect(over.green).toBe(false);
+    expect(over.findings).toBe(1);
+    expect(over.note).toMatch(/3001ms/);
+    expect(over.note).toMatch(/3000ms volume interaction budget/);
+  });
+
+  it("the INP proxy shape family: a missing ms reads shape-error; from/to must be strings (the proxy's identity is part of the record)", () => {
+    const noMs = classifyAudit("cwv-volume-stress", { ...s51Envelope(), inpProxy: { viewport: { width: 1280, height: 800 }, cpuRate: 4, networkThrottled: true, from: "Dashboard", to: "Tasks" } });
+    expect(isErr(noMs)).toBe(true);
+    const noFrom = classifyAudit("cwv-volume-stress", { ...s51Envelope(), inpProxy: { viewport: { width: 1280, height: 800 }, cpuRate: 4, networkThrottled: true, to: "Tasks", ms: 2100 } });
+    expect(isErr(noFrom)).toBe(true);
+  });
+
+  it("the findings-array ride: a findings entry with zero budget breaches still reads non-green (the probe-computed findings are counted, not replaced)", () => {
+    const env = s51Envelope() as { findings: unknown[] };
+    env.findings.push({ family: "probe", view: "Tasks", detail: "a probe-computed finding" });
+    const v = classifyAudit("cwv-volume-stress", env);
+    expect(v.green).toBe(false);
+    expect(v.findings).toBe(1);
+  });
+
+  it("the mainNodes strictness negative: a low mainNodes value reads GREEN — the density evidence is informational, never a budget (the Analytics view measures ~224 nodes at volume: its density lives in the SVG chart data, not the DOM)", () => {
+    const v = classifyAudit("cwv-volume-stress", s51Envelope({ Analytics: { mainNodes: 224 } }));
+    expect(v.green).toBe(true);
+  });
+
+  it("the runs doctrine: each view record carries its run count (the 2-run median — the S16 dampening doctrine; the shape guard pins the key)", () => {
+    const env = s51Envelope() as { views: Record<string, Record<string, unknown>> };
+    delete env.views.Dashboard.runs;
+    const v = classifyAudit("cwv-volume-stress", env);
+    expect(isErr(v)).toBe(true);
+  });
+
+  it("the unknown-audit guard still holds: a misspelled name is a shape-error even with a perfect envelope", () => {
+    const v = classifyAudit("cwv-volume-stres", s51Envelope());
+    expect(isErr(v)).toBe(true);
+  });
+});
+
 // --- suiteVerdict (the aggregate) -------------------------------------------
 
 describe("suiteVerdict", () => {
