@@ -1430,3 +1430,15 @@ Stage Summary:
 - Key decisions: the state sharing into the mobile drawer (the reference's own behavior — visual parity governs, with the title/aria-label superset for the a11y gap the reference itself has); the persistence key kept as sf-sidebar-collapsed (functionally equivalent observable behavior — no cross-app migration path); the <2px panel-width tolerance (the S14 precedent).
 - The session's audit record: the reference's FIRST change since S19 found because the arrival audit measured the sidebar at BOTH states; the mobile navigation verified working on both apps; no Tailwind v4 bug; zero app-code findings in the review; the .env/.env.example/vitest/playwright contracts verified.
 - Remaining open: the first real docker compose --profile init up on the owner's Docker host; the upstream dep patches (braces > 3.0.3, Prisma's deepmerge-ts pin); the reference has now moved once — the arrival re-sweep (both sidebar states) stays in the protocol.
+
+---
+Task ID: S52-followup
+Agent: Super Z (the S52 session, follow-up)
+Task: The session-log follow-up — session_136 (the S52 process log) + this worklog note, committed and pushed after the feat commit.
+
+Work Log:
+- session_136.md written (the process log: the fresh-clone rebuild, the 1125-green baseline, the reference-change discovery + the full measurement record, the probe's stray-click lesson, the TDD arc, the VLM-hypotheses refutation, the push).
+- The feat commit 193132f pushed and verified (remote main == local HEAD; both keys shredded).
+
+Stage Summary:
+- The S52 session fully recorded: session_134 (narrative) + session_135 (summary) in the feat commit; session_136 (process log) + this note in the follow-up.
