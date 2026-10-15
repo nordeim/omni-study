@@ -173,12 +173,19 @@ test.describe("S52-F · the mobile drawer shares the collapsed state", () => {
     await page.getByRole("button", { name: "Open navigation menu" }).click();
     const drawer = page.locator('[role="dialog"]');
     await expect(drawer).toBeVisible();
-    const panelW = await drawer
-      .locator(":scope > div")
-      .evaluate((el) => Math.round(el.getBoundingClientRect().width));
     // w-72 = 288 CSS px; fractional layout at the 390px viewport can round
-    // to 287 — the standing drawer-check's own <2px tolerance (S14).
-    expect(Math.abs(panelW - 288)).toBeLessThan(2);
+    // to 287 — the standing drawer-check's own <2px tolerance (S14). The
+    // panel carries the 0.25s sf-slide-in entry animation (scale(0.98) at
+    // the start) and getBoundingClientRect() includes transforms, so an
+    // immediate read catches ~282px mid-animation — poll the FINAL width
+    // (the S8 settled-value doctrine; the S55 flake fix).
+    await expect
+      .poll(async () =>
+        drawer
+          .locator(":scope > div")
+          .evaluate((el) => Math.abs(Math.round(el.getBoundingClientRect().width) - 288)),
+      )
+      .toBeLessThan(2);
     const probe = await drawer.evaluate((el) => {
       const links = Array.from(el.querySelectorAll("nav a"));
       const active = links.find((a) => a.getAttribute("aria-current") === "page");

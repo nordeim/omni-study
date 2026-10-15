@@ -219,7 +219,16 @@ test.describe("S8-C · Calendar rework", () => {
     // cells carry transition-all — the tint ANIMATES in over ~150ms, so we
     // gate on the final computed color (an immediate read catches a
     // mid-transition blend like rgb(184,157,250)).
-    const other = grid.locator("button").filter({ hasText: "15" }).first();
+    // Never click today itself — the selection would not move and the old
+    // day would never become the tinted TODAY cell (the hardcoded "15"
+    // failed on UTC 15ths; the day is read from the grid's own
+    // [data-today] marker so the runner's clock never matters — the S55 fix).
+    const otherDay = await grid.evaluate((g) => {
+      const today = g.querySelector("button[data-today]");
+      const n = today ? Number(today.textContent?.trim()) : Number.NaN;
+      return n === 15 ? "16" : "15";
+    });
+    const other = grid.locator("button").filter({ hasText: otherDay }).first();
     await other.click();
     await page.waitForFunction(
       () =>
