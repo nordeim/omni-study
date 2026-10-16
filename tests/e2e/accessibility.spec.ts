@@ -143,6 +143,13 @@ test.describe("S12-B · the skip-to-content link (WCAG 2.4.1)", () => {
   test("first Tab stop is the skip link; it appears on focus and lands on main", async ({ page }) => {
     await gotoMode(page, "/Dashboard", "light");
     await hydrated(page);
+    // S57 (AP-90 class): the gotoMode mode wait (html.dark) is satisfiable
+    // at first paint by the pre-hydration boot script, and --sf-primary is
+    // applied before the initial-collections pre-warm settles — both gates
+    // can pass while <Splash/> still shows, so the Tab press would land on
+    // <body>. Gate on the shell itself (the documented AP-90 guard) before
+    // the keyboard read.
+    await page.waitForFunction(() => !!document.querySelector("aside nav"));
     await page.keyboard.press("Tab");
     const first = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;

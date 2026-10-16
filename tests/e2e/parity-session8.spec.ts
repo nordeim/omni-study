@@ -41,6 +41,13 @@ test.describe("S8-A · Sidebar chrome", () => {
   test("nav icons match the reference's lucide set (6 swaps)", async ({ page }) => {
     await page.goto("/Dashboard");
     await hydrated(page);
+    // S57 (AP-90 class): --sf-primary is applied by loadFromUser BEFORE the
+    // initial-collections pre-warm settles (page.tsx flips the shell only
+    // after BOTH auth and the pre-warm resolve), so the theme gate alone is
+    // satisfiable while <Splash/> still shows — the full-run flake read 0
+    // icons. Gate the shell-DOM read on the shell itself (the documented
+    // AP-90 guard), not on the theme observable.
+    await page.waitForFunction(() => !!document.querySelector("aside nav"));
     const icons = await page.locator("nav a svg").evaluateAll((svgs) =>
       svgs.map((s) => s.getAttribute("class") ?? ""),
     );
