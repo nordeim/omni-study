@@ -1737,3 +1737,16 @@ Stage Summary:
 - Gates: lint ✓ tsc ✓ 834 unit ✓ build ✓ cold-db 299 e2e ✓ = 1133 green (unchanged — zero code changes this session); the standing suite GREEN 35/35 with zero total findings.
 - Push (this commit) includes: the session-61 remediation plan + the 35-row suite evidence envelope + 5 dev-server screenshots + 2 reference captures + session_168/169 + the README session-61 row + this worklog entry. ZERO code changes.
 - Remaining open: the owner decision on the dedicated Prisma 7 upgrade session (the deepmerge-ts advisory's stable fix path, stable at 7.10.1 for a sixth consecutive re-check); the first real docker compose --profile init up on the owner's Docker host; braces waiting on an upstream fix release that does not exist yet. The arrival re-sweep (both sidebar states) stays in the protocol.
+
+---
+Task ID: S61
+Agent: Super Z (the S61 session, follow-up)
+Task: The session-log follow-up — session_170 (the S61 process log) + the plan's commit-checkboxes ticked + this worklog note, committed and pushed after the evidence commit.
+
+Work Log:
+- session_170.md written (the process log: the fresh-clone arrival, the 1133-green baseline, the standing checks with the mobile walkthrough + both sidebar states, the reference re-sweep, the run-1 suite incident with the Mode-B investigation + the run-2 GREEN re-run, the capture-delta classification, the push).
+- The evidence commit c043e74 pushed and verified (remote main @ c043e74 == local HEAD; the wrapper's temp key shredded; the operator key stays materialized for this follow-up push only).
+
+Stage Summary:
+- The S61 session fully recorded: session_168 (narrative) + session_169 (Chinese summary) + the remediation plan in the evidence commit; session_170 (process log) + the ticked checkboxes + this note in the follow-up.
+- The session's one development (the suite run-1 ai-a11y stage crash — the transient heap-OOM infra class, resolved by the daemon restart + the clean run-2 GREEN 35/35 with zero code changes between) is recorded in the evidence envelope's suiteRuns context field, the plan's execution log, session_168/169/170, and the README session-61 row.
