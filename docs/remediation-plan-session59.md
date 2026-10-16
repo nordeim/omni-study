@@ -132,7 +132,8 @@ probe is the authority).
 - [x] Docs: this plan's execution log, session_160 (narrative) +
       session_161 (Chinese summary), the README session-59 row, the
       worklog entry
-- [ ] Commit + push to `main` (the SSH wrapper, key verified + shredded)
+- [x] Commit + push to `main` (the SSH wrapper, key verified + shredded) —
+      `60d3ab3`, remote verified == local HEAD
 
 ## Why the diff is zero (the judgment call)
 
