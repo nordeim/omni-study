@@ -75,37 +75,37 @@ arrival audit read GREEN:
 
 ## The ToDo list
 
-- [ ] The arrival: the fresh-clone rebuild (the S52/S53/S55/S57/S58/S59
+- [x] The arrival: the fresh-clone rebuild (the S52/S53/S55/S57/S58/S59
       recipe) at `83a0b05`, the five core docs + the S59 baseline docs
       re-read, the understanding validated against the codebase (HEAD
       doc-only, the count anchors 1133/834/299)
-- [ ] The baseline gates: lint ✓ tsc ✓ 834 unit ✓ (20 files, 3.70 s)
+- [x] The baseline gates: lint ✓ tsc ✓ 834 unit ✓ (20 files, 3.70 s)
       build ✓ cold-db **299 e2e ✓** (4.7 min) = **1133 green**
-- [ ] The dev daemon (the S32 recipe, health 200) + the preflight GREEN
+- [x] The dev daemon (the S32 recipe, health 200) + the preflight GREEN
       + the drawer-check GREEN
-- [ ] The live agent-browser 390×844 walkthrough GREEN (the mobile
+- [x] The live agent-browser 390×844 walkthrough GREEN (the mobile
       navigation working; traps 4/7/9 verified live clean; both desktop
       sidebar states + the shared drawer state measured to the pin; the
       preference restored with the reload round-trip verified)
-- [ ] The reference re-sweep with the operator account — BOTH sidebar
+- [x] The reference re-sweep with the operator account — BOTH sidebar
       states + the shared drawer — **UNCHANGED**; the preference restored
-- [ ] The Mode-C review (both post-S59 commits verified doc-only; the
+- [x] The Mode-C review (both post-S59 commits verified doc-only; the
       static scan clean) + the dep-audit GREEN + the registry re-check
       (braces unchanged; the Prisma 7.10.1 fix path re-confirmed; no newer
       7.x; the `latest` dist-tag still on the Prisma 8 RC)
-- [ ] The scandihaven patterns reference re-verified (unchanged,
+- [x] The scandihaven patterns reference re-verified (unchanged,
       `d4789c3`)
-- [ ] This plan written and validated against the codebase
-- [ ] The confirmation: `bun scripts/standing-suite.mjs` — all 35 rows
+- [x] This plan written and validated against the codebase
+- [x] The confirmation: `bun scripts/standing-suite.mjs` — all 35 rows
       (launched detached on the daemon per the S32 recipe)
-- [ ] The evidence: the 35-row envelope
+- [x] The evidence: the 35-row envelope
       (`docs/screenshots/s60-standing-suite-evidence.json` with the
       session context header) + the 5 dev-server screenshots + the 2
       reference captures
-- [ ] Docs: this plan's execution log, session_164 (narrative) +
+- [x] Docs: this plan's execution log, session_164 (narrative) +
       session_165 (Chinese summary), the README session-60 row, the
       worklog entry
-- [ ] Commit + push to `main` (the SSH wrapper, key verified + shredded)
+- [x] Commit + push to `main` (the SSH wrapper, key verified + shredded)
 
 ## Why the diff is zero (the judgment call)
 

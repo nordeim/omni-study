@@ -1701,3 +1701,15 @@ Stage Summary:
 - The one recorded evidence note: the greeting-bucket crossing (morning ↔ evening) widens the capture-delta class on the greeting row + the live clock — classified by the mid-content zero-diff proof, documented in the plan + session_164/165 + the README row.
 - Push (this commit) includes: the session-60 remediation plan + the 35-row suite evidence envelope + 5 dev-server screenshots + 2 reference captures + session_164/165 + the README session-60 row + this worklog entry. ZERO code changes.
 - Remaining open: the owner decision on the dedicated Prisma 7 upgrade session (the deepmerge-ts advisory's stable fix path, stable at 7.10.1 for a fifth consecutive re-check); the first real docker compose --profile init up on the owner's Docker host; braces waiting on an upstream fix release that does not exist yet. The arrival re-sweep (both sidebar states) stays in the protocol.
+
+---
+Task ID: S60
+Agent: Super Z (the S60 session, follow-up)
+Task: The session-log follow-up — session_166 (the S60 process log) + the plan's commit-checkboxes ticked + this worklog note, committed and pushed after the evidence commit.
+
+Work Log:
+- session_166.md written (the process log: the fresh-clone arrival, the 1133-green baseline, the standing checks with the mobile walkthrough + both sidebar states, the reference re-sweep, the capture-delta investigation with the greeting-bucket classification, the registry re-check, the standing suite 35/35, the captures, the push).
+- The evidence commit ebb9780 pushed and verified (remote main @ ebb9780 == local HEAD; the wrapper's temp key shredded; the operator key stays materialized for this follow-up push only).
+
+Stage Summary:
+- The S60 session fully recorded: session_164 (narrative) + session_165 (Chinese summary) + the remediation plan in the evidence commit; session_166 (process log) + the ticked checkboxes + this note in the follow-up.
