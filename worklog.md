@@ -1627,3 +1627,15 @@ Stage Summary:
 - The one recorded lesson: the hidden-element zero-rect locator trap (geometry-based probes must filter on visibility — offsetParent !== null), documented in the plan + session_156/157 + the README row.
 - Push (this commit) includes: the session-58 remediation plan + the 35-row suite evidence envelope + 5 dev-server screenshots + 2 reference captures + session_156/157 + the README session-58 row + this worklog entry. ZERO code changes.
 - Remaining open: the owner decision on the dedicated Prisma 7 upgrade session (the deepmerge-ts advisory's stable fix path, stable at 7.10.1 for a third consecutive re-check); the first real docker compose --profile init up on the owner's Docker host; braces waiting on an upstream fix release that does not exist yet. The arrival re-sweep (both sidebar states) stays in the protocol.
+
+---
+Task ID: S58
+Agent: Super Z (the S58 session, follow-up)
+Task: The session-log follow-up — session_158 (the S58 process log) + the plan's commit-checkbox ticked + this worklog note, committed and pushed after the evidence commit.
+
+Work Log:
+- session_158.md written (the process log: the fresh-clone arrival, the 1133-green baseline with the S57 fix's first fresh-clone confirmation, the standing checks, the reference re-sweep with the probe lesson, the registry re-check, the standing suite 35/35, the captures, the push).
+- The evidence commit 38ffcaf pushed and verified (remote main @ 38ffcaf == local HEAD; the key shredded; the daemon stopped by PID).
+
+Stage Summary:
+- The S58 session fully recorded: session_156 (narrative) + session_157 (Chinese summary) + the remediation plan in the evidence commit; session_158 (process log) + the ticked checkbox + this note in the follow-up.

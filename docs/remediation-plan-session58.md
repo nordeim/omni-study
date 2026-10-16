@@ -121,7 +121,8 @@ shared icon-only state. The correct probe filters on visibility
       capture set mirrored) + the 2 reference captures
 - [x] Docs: this plan's execution log, session_156 (narrative) +
       session_157 (summary), the README session-58 row, the worklog entry
-- [ ] Commit + push to `main` (the SSH wrapper, key verified + shredded)
+- [x] Commit + push to `main` (the SSH wrapper, key verified + shredded) —
+      `38ffcaf`, remote verified == local HEAD
 
 ## Why the diff is zero (the judgment call)
 
