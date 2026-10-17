@@ -153,9 +153,10 @@ arrival audit read GREEN:
       structural movement)
 - [x] The docs: session_197 (narrative) + session_198 (Chinese summary) +
       the README session-68 row + the worklog entry
-- [ ] The evidence commit + the push via the SSH wrapper (main only) —
-      pushed and verified (remote main == local HEAD; the wrapper's temp
-      key shredded; the operator key shredded at session close)
+- [x] The evidence commit + the push via the SSH wrapper (main only) —
+      pushed and verified (remote main @ `83ffd6c` == local HEAD; the
+      wrapper's temp key shredded; the operator key shredded at session
+      close)
 
 ## The execution log
 
