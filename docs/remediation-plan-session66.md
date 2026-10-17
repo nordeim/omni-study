@@ -217,8 +217,11 @@ arrival audit read GREEN:
       below)
 - [x] The docs: session_189 (narrative) + session_190 (Chinese summary) +
       the README session-66 row + the worklog entries
-- [ ] The evidence commit + the push via the SSH wrapper + the follow-up
-      (session_191, the process log)
+- [x] The evidence commit + the push via the SSH wrapper + the follow-up
+      (session_191, the process log) — the evidence commit `ccec0fc`
+      pushed and verified (remote main @ `ccec0fc` == local HEAD); this
+      follow-up commit carries session_191 + the ticked checkbox + the
+      worklog note
 
 ## The execution log
 

@@ -1915,3 +1915,16 @@ Stage Summary:
 - The arrival's own story — the connection drop, the workspace reset, and the fresh-clone rebuild restoring every gate byte-for-byte — is the session's headline evidence of reproducibility.
 - Push (this commit) includes: the session-66 remediation plan + the 35-row suite evidence envelope (4-run context) + the cwv variance-study evidence + 5 dev-server screenshots + 2 reference captures + session_189/190 + the README session-66 row + this worklog entry. ZERO code changes.
 - Remaining open: the owner decision on the dedicated Prisma 7 upgrade session (stable at 7.10.1 for an eleventh consecutive re-check); the first real docker compose --profile init up on the owner's Docker host; braces waiting on an upstream fix release that does not exist. The arrival re-sweep (both sidebar states) stays in the protocol — S67 owes it.
+
+---
+Task ID: S66
+Agent: Super Z (the S66 session, follow-up)
+Task: The session-log follow-up — session_191 (the S66 process log) + the ticked plan checkbox + this worklog note, committed and pushed after the evidence commit.
+
+Work Log:
+- session_191.md written (the process log: the fresh-clone rebuild arrival after the workspace reset, the 1133-green baseline on the cold rebuild, the standing checks with the mobile walkthrough + both sidebar states, the reference re-sweep with the geometry probe first-probe correct, the four-run standing-suite confirmation with the two newly-classified environmental artifact families (the cold-workspace CWV load artifact + the shared-limiter-window consumption, both with standalone-verified evidence), the capture-delta classification with the greeting-bucket crossing, the push).
+- The evidence commit ccec0fc pushed and verified (remote main @ ccec0fc == local HEAD; the wrapper's temp key shredded; the operator key stays materialized for this follow-up push only, then shredded).
+
+Stage Summary:
+- The S66 session fully recorded: session_189 (narrative) + session_190 (Chinese summary) + the remediation plan in the evidence commit; session_191 (process log) + this note in the follow-up.
+- Two new environmental lessons recorded (without code changes): (a) the first-ever standing-suite run on a freshly-rebuilt cold workspace can inflate the cwv-volume-stress Tasks readings beyond the budgets (+660ms LCP observed) — the variance study is the authority, the budgets hold on the stable readings; (b) the shared 20/15-min AI-limiter budget makes the suite the window's ONLY consumer — any manual audit run before/during (including a remedy verification) pre-spends it; after a daemon restart, launch the suite directly and verify the security stage from the raw stage output (a file read), never by re-running the audit.
