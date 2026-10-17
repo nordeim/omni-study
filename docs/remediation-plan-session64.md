@@ -128,7 +128,10 @@ pull before pushing, never force.
 - [x] Docs: this plan's execution log, session_181 (narrative) +
       session_182 (Chinese summary), the README session-64 row, the
       worklog entry
-- [ ] Commit + push to `main` (the SSH wrapper, key verified + shredded)
+- [x] Commit + push to `main` (the SSH wrapper, key verified + shredded) —
+      the evidence commit `916370c` (13 files, +800, zero code) pushed and
+      remote-verified; this follow-up commit carries session_183 + this
+      ticked checkbox + the worklog note
 
 ## Why the diff is zero (the judgment call)
 
