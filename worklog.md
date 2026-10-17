@@ -1876,3 +1876,16 @@ Stage Summary:
 - Gates: lint ✓ tsc ✓ 834 unit ✓ build ✓ cold-db 299 e2e ✓ = 1133 green (unchanged — zero code changes this session); the standing suite GREEN 35/35 with zero total findings and ZERO incidents on run 1 (zero incidents for the fourth consecutive session).
 - Push (this commit) includes: the session-65 remediation plan + the 35-row suite evidence envelope + 5 dev-server screenshots + 2 reference captures + session_185/186 + the README session-65 row + this worklog entry. ZERO code changes.
 - Remaining open: the owner decision on the dedicated Prisma 7 upgrade session (the deepmerge-ts advisory's stable fix path, stable at 7.10.1 for a tenth consecutive re-check); the first real docker compose --profile init up on the owner's Docker host; braces waiting on an upstream fix release that does not exist yet. The arrival re-sweep (both sidebar states) stays in the protocol — S66 owes it.
+
+---
+Task ID: S65
+Agent: Super Z (the S65 session, follow-up)
+Task: The session-log follow-up — session_187 (the S65 process log) + the ticked plan checkbox + this worklog note, committed and pushed after the evidence commit.
+
+Work Log:
+- session_187.md written (the process log: the survived-workspace arrival + the environment reset to the seed pin, the 1133-green baseline, the standing checks with the mobile walkthrough + both sidebar states, the reference re-sweep with the geometry probe first-probe correct, the registry re-check, the standing suite GREEN 35/35 on run 1 with zero incidents, the capture-delta classification with the two DOM-probe-resolved first-take nuances, the push).
+- The evidence commit be03e43 pushed and verified (remote main @ be03e43 == local HEAD; the wrapper's temp key shredded; the operator key stays materialized for this follow-up push only, then shredded).
+
+Stage Summary:
+- The S65 session fully recorded: session_185 (narrative) + session_186 (Chinese summary) + the remediation plan in the evidence commit; session_187 (process log) + this note in the follow-up.
+- No new doctrines this session — the standing doctrines (the geometry probe, the capture-delta classification discipline, the browser-close-before-suite, the dry-run freshness probe) all held on first application; the session's two first-take capture nuances (the dev-tools badge expanded-notification state; the transient settle/rasterization frame) are recorded in session_185/186/187 and the plan without generalizing to doctrines (the S63 precedent).

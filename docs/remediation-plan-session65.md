@@ -126,8 +126,11 @@ on the first pull AND the first dry-run (no mid-gap owner commit this time).
       — both re-taken clean)
 - [x] The docs: session_185 (narrative) + session_186 (Chinese summary) +
       the README session-65 row + the worklog entries
-- [ ] The evidence commit + the push via the SSH wrapper + the follow-up
-      (session_187, the process log)
+- [x] The evidence commit + the push via the SSH wrapper + the follow-up
+      (session_187, the process log) — the evidence commit `be03e43`
+      pushed and verified (remote main @ `be03e43` == local HEAD); this
+      follow-up commit carries session_187 + the ticked checkbox + the
+      worklog note
 
 ## The execution log
 
