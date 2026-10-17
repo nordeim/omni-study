@@ -1,0 +1,55 @@
+{
+ "context": {
+  "session": "S66",
+  "date": "2026-10-17",
+  "kind": "the cwv-volume-stress variance study \u2014 the suite run-1 breach classified (the S51 protocol, 3 points)",
+  "trigger": "the standing-suite run 1 read 34/35: the cwv-volume-stress stage flagged Tasks:lcp=4836>4400 + Tasks:longTaskTotal=2016>2000",
+  "codeChanges": "zero since the S52 four-file fix (verified by git show --stat on every commit since)"
+ },
+ "runs": [
+  {
+   "run": 1,
+   "context": "the standing suite, ~70 min into its sustained browser workload, on the freshly-rebuilt cold workspace (the first-ever suite run on the fresh clone)",
+   "tasks": {
+    "lcp": 4836,
+    "longTaskTotal": 2016,
+    "maxLongTask": 1309,
+    "mainNodes": 7894,
+    "findings": 2
+   },
+   "verdict": "2 budget breaches (LCP 4836>4400, longTaskTotal 2016>2000)"
+  },
+  {
+   "run": 2,
+   "context": "standalone re-run on the quiet system (the dev daemon only), the same standalone :3200 recipe",
+   "tasks": {
+    "lcp": 4176,
+    "longTaskTotal": 1301,
+    "maxLongTask": 805,
+    "mainNodes": 7894,
+    "findings": 0
+   },
+   "verdict": "0 findings, exit 0"
+  },
+  {
+   "run": 3,
+   "context": "standalone re-run again, identical conditions",
+   "tasks": {
+    "lcp": 4164,
+    "longTaskTotal": 1236,
+    "maxLongTask": 778,
+    "mainNodes": 7894,
+    "findings": 0
+   },
+   "verdict": "0 findings, exit 0"
+  }
+ ],
+ "analysis": {
+  "clusterSpreadStandalone": "runs 2-3 within 12 ms (LCP 4176/4164) / 65 ms (longTaskTotal 1301/1236)",
+  "run1DeltaAboveCluster": "+660 ms LCP / +750 ms longTaskTotal",
+  "mainNodes": "7894 on ALL THREE runs \u2014 the identical rendering workload (the density signature)",
+  "classification": "a system-load measurement artifact of the first suite run on the freshly-rebuilt cold workspace (the S51 noise mechanism, widened by the cold-cache first-run condition) \u2014 NOT a code regression (impossible: zero code changes since S52) and NOT a budget defect (the 4400 parity anchor holds with 224-236 ms headroom on the stable readings; the reference's own seed dashboard measures 4416-4432 ms under the same preset)",
+  "budgetsTouched": false,
+  "response": "the corrected validation run 2 of the full suite launched per the S51 precedent (PID 12379, 09:04 UTC, on the now-warm workspace)"
+ }
+}

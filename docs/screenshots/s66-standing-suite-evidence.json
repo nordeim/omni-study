@@ -1,0 +1,253 @@
+{
+ "context": {
+  "session": "S66",
+  "date": "2026-10-17",
+  "kind": "the S65+1 stability confirmation \u2014 the standing arrival audit (the fresh-clone rebuild arrival)",
+  "head": "31ac662",
+  "baselineGates": "lint + tsc + 834 unit (20 files, 3.61s) + build + cold-db e2e 299/299 (4.7 min) = 1133 green (on the fresh clone)",
+  "suiteRuns": [
+   {
+    "run": 1,
+    "launched": "2026-10-17T07:56Z (detached, PID 7641, the S32 recipe)",
+    "verdict": "34/35 \u2014 the cwv-volume-stress stage: 2 Tasks budget breaches (LCP 4836>4400, longTaskTotal 2016>2000)",
+    "classification": "the cold-workspace system-load artifact \u2014 variance-study-decisive (2 standalone re-runs: LCP 4176/4164, longTaskTotal 1301/1236, 0 findings both; identical mainNodes 7894; see s66-cwv-variance-study.json)"
+   },
+   {
+    "run": 2,
+    "launched": "2026-10-17T09:04Z (detached, PID 12379)",
+    "verdict": "34/35 \u2014 the security stage: the pre-spent AI-limiter budget differential (cutoffAt=16)",
+    "classification": "the cross-run limiter poisoning (run 1's own C-probe had spent the shared 20/15-min budget; the S13/S14 in-run lessons' cross-run sibling) \u2014 the cwv-volume-stress stage GREEN in-suite this run (Tasks LCP 4060), confirming run 1's classification; the remedy (daemon restart) verified standalone GREEN"
+   },
+   {
+    "run": 3,
+    "launched": "2026-10-17T10:14Z (detached, PID 16149)",
+    "verdict": "34/35 \u2014 the security differential again",
+    "classification": "the remedy VERIFICATION itself poisoned the window \u2014 the standalone security audit at 10:13:56 (GREEN on the fresh limiter) spent its 22 C-probe requests against the shared budget, overlapping run 3's security stage ~60-90s later; the src/lib/suite-verdict.ts encoded protocol states: the suite must be the window's ONLY consumer (no manual audit runs before/during); the cwv-volume-stress stage GREEN again (LCP 4064)"
+   },
+   {
+    "run": 4,
+    "launched": "2026-10-17T11:25Z (detached, PID 20006, the full daemon tree restarted 11:24:18, NO manual audit runs before/during \u2014 the suite as the window's only consumer)",
+    "verdict": "35/35 green",
+    "wall": "~68 min",
+    "securityStage": "ZERO findings in-suite (verified from the raw stage output by file read)"
+   }
+  ],
+  "codeChanges": "zero by design (the S53-S65 precedent) \u2014 zero code, zero budget, zero config changes across all four runs; the two failure classes both classified as measurement-environment artifacts (the cold-workspace load artifact + the shared-limiter-window consumption), each with standalone-verified evidence and the remedies documented in the remediation plan"
+ },
+ "summary": "35/35 green",
+ "green": true,
+ "failed": [],
+ "aborted": false,
+ "rows": [
+  {
+   "name": "dev-server-preflight",
+   "green": true,
+   "findings": 0,
+   "note": "hydrated and navigation-stable"
+  },
+  {
+   "name": "security",
+   "green": true,
+   "findings": 0,
+   "note": "7 nonGaps"
+  },
+  {
+   "name": "settings-roundtrip",
+   "green": true,
+   "findings": 0,
+   "note": "5 nonGaps"
+  },
+  {
+   "name": "connectivity",
+   "green": true,
+   "findings": 0,
+   "note": "7 nonGaps"
+  },
+  {
+   "name": "upload-edge",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "data-volume",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "forced-colors",
+   "green": true,
+   "findings": 0,
+   "note": "4 views probed; 1 sr-only controls exempt (visually hidden by design); reference rides the envelope"
+  },
+  {
+   "name": "print",
+   "green": true,
+   "findings": 0,
+   "note": "40 view-counts checked; overflow probe data preserved (20 entries)"
+  },
+  {
+   "name": "focus-order",
+   "green": true,
+   "findings": 0,
+   "note": "dialogs=1; 2 dev-portal artifacts excluded (NEXTJS-PORTAL \u2014 dev-mode only); drawer/skipLink ride the envelope (n/a/n/a)"
+  },
+  {
+   "name": "mobile-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 390\u00d7844 (light); drawer carried 20 links"
+  },
+  {
+   "name": "midband-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 768\u00d71024 (light, the md breakpoint); drawer carried 20 links; chrome contract holds (sidebar hidden, hamburger visible)"
+  },
+  {
+   "name": "landscape-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 844\u00d7390 (light, the iPhone-class landscape); drawer carried 20 links; vehicle + nav-scroll contracts hold (sidebar hidden, hamburger visible, nav scrollable)"
+  },
+  {
+   "name": "dark-mobile-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views swept through the drawer at 390\u00d7844 in MODE dark; drawer carried 20 links; vehicle contract holds (sidebar hidden, hamburger visible); 0 dark detections"
+  },
+  {
+   "name": "accent-light-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 140 view renderings + 7 drawer records at 390\u00d7844 in MODE light; every accent self-verified applied; 108 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 \u2014 the S6-G reference-measured pin, re-verified live); 21 yellow-pill exempt (yellow-500 \u2014 the S6/S8 reference-measured pin); 449 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-midband-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 140 view renderings + 140 active-tint readings + 7 drawer records at 768\u00d71024 in MODE light, navigated through the drawer; every accent self-verified applied; 108 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 \u2014 the S6-G reference-measured pin); 21 yellow-pill exempt (yellow-500 \u2014 the S6/S8 reference-measured pin); 588 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-landscape-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 140 view renderings + 140 active-tint readings + 7 drawer records at 844\u00d7390 in MODE light, navigated through the drawer (the iPhone-class landscape); every accent self-verified applied; the short-viewport contracts hold (nav scrollable, heading clearance); 108 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 \u2014 the S6-G reference-measured pin); 21 yellow-pill exempt (yellow-500 \u2014 the S6/S8 reference-measured pin); 588 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-desktop-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 140 view renderings + 140 active-tint readings + 7 sidebar records at 1280\u00d7800 in MODE light, navigated through the sidebar (the desktop vehicle); every accent self-verified applied; the sidebar-own contracts hold (nav scrollable, heading offset); 94 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 \u2014 the S6-G reference-measured pin); 21 yellow-pill exempt (yellow-500 \u2014 the S6/S8 reference-measured pin); 596 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "dark-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "20 views probed in MODE dark"
+  },
+  {
+   "name": "accent-dark-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "280 view renderings probed (7 accents \u00d7 20 views \u00d7 desktop+mobile) + 7 drawer records; 6 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 138 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 49 view renderings + 49 active-tint readings + 7 sidebar records at 1280\u00d7800 in MODE dark under the 300/200/250 volume profile, navigated through the sidebar (the desktop vehicle); every accent self-verified applied; the volume budgets hold (long tasks \u2264 1500ms, clicks \u2264 1500ms, the /api/tasks payload 112960 bytes \u2264 500000); 2 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 32 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-light-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 49 view renderings + 49 active-tint readings + 7 sidebar records at 1280\u00d7800 in MODE light under the 300/200/250 volume profile, navigated through the sidebar (the desktop vehicle); every accent self-verified applied; the volume budgets hold (long tasks \u2264 1500ms, clicks \u2264 1500ms, the /api/tasks payload 112960 bytes \u2264 500000); 16 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 28 calendar adjacent-day exempt (slate-300 \u2014 the S6-G reference-measured pin); 14 yellow-pill exempt (yellow-500 \u2014 the S6/S8 reference-measured pin); 3404 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-dark-mobile-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 49 view renderings + 49 active-tint readings + 7 drawer records at 390\u00d7844 in MODE dark under the 300/200/250 volume profile, navigated through the drawer (the mobile vehicle); every accent self-verified applied; the volume budgets hold (long tasks \u2264 1500ms, clicks \u2264 1500ms, the /api/tasks payload 112960 bytes \u2264 500000); 2 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 32 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-light-mobile-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 49 view renderings + 49 active-tint readings + 7 drawer records at 390\u00d7844 in MODE light under the 300/200/250 volume profile, navigated through the drawer (the mobile vehicle); every accent self-verified applied; the volume budgets hold (long tasks \u2264 1500ms, clicks \u2264 1500ms, the /api/tasks payload 112960 bytes \u2264 500000); 23 CTA-face + 28 calendar-day + 14 yellow-pill exempt (the THREE signature-strict light exemptions \u2014 the reference's own design in light); 3270 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-dark-midband-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 49 view renderings + 49 active-tint readings + 7 drawer records at 768\u00d71024 in MODE dark under the 300/200/250 volume profile, navigated through the drawer (the mid-band vehicle); every accent self-verified applied; the volume budgets hold (long tasks \u2264 1500ms, clicks \u2264 1500ms, the /api/tasks payload 112960 bytes \u2264 500000); 2 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 32 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-light-midband-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 49 view renderings + 49 active-tint readings + 7 drawer records at 768\u00d71024 in MODE light under the 300/200/250 volume profile, navigated through the drawer (the mid-band vehicle); every accent self-verified applied; the volume budgets hold (long tasks \u2264 1500ms, clicks \u2264 1500ms, the /api/tasks payload 112960 bytes \u2264 500000); 23 CTA-face + 28 calendar-day + 14 yellow-pill exempt (the THREE signature-strict light exemptions \u2014 the reference's own design in light); 3284 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-dark-landscape-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 49 view renderings + 49 active-tint readings + 7 drawer records at 844\u00d7390 in MODE dark under the 300/200/250 volume profile, navigated through the drawer (the landscape vehicle); every accent self-verified applied; the volume budgets hold (long tasks \u2264 1500ms, clicks \u2264 1500ms, the /api/tasks payload 112960 bytes \u2264 500000); 2 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 32 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-volume-light-landscape-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 49 view renderings + 49 active-tint readings + 7 drawer records at 844\u00d7390 in MODE light under the 300/200/250 volume profile, navigated through the drawer (the landscape vehicle); every accent self-verified applied; the volume budgets hold (long tasks \u2264 1500ms, clicks \u2264 1500ms, the /api/tasks payload 112960 bytes \u2264 500000); 23 CTA-face + 28 calendar-day + 14 yellow-pill exempt (the THREE signature-strict light exemptions \u2014 the reference's own design in light); 3284 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "accent-dark-landscape-seed-sweep",
+   "green": true,
+   "findings": 0,
+   "note": "7 accents swept \u00d7 91 view renderings + 91 active-tint readings + 7 drawer records at 844\u00d7390 in MODE dark at SEED volume, navigated through the drawer (the landscape vehicle \u2014 the 13 volume-invariant views); every accent self-verified applied; the short-viewport contracts hold (nav scrollable, heading clearance); the drawer census 20/20; 1 CTA-face exempt (white on accent-500 \u2014 the S11 family-2 non-gap); 58 WARN (lowcontrast \u2014 the S11 non-gap family)"
+  },
+  {
+   "name": "cwv",
+   "green": true,
+   "findings": 0,
+   "note": "ref POOR informational; 1 ref POOR (the reference's own documented state \u2014 informational, not a clone finding)"
+  },
+  {
+   "name": "cwv-volume-stress",
+   "green": true,
+   "findings": 0,
+   "note": "7 volume-affected views \u00d7 2-run medians measured at 390\u00d7844 under the Lighthouse throttle (4x CPU + Slow-4G) in MODE light at the 300/200/250 volume profile against the standalone build; the budget families hold (LCP \u2264 4400 [the parity anchor \u2014 the reference's own seed dashboard measures 4416\u20134432ms under the same preset; the public 4000ms field-POOR boundary documented: the Tasks view's genuine ~4000ms boundary-straddling reading is the recorded NI-to-POOR state] \u00b7 CLS \u2264 0.1 \u00b7 FCP \u2264 1500 \u00b7 TTFB \u2264 500 \u00b7 longTasks \u2264 2000); the INP proxy Dashboard\u2192Tasks 1752ms under the full throttle (\u2264 3000)"
+  },
+  {
+   "name": "ai-error",
+   "green": true,
+   "findings": 0,
+   "note": "10 nonGaps"
+  },
+  {
+   "name": "ai-a11y",
+   "green": true,
+   "findings": 0,
+   "note": "4 nonGaps"
+  },
+  {
+   "name": "pre15-preflight",
+   "green": true,
+   "findings": 0,
+   "note": "GREEN \u2014 deps pinned by design (majors), client bundle lean, no action"
+  },
+  {
+   "name": "dep-audit",
+   "green": true,
+   "findings": 0,
+   "note": "GREEN \u2014 2 advisory(ies) documented as non-production (dev/CLI surface), 0 runtime-reachable"
+  },
+  {
+   "name": "theme-restore",
+   "green": true,
+   "findings": 0,
+   "note": "demo theme = light/violet (expected light/violet \u2014 a mid-suite crash must not leave the demo user mutated)"
+  }
+ ]
+}
