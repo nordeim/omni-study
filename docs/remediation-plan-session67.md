@@ -149,7 +149,9 @@ arrival audit read GREEN:
       movement; the collapsed capture byte-identical)
 - [x] The docs: session_193 (narrative) + session_194 (Chinese summary) +
       the README session-67 row + the worklog entry
-- [ ] The evidence commit + the push via the SSH wrapper (main only)
+- [x] The evidence commit + the push via the SSH wrapper (main only) —
+      `9223a20` pushed and verified (remote main @ `9223a20` == local
+      HEAD; the wrapper's temp key shredded)
 
 ## The execution log
 

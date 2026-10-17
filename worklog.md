@@ -1953,3 +1953,16 @@ Stage Summary:
 - The arrival story: the second consecutive reset boundary handled as a routine (the rebuild recipe twice-field-tested; the daemon recipe now first-try).
 - Push (this commit) includes: the session-67 remediation plan + the 35-row suite evidence envelope + 5 dev-server screenshots + 2 reference captures + session_193/194 + the README session-67 row + this worklog entry. ZERO code changes.
 - Remaining open: the owner decision on the dedicated Prisma 7 upgrade session (stable at 7.10.1 for a twelfth consecutive re-check); the first real docker compose --profile init up on the owner's Docker host; braces waiting on an upstream fix release that does not exist. The arrival re-sweep (both sidebar states) stays in the protocol — S68 owes it.
+
+---
+Task ID: S67
+Agent: Super Z (the S67 session, follow-up)
+Task: The session-log follow-up — session_195 (the S67 process log) + the ticked plan checkbox + this worklog note, committed and pushed after the evidence commit.
+
+Work Log:
+- session_195.md written (the process log: the second consecutive reset-boundary arrival handled as a routine, the 1133-green baseline on the third consecutive fresh-clone rebuild, the standing checks with the mobile walkthrough + both sidebar states, the reference re-sweep with the geometry probe first-probe correct, the standing suite GREEN 35/35 ON RUN 1 with the S66 suite-as-only-consumer protocol applied from the start, the capture-delta classification with the byte-identical collapsed capture, the push).
+- The evidence commit 9223a20 pushed and verified (remote main @ 9223a20 == local HEAD; the wrapper's temp key shredded; the operator key stays materialized for this follow-up push only, then shredded).
+
+Stage Summary:
+- The S67 session fully recorded: session_193 (narrative) + session_194 (Chinese summary) + the remediation plan in the evidence commit; session_195 (process log) + this note in the follow-up.
+- No new doctrines this session — the standing doctrines all held, and the S66 suite-as-only-consumer launch recipe is now validated as the standing form (the first clean-envelope run 1 since S65). The two field lessons recorded without doctrine promotion: the agent-browser @ref click syntax (vs the failed -r form); the reference greeting-band delta being the bucket family by construction (S66 morning captures vs S67 afternoon).
