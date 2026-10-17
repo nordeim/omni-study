@@ -1773,3 +1773,16 @@ Stage Summary:
 - Gates: lint ✓ tsc ✓ 834 unit ✓ build ✓ cold-db 299 e2e ✓ = 1133 green (unchanged — zero code changes this session); the standing suite GREEN 35/35 with zero total findings and ZERO incidents on run 1 (the S61 heap-OOM class did not recur).
 - Push (this commit) includes: the session-62 remediation plan + the 35-row suite evidence envelope + 5 dev-server screenshots + 2 reference captures + session_173/174 + the README session-62 row + this worklog entry. ZERO code changes.
 - Remaining open: the owner decision on the dedicated Prisma 7 upgrade session (the deepmerge-ts advisory's stable fix path, stable at 7.10.1 for a seventh consecutive re-check); the first real docker compose --profile init up on the owner's Docker host; braces waiting on an upstream fix release that does not exist yet. The arrival re-sweep (both sidebar states) stays in the protocol — S63 owes it.
+
+---
+Task ID: S62
+Agent: Super Z (the S62 session, follow-up)
+Task: The session-log follow-up — session_175 (the S62 process log) + the plan's commit-checkboxes ticked + this worklog note, committed and pushed after the evidence commit.
+
+Work Log:
+- session_175.md written (the process log: the fresh-clone arrival, the 1133-green baseline, the standing checks with the mobile walkthrough + both sidebar states, the reference re-sweep with the geometry-probe lesson, the registry re-check, the standing suite GREEN 35/35 on run 1 with zero incidents, the capture-delta classification with the greeting-bucket + calendar-day crossings, the push).
+- The evidence commit d2ffa22 pushed and verified (remote main @ d2ffa22 == local HEAD; the wrapper's temp key shredded; the operator key stays materialized for this follow-up push only).
+
+Stage Summary:
+- The S62 session fully recorded: session_173 (narrative) + session_174 (Chinese summary) + the remediation plan in the evidence commit; session_175 (process log) + the ticked checkboxes + this note in the follow-up.
+- The session's two recorded lessons (neither a code finding): (1) the geometry-probe doctrine — the reference's drawer root carries NO role=dialog, so a semantic-selector probe falsely read "closed"; the observable-geometry probe (the 288px panel + the backdrop presence) is the authority for cross-app drawer-state assertions; (2) the capture-delta widening — a session crossing BOTH a greeting bucket AND a calendar day adds the date-line band to the clock/data class; classify by the DOM probes + the non-date-row mid-content near-zero proof.
