@@ -2184,3 +2184,16 @@ Stage Summary:
 - The capture-delta: ONE zero-diff pair (the collapsed byte-identical FOURTH consecutive) — all seven captures the clock-digit family, zero structural movement
 - Push (this commit) includes: the session-73 remediation plan + 5 dev-server screenshots + 2 reference captures + session_221/222 + the README session-73 row + this worklog entry. ZERO code changes.
 - Remaining open: the owner decision on the dedicated Prisma major upgrade session (the repo on 6.x; the 7.x stable line ending at 7.10.1 for an eighteenth consecutive re-check); the first real docker compose --profile init up on the owner's Docker host; braces waiting on an upstream fix release that does not exist; S74 owes the routine arrival re-sweep.
+
+---
+Task ID: S73
+Agent: Super Z (the S73 session, follow-up)
+Task: The session-log follow-up — session_223 (the S73 process log) + this worklog note, committed and pushed after the evidence commit.
+
+Work Log:
+- session_223.md written (the process log: the sixth fresh-clone rebuild handled as a routine — every step first-try, the pin byte-identical, the ninth consecutive identical 1133, the preflight GREEN first-try [no stale cache on a fresh clone]; the chevron-scoped matrix-glyph probe + the panel-anchored drawer-link probe corrections; the dedicated-venv SSH rebuild with the wire-format parse re-deriving the two documented subtleties; the Python-decoder-as-primary capture-delta [the one zero-diff pair + the two drawers' identical band+count coincidence]; the seventh consecutive clean run-1 suite — the result appended and verified against the real stage table).
+- The evidence commit 0827838 pushed and verified (remote main @ 0827838 == local HEAD; the wrapper's temp key shredded; the operator key to be shredded at session close).
+
+Stage Summary:
+- The S73 session recorded: session_221 (narrative) + session_222 (Chinese summary) + the remediation plan in the evidence commit; session_223 (process log) + this note in the follow-up.
+- ZERO tool defects this cycle; the two probe-form corrections (the chevron-scoped glyph + the panel-anchored link height) + the venv layout change + the wire-format parse subtleties recorded without doctrine promotion (the probe forms already covered by the chain's record); the standing doctrines all held, the suite-as-only-consumer launch recipe the standing form (the seventh consecutive clean run-1).
