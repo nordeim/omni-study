@@ -70,7 +70,7 @@ vars — never hardcode violet hexes in view code.
 
 | Layer | Technology | Version | Critical note |
 |---|---|---|---|
-| Framework | `next` | ^16.1.1 (16.4.0 installed) | App Router; `output: "standalone"`; Turbopack dev |
+| Framework | `next` | ^16.4.2 (16.4.2 installed) | App Router; `output: "standalone"`; Turbopack dev; the S88 security patch floor |
 | UI runtime | `react` / `react-dom` | ^19.0.0 | Client view switching inside one page |
 | Language | `typescript` | ^5 | `strict: true`; `tsc --noEmit` is a gate |
 | Styling | `tailwindcss` + `@tailwindcss/postcss` | ^4 | **CSS-first** — no `tailwind.config.js`; tokens in `globals.css` `@theme` |

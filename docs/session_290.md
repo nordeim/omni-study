@@ -1,0 +1,61 @@
+# Session 290 — the S88 narrative: the same-day security advisory remediation (the nineteenth arrival; the CRITICAL found, root-caused, and patched in-session)
+
+**2026-10-22 · the EVENING window (18:00–19:xx UTC) · the fresh-clone form · the first code change since S52**
+
+## The arrival
+
+The workspace was RESET at the session boundary — the nineteenth arrival in the fresh-clone form (the S80/S83/S85/S86/S87 family). The repo re-cloned at `d522c36` (main, clean, in sync — ONE owner commit since S87 closed: the `docs/session_289.md` raw transcript, doc-only, the standing trigger pattern). The pins verified in one pass: `src/` at `193132f` (the S52 pin — still the last app-code change at arrival), the SKILL doc at `c5378bc`, `.env.example` at `158dfa8`.
+
+The rebuild on the S80 recipe, every step first-try: `.env` from `.env.example` (`DATABASE_URL="file:../db/custom.db"`, the `db/` folder at the repo root); `bun install` (489 packages, 6.96 s); the cold re-seed to **exactly the 303,104-byte pin** (the seed epoch ~18:06 UTC Oct 22 — anchoring Oct 22, the cross-date anchor vs S87's Oct 21); chromium v1243 in the foreground (both forms); the SSH venv (paramiko 5.1.0) + the Appendix A shim (164 lines, the shebang repointed at the venv python, on PATH via `/home/z/my-project/bin`).
+
+The baseline gates on the pre-remediation codebase: lint ✓ tsc ✓ **834 unit ✓** (20 files, 3.73 s) build ✓ cold e2e **299/299** (4.7 min, zero flake, `rm -f db/e2e.db` first) = **1133 GREEN — the twenty-fourth consecutive identical count** (18:03–18:15 UTC). The daemon via the documented S32 subshell recipe from the FIRST attempt (no S66 reaping encounter; the S86/S87 lesson standing); health 200 persistent; preflight GREEN; drawer-check GREEN.
+
+## The walkthrough + the sweep (all GREEN)
+
+The session window sits at 18:0x UTC — the **EVENING bucket** (`greetingForHour`: hour ≥ 17 → "Good evening"). The clone walkthrough read the **EVENING greeting "Good evening, Demo Student 👋"** — the cross-bucket form vs S87's MORNING — with every pin exact: the mobile shell (390 / aside display:none / burger 17,14 36×36); the drawer census + traps 4/9/7 in one probe (backdrop BUTTON 390×844 blur(4px) + oklab(0 0 0 / 0.2) / panel 288×844 white / 20 links / navSH 1068 vs 755 / ul flex gap 4px padding 0 marginKids false — **NO Tailwind v4 bug**); the active-link triple-pin (label violet-600 rgb(124,58,237) / the violet→indigo 10% gradient / the dot FILL violet-500 rgb(139,92,246) at 6×6); Notes via the drawer (auto-close, H2, no overflow); the Escape-close superset; both desktop states (expanded 260/800 + main 260/1020 + 40 nav text spans + 0 aria + burger 0×0; collapsed 80/1200 + navSvgX 33 + the chevron **rotate: 180deg** — a probe refinement recorded: Tailwind v4's `rotate-180` computes the native `rotate` property, not the legacy `transform` + labels UNMOUNT + 20 aria + the empty footer + pref "1"); the shared icon-only drawer (navSvgX 32 — the panel's first svg = the brand logo at x=34, the S86/S87 isolation reproduced); the pref round-trip both directions.
+
+The reference re-sweep (operator login): **UNCHANGED — the 37th consecutive sweep.** The four anchors exact (the title "AcademiaFlow (Copy)"; the settled EVENING greeting "Good evening, sepnetflix2023 👋" — the same-bucket EVENING pair with the clone; the 20-view order; the five Settings tabs via the drawer's icon-only rail, auto-closed); both sidebar states + both structural toggles (the unlabeled x=201/y=37 expanded toggle; the x=25/y=25 collapsed-rail toggle); the shared collapsed drawer (the two-fixed-layer census: the backdrop DIV 390×844 blur(4px) + rgba(0,0,0,0.2) as the panel's SIBLING; panel 288×844 white; svgX 32; navSH 912 vs 744; ZERO aria); the Escape-close absence (both fixed layers persist — the clone's superset holds); the preference restored (sidebarOpen true, 260/1020); the CTA gate exact ("Start My Day" x=1093/y=46/155×36).
+
+## THE FINDING — the same-day Next.js security advisories
+
+The first-pass capture-delta read 752 differing rows — and the band census exposed a constant amber element (x 21-146, ~34 rows tall, rgb(219,126,19), bottom-left) present in **all five clone captures** and absent from every S85–S87 capture and both reference captures. The isolation chain, step by step:
+
+1. **Constant absolute x across viewports** (x 21-146 at both 1280 and 390) → a window-anchored fixed layer, not page content.
+2. **Invisible to `elementFromPoint`** (the live probes read the underlying page content) → not light DOM — a shadow-DOM layer.
+3. **The `<nextjs-portal>` shadow-root census** → three buttons: "Open Next.js Dev Tools" (x=22, y=790, 32×32 — the N logo), **"Open issues overlay" (x=64, y=790, 52×32, text "01 Insight")** — the amber pill — and "Collapse issues badge" (x=118, y=794, 24×24).
+4. **The overlay read** → the Security Insight: *"Upgrade Next.js to a safe version. Next.js 16.4.0 is affected by a known security vulnerability."*
+5. **`bun audit`** → **4 vulnerabilities (1 critical, 3 high)** — the direct `next` dependency carrying **GHSA-2464-fhr4-w9xw (critical — unauthenticated RCE in the Image Optimization API when SVG files are used)** + **GHSA-p3m5-59mp-jv5r (high — DoS in App Router Server Actions)**, alongside the two documented non-production advisories (braces via eslint-config-next; deepmerge-ts via the prisma CLI).
+6. **The OSV API cross-check** → the publication timeline: **all three Next.js advisories published/modified 2026-10-22 between 15:50 and 16:42 UTC** — hours before this audit, one day AFTER S87's clean Oct 21 reading (S87's GREEN was correct for its wall-clock). The cross-check also surfaced a THIRD advisory bun's DB had not yet ingested: **GHSA-673q-mjm6-r5xr (critical — unauthenticated RCE in `use cache` functions returning typed arrays, published 16:42 UTC)**.
+7. **The exposure probes** → the app uses NO `next/image` components (no SVG through the optimizer, no `images.remotePatterns`), NO `"use server"` Server Actions (all server surface is API routes), NO `use cache` directives — the practical exposure of all three is LOW in this app's configuration; but the advisories sit on the direct runtime dependency, one is CRITICAL (unauthenticated RCE class), and the fix is a patch-level bump inside the declared `^16.1.1` range.
+
+All three advisories are fixed in **16.4.1** (per the OSV ranges); the current latest is **16.4.2** (released Oct 15). Per the Decision Priority Hierarchy (security above maintainability/brevity) and the S22 precedent (production-readiness security fixes executed in-session), the remediation was decided: **the 16.4.2 patch upgrade, in-session, no owner decision required** — the first code change since the S52 four-file fix (the 35-session zero-code streak ends at a CRITICAL security finding, exactly the exception the streak's doctrine allows).
+
+## The remediation (the TDD form)
+
+- **RED**: the audit reading (4 vulnerabilities, 1 critical on the direct dependency) + the badge evidence (the "1 Insight" pill in all five first-pass captures) — both preserved as evidence.
+- **The fix**: `bun update next eslint-config-next` → both 16.4.0 → **16.4.2** (9 packages; the package.json ranges moved `^16.1.1` → `^16.4.2` — the manifest now enforces the security floor, preventing any resolution below the fixed version; eslint-config-next bumped in lockstep, the versioned-together convention). A surgical diff: two manifest lines + the lockfile.
+- **The gates re-run on the remediated codebase**: lint ✓ tsc ✓ 834 unit ✓ build ✓ cold e2e **299/299** (4.7 min, zero flake) = **1133 GREEN — the count anchors HOLD** (the patch is behavior-neutral, as a patch release must be).
+- **The daemon restart** (the old PID killed by PID per AP-70; the relaunch via the S32 subshell recipe): health 200 persistent; preflight GREEN; drawer-check GREEN.
+- **GREEN**: `bun audit` re-run → **2 vulnerabilities (2 high) — the two documented non-production advisories only, exit 0** (the standing GREEN form); the three Next.js advisories GONE; the OSV cross-check on 16.4.2 → **0 vulnerabilities**; the dev-tools badge **collapsed to the no-issues form** (the visible symptom cleared).
+
+## The re-captures + the clean capture-delta
+
+The 5 clone captures re-taken on the remediated server (the badge-free form; the S86 watch-item honored — the "Upcoming Assignments" header verified settled at the 788 form, stable across a 2.5 s wait, before the collapsed shot fired). All five verified badge-free (0 amber pixels in the badge region) at exact dimensions.
+
+The clean capture-delta vs the S87 counterparts: **441 differing rows across the 7 pairs — FOUR families: GREETING + DATE + DAY-RELATIVE-SEED + CLOCK** — the chain's **SECOND cross-bucket + cross-date pair** (EVENING Oct 22 vs MORNING Oct 21 — the S86 form exactly), every band attributed live (the greeting H1 "Good evening, Demo Student 👋"; the date sub-line "Thursday, October 22, 2026"; the three due-chips "Oct 23, 9:00 AM" / "Oct 25, 10:00 AM" / "Oct 29, 9:00 AM" — the fresh Oct 22 seed; the sidebar-footer clock "06:16 PM"; the footer clock-date "Thu, Oct 22"; the app-bar clocks through the drawer backdrops; the Notes app-bar clock). The collapsed pair carries **NO clock band** (the S52 unmount pin holds); the reference pairs carry no seed bands (the reference's data is its own); ZERO structural movement. The first-pass contaminated classification (752 rows) is fully explained: the badge bands (311 rows of tooling noise) are gone in the clean form.
+
+## Mode-C + the registry + the SSH infrastructure
+
+The static scan clean (zero TODO/FIXME/console.log/`: any` in src/; the two documented exceptions re-verified — the eval( prose comment at calculator.ts:4 + the THEME_BOOT_SCRIPT dangerouslySetInnerHTML at layout.tsx:44). The registry re-check (the 33rd): braces 3.0.3 = latest (unfixable upstream, unchanged); the prisma CLI's latest dist-tag advanced 8.0.0-rc.23 → 8.0.0-rc.25 (still the Prisma 8 RC line; the owner decision standing); @prisma/client latest stable 7.10.1 (unchanged). scandihaven unchanged (`d4789c3`).
+
+The SSH infrastructure: the operator key materialized (399 bytes, 0600, outside the repo) + the **S87-corrected verifier carried UNCHANGED — ALL 27 CHECKS GREEN ON THE FIRST RUN** (the S83→S87 verifier-correction streak settles: the corrected form holds on its first fresh run; no new correction pair this cycle). The wrapper dry-run GREEN with the REQUIRED `--key-file` + `--remote git@github.com:nordeim/omni-study.git` flags (remote @ `d522c36` == local HEAD, "Everything up-to-date"; the temp key shredded) — from the canonical `docs/ssh_git_wrapper_v3.py` placement.
+
+## The standing suite — GREEN 35/35 ON RUN 1
+
+Launched 18:35:58 UTC Oct 22 on the REMEDIATED codebase (the ONE detached launch via the S32 setsid subshell recipe; /tmp/standing-suite wiped; the :3100/:3200 ports verified free; the preflight + drawer-check GREEN immediately before; the limiter budget fresh, zero AI-route consumption before the launch). The run window wholly inside Oct 22 (~66 min; monitored live end-to-end, thirteen bounded wait-rounds, no restart boundary).
+
+**GREEN 35/35 ON RUN 1 — ZERO total findings, ZERO incidents** (the security row 0+7; the INP proxy 1504 ms within budget — the chain's readings all inside; the theme-restore guard light/violet; the twenty-second consecutive clean envelope, the fourteenth consecutive clean RUN 1 form). The envelope saved with the launch-provenance note and verified against the real stage table — ALL 17 CHECKS PASSED (after three in-session verifier-form corrections: the no-leading-pipe/no-space table rows for the >25-char names; the envelope's security `findings: 0` int form; the `inpProxy.ms` key). The count anchors (1133/834/299) HOLD — the security patch verified behavior-neutral end to end.
+
+## The docs aligned
+
+README / PAD / SKILL: the Next.js version references 16.4.0 → 16.4.2 with the S88 security-patch note (the manifest range `^16.4.2` = the security floor). The remediation plan (docs/remediation-plan-session88.md) carries the findings table + the executed ToDo + the execution log. The README session-88 row + the worklog entry follow the standing form.

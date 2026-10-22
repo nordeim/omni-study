@@ -45,7 +45,7 @@ StudyFlow is a self-hosted study-companion application: a deliberate clone — f
 
 | Layer | Technology | Version | Key Rationale |
 |-------|-----------|---------|---------------|
-| Web framework | Next.js (App Router) | 16.4.0 | Matches the repo scaffold's pinned major; `output: "standalone"` gives a single-server deploy story |
+| Web framework | Next.js (App Router) | 16.4.2 | Matches the repo scaffold's pinned major; `output: "standalone"` gives a single-server deploy story; the S88 security patch (three same-day advisories fixed in 16.4.1+, upgraded 16.4.0 to 16.4.2) |
 | UI runtime | React | 19 | Required by Next 16; client view-switching inside one app shell |
 | Language | TypeScript (strict) | 5 | End-to-end types; scaffold convention; `unknown` over `any` |
 | Styling | Tailwind CSS | 4.1.x (CSS-first) | Scaffold + reference-compiled parity requires v3-pinned tokens (ADR-004) |
