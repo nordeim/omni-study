@@ -52,11 +52,16 @@ export async function POST(req: Request) {
     const body = await readJson(req);
     const data = parseWith(aiChatSchema, body as Record<string, unknown>);
 
-    const history = await db.aiChatMessage.findMany({
+    // S91: the LLM context window is the NEWEST 20 messages — query desc
+    // (the newest rows) then reverse for chronological prompt injection.
+    // The original asc + take 20 silently selected the OLDEST rows, so
+    // past 20 stored messages the prompt never included the recent turns.
+    const recent = await db.aiChatMessage.findMany({
       where: { userId: user.id },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       take: 20,
     });
+    const history = recent.reverse();
 
     const systemPrompt =
       SYSTEM_PROMPTS[data.mode] ?? SYSTEM_PROMPTS["chat"]!;

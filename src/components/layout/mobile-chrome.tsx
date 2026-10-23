@@ -33,6 +33,9 @@ function HeaderClock() {
 
 function MobileHeader() {
   const setMobileMenu = useAppStore((s) => s.setMobileMenu);
+  const menuOpen = useAppStore((s) => s.mobileMenuOpen);
+  // S91 — the hamburger reports its control state (the web-app-foundation
+  // §8.1 drawer contract; the reference's own button carries no aria).
   return (
     <header
       className="glass fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between px-4 shadow-sm lg:hidden dark:shadow-black/20"
@@ -43,6 +46,8 @@ function MobileHeader() {
           type="button"
           onClick={() => setMobileMenu(true)}
           aria-label="Open navigation menu"
+          aria-expanded={menuOpen}
+          aria-controls="mobile-navigation-drawer"
           className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 sf-focus dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <Menu className="h-4 w-4" strokeWidth={2} />
@@ -76,13 +81,66 @@ function MobileDrawer() {
   // backdrop, and panel geometry are identical in both states.
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed);
 
+  // S91 — the modal drawer mechanics (the web-app-foundation §8.1
+  // non-negotiables; every one a superset — the reference's drawer has no
+  // aria/focus mechanics at all, measured S3–S52):
+  //   - focus moves INTO the panel on open (the close button)
+  //   - Tab (and Shift+Tab) cycle within the dialog — no escape into the
+  //     page behind the overlay
+  //   - the body is scroll-locked while open, released on close
+  //   - focus is RESTORED to the hamburger on close
+  // Pinned by tests/e2e/s91-drawer-focus-a11y.spec.ts. The DOM structure,
+  // panel geometry, and every standing drawer pin are untouched.
+  const panelRef = React.useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = React.useRef<HTMLButtonElement | null>(null);
+
   React.useEffect(() => {
     if (!open) return;
+    // Focus the panel's close button once the drawer is mounted.
+    closeButtonRef.current?.focus();
+    // Scroll-lock the page under the overlay.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const isFocusable = (el: Element): el is HTMLElement =>
+      el instanceof HTMLElement &&
+      el.tabIndex >= 0 &&
+      !el.hasAttribute("disabled") &&
+      el.offsetParent !== null;
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileMenu(false);
+      if (e.key === "Escape") {
+        setMobileMenu(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusables = [...panel.querySelectorAll("*")].filter(isFocusable);
+      if (focusables.length === 0) return;
+      const first = focusables[0]!;
+      const last = focusables[focusables.length - 1]!;
+      const active = document.activeElement;
+      if (e.shiftKey) {
+        if (active === first || !panel.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !panel.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      // Restore focus to the hamburger — the user's point of departure.
+      const burger = document.querySelector<HTMLButtonElement>(
+        'button[aria-label="Open navigation menu"]'
+      );
+      burger?.focus();
+    };
   }, [open, setMobileMenu]);
 
   if (!open) return null;
@@ -92,6 +150,7 @@ function MobileDrawer() {
       role="dialog"
       aria-modal="true"
       aria-label="Navigation menu"
+      id="mobile-navigation-drawer"
       className="fixed inset-0 z-50 lg:hidden"
     >
       <button
@@ -100,7 +159,10 @@ function MobileDrawer() {
         className="absolute inset-0 bg-black/20 backdrop-blur-xs"
         onClick={() => setMobileMenu(false)}
       />
-      <div className="sf-toast-in absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-2xl dark:bg-slate-950">
+      <div
+        ref={panelRef}
+        className="sf-toast-in absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-2xl dark:bg-slate-950"
+      >
         <div className="flex items-center justify-between border-b border-slate-100 p-6 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <span
@@ -120,6 +182,7 @@ function MobileDrawer() {
             </div>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={() => setMobileMenu(false)}
             aria-label="Close menu"

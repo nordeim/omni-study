@@ -36,6 +36,12 @@ export function verifyPassword(password: string, stored: string): boolean {
   if (parts.length !== 3 || parts[0] !== "scrypt") return false;
   const [, salt, expectedHex] = parts;
   const expected = Buffer.from(expectedHex, "hex");
+  // S91 — the corrupted-hash guard: an empty or garbage-hex segment decodes
+  // to a ZERO-length buffer, and scryptSync(password, salt, 0) also returns
+  // zero bytes — timingSafeEqual(∅, ∅) is TRUE, so a corrupted row used to
+  // authenticate ANY password. hashPassword always writes a 64-byte hash;
+  // anything else is corruption, not a credential.
+  if (expected.length !== 64) return false;
   const actual = scryptSync(password, salt, expected.length);
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }

@@ -82,6 +82,10 @@ export function errorResponse(err: unknown): Response {
   const anyErr = err as { code?: string; message?: string };
   if (anyErr?.code === "P2002") return jsonError(409, "A record with this value already exists");
   if (anyErr?.code === "P2025") return jsonError(404, "Record not found");
+  // S91 — a client-supplied FK id that points at a nonexistent (or
+  // unowned) row is a client error, not a server fault; before this
+  // mapping a bad subjectId/listId/notebookId surfaced as a 500.
+  if (anyErr?.code === "P2003") return jsonError(400, "A referenced record does not exist");
   console.error("[api] unhandled error:", err);
   return jsonError(500, "Internal server error");
 }

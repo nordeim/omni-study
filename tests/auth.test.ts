@@ -27,6 +27,24 @@ describe("password hashing (scrypt)", () => {
     expect(verifyPassword("x", "not-a-hash")).toBe(false);
     expect(verifyPassword("x", "scrypt$only")).toBe(false);
   });
+
+  // S91 — the corrupted-hash guard: an empty or garbage-hex hash segment
+  // decodes to a zero-length expected buffer, and scryptSync(password,
+  // salt, 0) returns a zero-length actual buffer — timingSafeEqual(∅, ∅)
+  // is TRUE, so a corrupted row (scrypt$salt$ / scrypt$salt$zz) used to
+  // authenticate ANY password. The guard: the expected hash must be the
+  // fixed 64-byte (128-hex) scrypt output this app writes.
+  it("rejects corrupted stored hashes (empty/garbage hash segment) for any password", () => {
+    expect(verifyPassword("anything", "scrypt$0123456789abcdef0123456789abcdef$")).toBe(false);
+    expect(verifyPassword("anything", "scrypt$0123456789abcdef0123456789abcdef$zz")).toBe(false);
+    expect(verifyPassword("anything", "scrypt$$0123456789abcdef")).toBe(false);
+  });
+
+  it("still accepts a well-formed 64-byte hash (the guard is not over-eager)", () => {
+    const hash = hashPassword("Guard123!");
+    expect(verifyPassword("Guard123!", hash)).toBe(true);
+    expect(verifyPassword("nope", hash)).toBe(false);
+  });
 });
 
 describe("session tokens (HMAC)", () => {
