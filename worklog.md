@@ -2903,3 +2903,19 @@ Stage Summary:
 - The count anchors (1133/834/299) confirmed a third full cycle; the reference unchanged the 39th sweep; the mobile navigation verified with NO Tailwind v4 bug
 - The capture-delta: the chain's THIRD same-bucket + same-date pair — the CLOCK family only (with the blurred-clock drawer-band doctrine correction), the fifth zero-delta collapsed pair
 - The suite result: **GREEN 35/35 ON RUN 1** (the 24th consecutive clean envelope, the 16th consecutive clean RUN 1 form; the INP proxy 1491 ms within budget; the envelope verified — ALL 17 checks after one in-session form correction)
+
+---
+Task ID: S90
+Agent: Super Z (the S90 session, follow-up)
+Task: The session-log follow-up — the suite result (GREEN 35/35 ON RUN 1 on the 16.4.2 codebase, live-monitored end-to-end with no restart boundary, the run window spanning the UTC midnight boundary) appended to all five docs, the evidence commit, session_300 (the process log) + this worklog note.
+
+Work Log:
+- THE RESULT appended to all five docs: the remediation plan's suite-result section + session_298 (narrative) + session_299 (Chinese summary) + the README session-90 row (the S90-SUITE-PENDING placeholder replaced) + the worklog S90 entry.
+- The evidence commit staged: docs/remediation-plan-session90.md + session_298 + session_299 + the README session-90 row + the 7 captures (s90-*) + the envelope (s90-standing-suite-evidence.json) + this worklog entry — created as `e6fc1ad` (13 files, 398 insertions, the standing form).
+- session_300.md written (the process log: the twenty-first arrival in the pull-refresh form with the environment intact; the hour-23 EVENING window with the third same-bucket + same-date pair; the S88 badge lesson honored before + after the capture set; the strict-classifier capture-delta with the blurred-clock drawer-band doctrine correction; the 36-check SSH verifier with four in-session form corrections; the live-monitored clean suite run with the 17/17 envelope verification after one in-session form correction).
+- The follow-up commit (session_300 + this note), then the SSH wrapper push to main.
+
+Stage Summary:
+- The S90 session recorded: the plan + session_298 (narrative) + session_299 (Chinese summary) + the envelope + the 7 captures + the README row + the worklog entry in the evidence commit `e6fc1ad`; session_300 (the process log) + this note in the follow-up; the raw transcript to follow per the owner's trigger.
+- ZERO codebase findings; ZERO code changes (the second consecutive zero-code session); the count anchors (1133/834/299) confirmed a third full cycle on 16.4.2; the environment intact through the boundary for the first time.
+- SIX process notes recorded: (1) the pull-refresh form with the environment intact (a first arrival form — the re-verification recipe vs the from-scratch rebuild); (2) the unit-gate runner discipline (`bun run test` = vitest is the gate; `bun test` is Bun's own runner and NOT the gate); (3) the capture-order + reload discipline for the drawer pair (pref-"0"-labeled FIRST, a reload between pref changes — the mounted store does not re-read localStorage); (4) THE STANDING-DOCTRINE CORRECTION on the drawer-pair capture-delta (the strict classifier reads the blurred-clock band, not zero-delta; the prior reading was a tolerance artifact); (5) the SSH verifier at 36 checks with four in-session form corrections (the D-group now encodes the wrapper's exact GIT_SSH_COMMAND construction; the base64 read remains the only trustworthy display channel for the delimiter constants); (6) the envelope verifier's check-10 regex re-hitting the S88-documented >25-char stage-name overflow trap (the fresh verifier had to re-apply the S88 correction itself — the correction is now double-confirmed).
