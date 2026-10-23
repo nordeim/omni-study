@@ -2952,3 +2952,21 @@ Stage Summary:
 - The gates on the remediated codebase: **1156 GREEN** (lint ✓ tsc ✓ 844 unit ✓ build ✓ cold e2e 310/310) — the count anchors moved for the first time since S52; the 299 standing pins untouched
 - The reference unchanged (the 40th sweep); the mobile navigation verified with NO Tailwind v4 bug AND the new focus/scroll-lock supersets live; the capture-delta the predicted four-family form with the remediation adding zero bands
 - The evidence: the remediation plan + session_302 (narrative) + session_303 (Chinese summary) + the README session-91 row + the 7 captures + the count-anchor alignment across README/AGENTS/CLAUDE/PAD/SKILL/vitest.config (834→844 unit, 299→310 e2e, 1133→1156)
+
+---
+Task ID: S91
+Agent: Super Z (the S91 session, follow-up)
+Task: The session-log follow-up — the real standing-suite result (GREEN 35/35 ON RUN 1 on the REMEDIATED codebase, monitored live end-to-end) appended to all the PENDING docs, the evidence commit, session_304 (the process log) + this worklog note.
+
+Work Log:
+- The suite ran 03:22:46 → ~04:33 UTC Oct 23 (~70 min) on the five-fix codebase: GREEN 35/35 ON RUN 1, ZERO total findings, ZERO incidents (the security row 0+7; the INP proxy 1573 ms within the ≤ 3000 budget; the theme-restore guard light/violet).
+- The envelope extracted + verified: ALL 17 CHECKS PASSED after TWO in-session verifier-form corrections (the pretty-printed envelope's column-0 brace locator — both verifier bugs, the wrapper/shim/key bytes never in question); saved with the launch-provenance note at docs/screenshots/s91-standing-suite-evidence.json.
+- The REAL result appended to the remediation plan's suite-result section + the README session-91 row (the S91-SUITE-PENDING placeholder replaced) + this worklog entry.
+- The evidence commit created (29 files: the 5 code fixes + the 4 test files + the auth.test extension + the vitest.config count + the 5 docs + the README row + the 8 captures + the envelope + the worklog entry).
+- session_304.md written (the process log: the install-gate correction; the ADR-ledger validation pass; the TDD RED/GREEN phases with the two SPEC corrections; the two capture-process corrections; the four-family capture-delta with the new blurred greeting-tail sub-form; the two envelope-verifier corrections; the count anchors' first movement since S52).
+- The follow-up commit (session_304 + this note), then the SSH wrapper push to main.
+
+Stage Summary:
+- The S91 session recorded: the plan + session_302 (narrative) + session_303 (Chinese summary) + the envelope + the 8 captures + the README row + the count anchors + the worklog entry in the evidence commit; session_304 (the process log) + this note in the follow-up.
+- The five fixes verified behavior-neutral on every standing audit axis (the suite GREEN 35/35; the 299 standing e2e pins untouched; the capture-delta adding zero bands); the count anchors 1156/844/310 — the first movement since S52, every new pin named.
+- SEVEN process notes recorded: (1) the install-gate classification (the Playwright chromium v1243 gap — infrastructure, not debt); (2) the ADR-ledger validation discipline (the commissioned standard's Critical/High findings that are documented owner decisions — record + recommend, never unilaterally reverse); (3) the two SPEC corrections (the backdrop click region; the s14 empty-cookie anon pattern); (4) the two capture-process corrections (the Notes-view desktop shot; the Settings-page reference drawer shot — the delta classifier caught both); (5) the NEW capture-delta sub-form (the blurred greeting-tail band — the glyph-width mechanism extends the S90 blurred-backdrop doctrine to the greeting family); (6) the scandihaven skills-only advance (d4789c3 → 5430197, the first reference-repo movement since S56); (7) the envelope verifier's column-0 brace locator (the S83→S91 correction streak continues).
