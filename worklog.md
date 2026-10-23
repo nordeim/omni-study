@@ -2995,3 +2995,21 @@ Stage Summary:
 - The verdict: ZERO new codebase findings → ZERO code changes; the five-fix S91 codebase confirmed behavior-neutral through its first full second cycle (the gates at 1156, the reference unchanged the 41st, the mobile navigation verified with NO Tailwind v4 bug AND the S91 supersets live, the capture-delta the predicted same-bucket + same-date CLOCK-only form with the collapsed pair ZERO-delta)
 - THREE standing-doctrine additions (capture-process contracts): the reference-drawer settled-form capture contract; the clone-drawer focus-state contract; the two-state watch-item reconciliation
 - The count anchors UNCHANGED at 1156/844/310 (the zero-code session — the S91 anchors' first confirmation cycle)
+
+---
+Task ID: S92
+Agent: Super Z (the S92 session, follow-up)
+Task: The session-log follow-up — the real standing-suite result (GREEN 35/35 ON RUN 1 on the confirmed codebase, monitored live end-to-end) recorded in all the PENDING docs, the evidence commit, this worklog note.
+
+Work Log:
+- The suite ran 05:49:03 → ~07:00 UTC Oct 23 (~71 min) on the five-fix codebase: GREEN 35/35 ON RUN 1, ZERO total findings, ZERO incidents (the security row 0+7; the INP proxy 1455 ms within the ≤ 3000 budget; the theme-restore guard light/violet).
+- The envelope extracted via the column-0 brace locator + verified: ALL 17 CHECKS PASSED after THREE in-session verifier-form corrections (the closing-guard stage name `theme-restore`; the last-stage anchor; the raw security shape `findings=[] nonGaps=7` — the S83→S91→S92 verifier-correction streak continuing, all verifier bugs, never wrapper/shim/key issues); saved with the launch-provenance note at docs/screenshots/s92-standing-suite-evidence.json.
+- The REAL result recorded in the remediation plan's suite-result section + the session_306/307 closings + the README session-92 row + this worklog entry (the PENDING placeholders replaced).
+- The gates re-verified after the doc edits (lint ✓ tsc ✓ 844 unit ✓ — docs-only changes, no source bytes moved).
+- The evidence commit created (13 files: the remediation plan + session_306 + session_307 + session_308 [swept in by git add -A, the S91 session_304 form] + the README row + the 8 evidence captures + the worklog entry).
+- The follow-up commit (this note), then the SSH wrapper push to main.
+
+Stage Summary:
+- The S92 session recorded: the plan + session_306 (narrative) + session_307 (Chinese summary) + session_308 (the process log, in the evidence commit) + the envelope + the 8 captures + the README row + the worklog entries.
+- ZERO code changes; the count anchors UNCHANGED at 1156/844/310 (the S91 anchors' first confirmation cycle, held exactly).
+- FIVE process notes recorded: (1) the agent-browser viewport command form (`set viewport W H` — the `open --viewport` flag does not set it); (2) the reference-drawer settled-form capture contract (the post-login 992/48px pre-settle transient; the settled 912/44px form verified at shot time); (3) the clone-drawer focus-state contract (the fresh-open form — focus on the Close button, the sf-focus ring rendering — is the canonical capture state); (4) the TWO-STATE watch-item reconciliation (860 expanded / 788 collapsed — the S91 seed-shift attribution corrected to the sidebar-state reflow); (5) the three envelope-verifier form corrections (the S83→S92 streak). Plus the S91/S90 reference-drawer captures retroactively classified as nav-scroll artifacts (the scroll test reproducing the 20-band form at scrollTop=40).
