@@ -26,7 +26,7 @@
 // What it asserts, per accent (7), at 844×390 (the iPhone-class landscape
 // — the 390–430px-tall band's canonical width; the short-viewport
 // structures: the drawer nav whose scroll is the ONLY path to links 8–20
-// at 390 height [measured S35: scrollHeight 1068 vs clientHeight 301],
+// at 390 height [measured S35: scrollHeight 992 vs clientHeight 301 (the S94 form; 1068 through S93)],
 // the fixed h-16 app bar covering 16% of the viewport, the pt-* heading
 // clearance under it), navigated THROUGH THE DRAWER (the only vehicle
 // below 1024):

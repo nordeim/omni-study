@@ -14,7 +14,7 @@
 // verifies the drawer's active link is TASKS with the teal
 // NAV_ACTIVE_GRADIENT_STOPS tint (the light × mid-band × volume interaction
 // cell), verifies the drawer-own nav-scroll geometry at 1024 height (the
-// mid-band contract: scrollHeight ~1068 vs clientHeight ~935), verifies the
+// mid-band contract: scrollHeight ~992 vs clientHeight ~935), verifies the
 // rendered row density (the volume actually visible in the frame), verifies
 // the LIGHT mode (the mode contract) with the LIGHT checker (zero
 // non-exempt unreadable — the THREE signature-strict light exemptions: the

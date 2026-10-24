@@ -4,7 +4,7 @@
 // portrait-tall [390×844, 768×1024, 1280×800, 1440×900, 1024×800]; the
 // phone-landscape class had zero coverage, and its height-dependent
 // structures — the drawer nav whose scroll is the ONLY path to links 8–20
-// at 390 height [measured: scrollHeight 1068 vs clientHeight 301], the
+// at 390 height [measured: scrollHeight 992 vs clientHeight 301 (the S94 form; 1068 through S93)], the
 // fixed h-16 app bar covering 16% of the viewport, the pt-* heading
 // clearance under it, the h-[calc(100vh-8rem)] panes at 262px — were
 // guaranteed by nothing).

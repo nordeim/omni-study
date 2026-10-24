@@ -13,7 +13,7 @@
 // hamburger visible at 844), verifies the drawer's active link is TASKS
 // with the teal NAV_ACTIVE_GRADIENT_STOPS tint (the dark × landscape ×
 // volume interaction cell), verifies the drawer-own nav-scroll geometry at
-// 390 height (the landscape contract: scrollHeight ~1068 vs clientHeight
+// 390 height (the landscape contract: scrollHeight ~992 vs clientHeight
 // ~301 — links ~8–20 below the fold), verifies the rendered row density
 // (the volume actually visible in the frame), verifies the DARK mode (the
 // mode contract) with the DARK checker (zero flashbulbs + zero non-exempt

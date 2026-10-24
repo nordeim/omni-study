@@ -15,7 +15,7 @@
 // verifies the drawer's active link is TASKS with the teal
 // NAV_ACTIVE_GRADIENT_STOPS tint (the light × landscape × volume
 // interaction cell), verifies the drawer-own nav-scroll geometry at 390
-// height (the landscape contract: scrollHeight ~1068 vs clientHeight ~301 —
+// height (the landscape contract: scrollHeight ~992 vs clientHeight ~301 —
 // links ~8–20 below the fold), verifies the rendered row density (the
 // volume actually visible in the frame), verifies the LIGHT mode (the mode
 // contract) with the LIGHT checker (zero NON-EXEMPT unreadable — the THREE

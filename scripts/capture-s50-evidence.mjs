@@ -16,7 +16,7 @@
 // with the teal NAV_ACTIVE_GRADIENT_STOPS tint (the dark × landscape ×
 // seed interaction cell on the volume-invariant set), verifies the
 // drawer-own nav-scroll geometry at 390 height (the landscape contract:
-// scrollHeight ~1068 vs clientHeight ~301 — links ~8–20 below the fold),
+// scrollHeight ~992 vs clientHeight ~301 — links ~8–20 below the fold),
 // verifies the DARK mode (the mode contract) with the DARK checker (zero
 // flashbulbs — a light surface on the dark canvas; zero NON-EXEMPT
 // unreadable — the CTA-face exemption ONLY; the light-mode calendar-day +

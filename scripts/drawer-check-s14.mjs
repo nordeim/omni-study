@@ -1,8 +1,12 @@
-// Standing mobile-drawer priority check — session 14 (S14).
+// Standing mobile-drawer priority check — session 14 (S14), S94-extended.
 // Verifies the mobile navigation drawer on BOTH apps at 390x844:
 // backdrop rgba(0,0,0,0.2)+blur(4px) (oklab serialization accepted — trap 7),
-// 288px white shadow-2xl panel, 20 links, no footer, Escape-close (clone superset).
-// Follows the S13 precedent: reference login + clone dev server, JSON verdict.
+// 288px white shadow-2xl panel, 20 links, no footer, Escape-close (clone superset),
+// + the S94 nav-geometry parity check: the clone's drawer nav scrollHeight and
+// link heights must EQUAL the reference's live readings (the reference's settled
+// form since S93: gapless 48px links, navSH 992 — the clone's gap-1 retired in
+// S94 for exact parity; a mismatch means either surface moved — investigate,
+// never re-pin blindly).
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
@@ -20,12 +24,20 @@ const DRAWER_PROBE = `(() => {
   const links = panel ? [...panel.querySelectorAll('a')] : [];
   const footer = panel ? panel.querySelector('footer') : null;
   const cs = (el) => el ? { bg: getComputedStyle(el).backgroundColor, blur: getComputedStyle(el).backdropFilter, w: getComputedStyle(el).width, shadow: getComputedStyle(el).boxShadow.slice(0, 60) } : null;
+  // S94 — the nav-geometry census (the parity axis): scrollHeight + the first
+  // two links' heights/pitch. The reference reads gapless 48px links / navSH
+  // 992 (settled since S93); the clone must EQUAL it live, both readings
+  // integers (scrollHeight rounds), so exact equality is the check.
+  const nav = panel ? panel.querySelector('nav') : null;
   return JSON.stringify({
     backdrop: cs(backdrop),
     panel: cs(panel),
     linkCount: links.length,
     firstLink: links[0] ? links[0].textContent.trim().slice(0, 20) : null,
     hasFooter: !!footer,
+    navSH: nav ? nav.scrollHeight : null,
+    firstLinkH: links[0] ? Math.round(links[0].getBoundingClientRect().height) : null,
+    linkPitch: links.length > 1 ? Math.round(links[1].getBoundingClientRect().y - links[0].getBoundingClientRect().y) : null,
   });
 })()`;
 
@@ -87,6 +99,12 @@ const verdict = {
     linkCountMatch: clone.linkCount === reference.linkCount,
     noFooter: !clone.hasFooter,
     escapeCloseSuperset: clone.escapeClosed,
+    // S94 — the nav-geometry parity check (relative, self-tracking: if the
+    // reference moves again this fails LOUDLY and the session protocol
+    // re-decides; the clone never lags or leads the reference's nav geometry).
+    navSHParity:
+      clone.navSH !== null && clone.navSH === reference.navSH &&
+      clone.firstLinkH !== null && clone.firstLinkH === reference.firstLinkH,
   },
 };
 console.log(JSON.stringify(verdict, null, 2));

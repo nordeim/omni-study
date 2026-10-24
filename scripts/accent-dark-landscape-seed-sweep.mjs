@@ -34,7 +34,7 @@
 // What it asserts, per accent (7), at 844×390 (the iPhone-class landscape —
 // the 390–430px-tall band's canonical width; the short-viewport structures:
 // the drawer nav whose scroll is the ONLY path to links 8–20 at 390 height
-// [measured S35/S48: scrollHeight 1068 vs clientHeight ~301], the fixed
+// [measured S35/S48: scrollHeight 992 vs clientHeight ~301 (the S94 form; 1068 through S93)], the fixed
 // h-16 app bar covering 16% of the viewport, the pt-* heading clearance
 // under it), in DARK mode at SEED volume, navigated THROUGH THE DRAWER (the
 // only vehicle below 1024):
@@ -401,7 +401,7 @@ try {
 
     // --- the drawer-own nav-scroll contract (re-measured per accent at the
     // first drawer open — the S35/S40/S48 pattern): at 390 height the 20
-    // nav rows measure scrollHeight ~1068 vs the ~301px nav area (the 390
+    // nav rows measure scrollHeight ~992 vs the ~301px nav area (the 390
     // viewport minus the ~89px brand header) — the nav MUST be scrollable.
     // If it fits, the link geometry changed (a parity-relevant regression);
     // if the nav cannot scroll, links ~8–20 are unreachable in landscape.

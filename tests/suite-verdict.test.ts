@@ -3390,7 +3390,7 @@ describe("classifyAudit accent-volume-light-mobile-sweep (S45 — the light × m
 // flashbulbs are ALWAYS findings; the unreadable CTA-face exemption ONLY —
 // the calendar-day and yellow-pill light exemptions do NOT apply in dark,
 // those surfaces re-theme). The drawer-own nav-scroll contract at the
-// mid-band geometry: the nav scrollHeight ~1068 vs the ~934px clientHeight
+// mid-band geometry: the nav scrollHeight ~992 vs the ~934px clientHeight
 // at 1024 height (the 1024 viewport minus the ~90px brand header) — the nav
 // MUST scroll; links ~17–20 sit below the fold.
 const S46_ACCENTS = ["violet", "blue", "green", "orange", "pink", "red", "teal"] as const;
@@ -3575,7 +3575,7 @@ describe("classifyAudit accent-volume-dark-midband-sweep (S46 — the dark × mi
     expect(burger.note).toMatch(/vehicle/i);
   });
 
-  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 1024 height the 20 nav rows measure scrollHeight ~1068 vs the ~934px nav area — links ~17–20 sit below the fold; the nav's scroll is the only path to them, the S44/S45 contract carried to the mid-band geometry)", () => {
+  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 1024 height the 20 nav rows measure scrollHeight ~992 vs the ~934px nav area — links ~17–20 sit below the fold; the nav's scroll is the only path to them, the S44/S45 contract carried to the mid-band geometry)", () => {
     const v = classifyAudit("accent-volume-dark-midband-sweep", { ...s46Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: false } });
     expect(v.green).toBe(false);
     expect(v.note).toMatch(/drawerNavScrollable|scroll/i);
@@ -3939,7 +3939,7 @@ describe("classifyAudit accent-volume-light-midband-sweep (S47 — the light × 
     expect(burger.note).toMatch(/vehicle/i);
   });
 
-  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 1024 height the 20 nav rows measure scrollHeight ~1068 vs the ~934px nav area — links ~17–20 sit below the fold; the nav's scroll is the only path to them, the S44/S45/S46 contract carried at the mid-band geometry)", () => {
+  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 1024 height the 20 nav rows measure scrollHeight ~992 vs the ~934px nav area — links ~17–20 sit below the fold; the nav's scroll is the only path to them, the S44/S45/S46 contract carried at the mid-band geometry)", () => {
     const v = classifyAudit("accent-volume-light-midband-sweep", { ...s47Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: false } });
     expect(v.green).toBe(false);
     expect(v.note).toMatch(/drawerNavScrollable|scroll/i);
@@ -4125,7 +4125,7 @@ describe("classifyAudit accent-volume-light-midband-sweep (S47 — the light × 
 // flashbulbs are ALWAYS findings; the unreadable CTA-face exemption ONLY —
 // the calendar-day and yellow-pill light exemptions do NOT apply in dark,
 // those surfaces re-theme). The drawer-own nav-scroll contract at the
-// LANDSCAPE geometry: the nav scrollHeight ~1068 vs the ~301px clientHeight
+// LANDSCAPE geometry: the nav scrollHeight ~992 vs the ~301px clientHeight
 // at 390 height (the 390 viewport minus the ~89px brand header) — the nav
 // MUST scroll; links ~8–20 sit below the fold.
 const S48_ACCENTS = ["violet", "blue", "green", "orange", "pink", "red", "teal"] as const;
@@ -4328,7 +4328,7 @@ describe("classifyAudit accent-volume-dark-landscape-sweep (S48 — the dark × 
     expect(burger.note).toMatch(/vehicle/i);
   });
 
-  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 390 height the 20 nav rows measure scrollHeight ~1068 vs the ~301px nav area — links ~8–20 sit below the fold; the nav's scroll is the only path to them, the S35/S40 short-viewport contract at volume)", () => {
+  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 390 height the 20 nav rows measure scrollHeight ~992 vs the ~301px nav area — links ~8–20 sit below the fold; the nav's scroll is the only path to them, the S35/S40 short-viewport contract at volume)", () => {
     const v = classifyAudit("accent-volume-dark-landscape-sweep", { ...s48Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: false } });
     expect(v.green).toBe(false);
     expect(v.note).toMatch(/drawerNavScrollable|scroll/i);
@@ -4509,7 +4509,7 @@ describe("classifyAudit accent-volume-dark-landscape-sweep (S48 — the dark × 
 // the CTA-face + the calendar adjacent-day + the yellow priority-pill; NO
 // flashbulbs: the class exists only in dark, a light surface on the light
 // canvas is by-design). The drawer-own nav-scroll contract at the LANDSCAPE
-// geometry: the nav scrollHeight ~1068 vs the ~301px clientHeight at 390
+// geometry: the nav scrollHeight ~992 vs the ~301px clientHeight at 390
 // height (the 390 viewport minus the ~89px brand header) — the nav MUST
 // scroll; links ~8–20 sit below the fold.
 const S49_ACCENTS = ["violet", "blue", "green", "orange", "pink", "red", "teal"] as const;
@@ -4710,7 +4710,7 @@ describe("classifyAudit accent-volume-light-landscape-sweep (S49 — the light �
     expect(burger.note).toMatch(/vehicle/i);
   });
 
-  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 390 height the 20 nav rows measure scrollHeight ~1068 vs the ~301px nav area — links ~8–20 sit below the fold; the nav's scroll is the only path to them, the S35/S40/S48 short-viewport contract at volume)", () => {
+  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 390 height the 20 nav rows measure scrollHeight ~992 vs the ~301px nav area — links ~8–20 sit below the fold; the nav's scroll is the only path to them, the S35/S40/S48 short-viewport contract at volume)", () => {
     const v = classifyAudit("accent-volume-light-landscape-sweep", { ...s49Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: false } });
     expect(v.green).toBe(false);
     expect(v.note).toMatch(/drawerNavScrollable|scroll/i);
@@ -4897,7 +4897,7 @@ describe("classifyAudit accent-volume-light-landscape-sweep (S49 — the light �
 // ONLY — the light-mode calendar-day + yellow-pill exemptions do NOT apply
 // in dark, those surfaces re-theme; lowcontrast < 3.2 = WARN). The
 // drawer-own nav-scroll contract at the LANDSCAPE geometry: the nav
-// scrollHeight ~1068 vs the ~301px clientHeight at 390 height — the nav
+// scrollHeight ~992 vs the ~301px clientHeight at 390 height — the nav
 // MUST scroll; links ~8–20 sit below the fold.
 const S50_ACCENTS = ["violet", "blue", "green", "orange", "pink", "red", "teal"] as const;
 // The 13 volume-invariant views by DISPLAY labels — the views the S13
@@ -5059,7 +5059,7 @@ describe("classifyAudit accent-dark-landscape-seed-sweep (S50 — the dark × la
     expect(burger.note).toMatch(/vehicle/i);
   });
 
-  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 390 height the 20 nav rows measure scrollHeight ~1068 vs the ~301px nav area — links ~8–20 sit below the fold; the nav's scroll is the only path to them, the S35/S40/S48/S49 short-viewport contract at seed)", () => {
+  it("the drawer-nav-scroll family: drawerNavScrollable=false is the finding class (at 390 height the 20 nav rows measure scrollHeight ~992 vs the ~301px nav area — links ~8–20 sit below the fold; the nav's scroll is the only path to them, the S35/S40/S48/S49 short-viewport contract at seed)", () => {
     const v = classifyAudit("accent-dark-landscape-seed-sweep", { ...s50Envelope(), chrome: { sidebarVisible: false, hamburgerVisible: true, drawerNavScrollable: false } });
     expect(v.green).toBe(false);
     expect(v.note).toMatch(/drawerNavScrollable|scroll/i);

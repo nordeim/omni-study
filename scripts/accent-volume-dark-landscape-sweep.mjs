@@ -48,7 +48,7 @@
 //      the only vehicle) + the hamburger visible (the vehicle's handle)
 //   3. the drawer-own nav-scroll contract (re-measured per accent at the
 //      first drawer open): at 390 height the 20 nav rows (scrollHeight
-//      ~1068) cannot fit the ~301px nav area (the 390 viewport minus the
+//      ~992) cannot fit the ~301px nav area (the 390 viewport minus the
 //      ~89px brand header) — the nav MUST be scrollable; links ~8–20 sit
 //      below the fold (the S35/S40 landscape geometry, re-verified
 //      empirically this session BEFORE the pins were finalized)
@@ -538,7 +538,7 @@ try {
 
     // --- the drawer-own nav-scroll contract (re-measured per accent at the
     // first drawer open — the S35/S40 pattern carried to volume): at 390
-    // height the 20 nav rows measure scrollHeight ~1068 vs the ~301px nav
+    // height the 20 nav rows measure scrollHeight ~992 vs the ~301px nav
     // area (the 390 viewport minus the ~89px brand header) — the nav MUST
     // be scrollable. If it fits, the link geometry changed (a
     // parity-relevant regression); if the nav cannot scroll, links ~8–20

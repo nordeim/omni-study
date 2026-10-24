@@ -36,7 +36,7 @@
 //   2. the sidebar-own scroll contract (measured at the start of EVERY
 //      accent's pass): the nav MUST be scrollable at 800 height — the 20
 //      reference-measured ~44px rows cannot fit the ~534px nav area
-//      [measured: scrollHeight 1068 vs clientHeight 534], so a
+//      [measured: scrollHeight 992 vs clientHeight 534 (the S94 form; 1068 through S93)], so a
 //      non-scrolling reading means the sidebar geometry changed (links
 //      ~13–20 beyond the fold would be unreachable); any accent whose
 //      nav reads non-scrollable is a FINDING + the top-level

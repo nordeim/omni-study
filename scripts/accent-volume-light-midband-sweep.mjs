@@ -46,7 +46,7 @@
 //      the only vehicle) + the hamburger visible (the vehicle's handle)
 //   3. the drawer-own nav-scroll contract (re-measured per accent at the
 //      first drawer open): at 1024 height the 20 nav rows (scrollHeight
-//      ~1068) cannot fit the ~934px nav area (the 1024 viewport minus the
+//      ~992) cannot fit the ~934px nav area (the 1024 viewport minus the
 //      ~90px brand header) — the nav MUST be scrollable; links ~17–20 sit
 //      below the fold
 //   4. the accent APPLIES through the real lifecycle (PATCHed + self-
@@ -504,7 +504,7 @@ try {
 
     // --- the drawer-own nav-scroll contract (re-measured per accent at the
     // first drawer open — the S35/S44 pattern carried to the mid-band
-    // geometry): at 1024 height the 20 nav rows measure scrollHeight ~1068
+    // geometry): at 1024 height the 20 nav rows measure scrollHeight ~992
     // vs the ~934px nav area (the 1024 viewport minus the ~90px brand
     // header) — the nav MUST be scrollable. If it fits, the link geometry
     // changed (a parity-relevant regression); if the nav cannot scroll,

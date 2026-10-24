@@ -192,7 +192,11 @@ function MobileDrawer() {
           </button>
         </div>
         <nav aria-label="Primary" className="sf-scroll flex-1 overflow-y-auto p-4">
-          <ul className="flex flex-col gap-1">
+          {/* S94 — gapless nav (the reference's settled form since S93: gapless
+              48px links, navSH 992, measured on BOTH its drawer and sidebar).
+              The clone's gap-1 (4px inter-link gaps → navSH 1068) is retired
+              for exact parity; the S91 mechanics/geometry pins are untouched. */}
+          <ul className="flex flex-col">
             {NAV.map((item) => (
               <li key={item.id}>
                 <NavItemLink id={item.id} collapsed={sidebarCollapsed} />

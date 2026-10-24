@@ -343,7 +343,8 @@ function classifyMidbandSweep(env: unknown): StageVerdict {
 // drawerNavScrollable — the short-viewport contract: the 20 reference-
 // measured nav rows cannot fit the ~300px nav area at 390 height, so the
 // nav scroll is the ONLY path to links 8–20 in landscape (measured live:
-// scrollHeight 1068 vs clientHeight 301). A non-scrolling reading means
+// scrollHeight 992 vs clientHeight 301 — the S94 gapless-parity form,
+// navSH ~1068 through S93). A non-scrolling reading means
 // the drawer geometry changed — the new class this audit owns.
 
 function classifyLandscapeSweep(env: unknown): StageVerdict {
@@ -1139,7 +1140,7 @@ function classifyAccentLandscapeSweep(env: unknown): StageVerdict {
 // 260px sidebar, the desktop clearance contract; sidebarVisible — the
 // vehicle persists through navigation). The chrome carries the
 // sidebar-own scroll contract (sidebarNavScrollable — the nav's scroll is
-// the ONLY path to links ~13–20 at 800 height [measured: scrollHeight 1068
+// the ONLY path to links ~13–20 at 800 height [measured: scrollHeight 992
 // vs clientHeight 534]; the S35-family contract on the DESKTOP vehicle).
 // The desktop DARK accent family belongs to accent-dark-sweep (its own
 // standing surface at 1280×800 dark).
@@ -2070,7 +2071,7 @@ function classifyAccentVolumeLightSweep(env: unknown): StageVerdict {
 // applied to the volume axis from birth). The MOBILE vehicle contract is
 // the INVERSE of the desktop seams: the sidebar (hidden lg:flex) must be
 // HIDDEN at 390 and the hamburger VISIBLE, the drawer-own nav scroll is
-// the only path to links ~14–20 at 844 height (scrollHeight 1068 vs
+// the only path to links ~14–20 at 844 height (scrollHeight 992 vs
 // clientHeight ≈ 700). The dark × desktop × volume cell is the S42
 // audit's own contract; the light × mobile × volume cell is the documented
 // future cross-axis candidate (the S43 one-half-per-session pattern).
@@ -2450,7 +2451,7 @@ function classifyAccentVolumeDarkMobileSweep(env: unknown): StageVerdict {
 // The MOBILE vehicle contract is the INVERSE of the desktop seams: the
 // sidebar (hidden lg:flex) must be HIDDEN at 390 and the hamburger VISIBLE,
 // the drawer-own nav scroll is the only path to links ~14–20 at 844 height
-// (scrollHeight 1068 vs clientHeight ≈ 700). The dark × mobile × volume cell
+// (scrollHeight 992 vs clientHeight ≈ 700). The dark × mobile × volume cell
 // is the S44 audit's own contract; the mid-band/landscape × volume cells and
 // the RUM-beacon second cross-axis are the documented future cross-axis
 // candidates (the S44 summary's named family, the S43
@@ -2824,9 +2825,9 @@ function classifyAccentVolumeLightMobileSweep(env: unknown): StageVerdict {
 // birth). The MID-BAND vehicle contract (the below-lg family, the S34/S39
 // doctrine at volume): the sidebar (hidden lg:flex) must be HIDDEN at 768
 // and the hamburger VISIBLE; the drawer-own nav scroll carries to the
-// mid-band geometry — the nav scrollHeight ~1068 (the 20 reference-measured
+// mid-band geometry — the nav scrollHeight ~992 (the 20 reference-measured
 // rows) vs the ~934px nav area at 1024 height (the 1024 viewport minus the
-// ~90px brand header), so links ~17–20 sit below the fold and the nav's
+// ~90px brand header), so links ~19–20 sit below the fold and the nav's
 // scroll is the only path to them. The light × mid-band × volume cell is
 // the documented future cross-axis candidate (the S47 mirror); the
 // landscape × volume cells and the RUM-beacon second cross-axis remain the
@@ -2954,7 +2955,7 @@ function classifyAccentVolumeDarkMidbandSweep(env: unknown): StageVerdict {
     return {
       green: false,
       findings: env.findings.length + 1,
-      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 1024 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~1068 vs the ~934px nav area at the mid-band viewport, so a non-scrolling nav means the drawer geometry changed — links ~17–20 would be unreachable at the mid-band)`,
+      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 1024 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~992 vs the ~934px nav area at the mid-band viewport, so a non-scrolling nav means the drawer geometry changed — links ~19–20 would be unreachable at the mid-band)`,
     };
   }
   // The applied check: every accent's self-verified reading must match its key.
@@ -3210,9 +3211,9 @@ function classifyAccentVolumeDarkMidbandSweep(env: unknown): StageVerdict {
 // birth). The MID-BAND vehicle contract (the below-lg family, the
 // S34/S39/S46 doctrine at volume): the sidebar (hidden lg:flex) must be
 // HIDDEN at 768 and the hamburger VISIBLE; the drawer-own nav scroll
-// carries to the mid-band geometry — the nav scrollHeight ~1068 (the 20
+// carries to the mid-band geometry — the nav scrollHeight ~992 (the 20
 // reference-measured rows) vs the ~934px nav area at 1024 height (the 1024
-// viewport minus the ~90px brand header), so links ~17–20 sit below the
+// viewport minus the ~90px brand header), so links ~19–20 sit below the
 // fold and the nav's scroll is the only path to them. The dark × mid-band
 // × volume cell is the S46 audit's own (the mode is the discriminator on
 // this very cell); the landscape × volume cells and the RUM-beacon second
@@ -3337,7 +3338,7 @@ function classifyAccentVolumeLightMidbandSweep(env: unknown): StageVerdict {
     return {
       green: false,
       findings: env.findings.length + 1,
-      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 1024 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~1068 vs the ~934px nav area at the mid-band viewport, so a non-scrolling nav means the drawer geometry changed — links ~17–20 would be unreachable at the mid-band)`,
+      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 1024 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~992 vs the ~934px nav area at the mid-band viewport, so a non-scrolling nav means the drawer geometry changed — links ~19–20 would be unreachable at the mid-band)`,
     };
   }
   // The applied check: every accent's self-verified reading must match its key.
@@ -3567,7 +3568,7 @@ function classifyAccentVolumeLightMidbandSweep(env: unknown): StageVerdict {
 // LANDSCAPE vehicle contract (the below-lg family, the S35/S40 doctrine at
 // volume): the sidebar (hidden lg:flex) must be HIDDEN at 844 and the
 // hamburger VISIBLE; the drawer-own nav scroll carries to the landscape
-// geometry — the nav scrollHeight ~1068 (the 20 reference-measured rows) vs
+// geometry — the nav scrollHeight ~992 (the 20 reference-measured rows) vs
 // the ~301px nav area at 390 height (the 390 viewport minus the ~89px brand
 // header), so links ~8–20 sit below the fold and the nav's scroll is the
 // only path to them; the fixed h-16 app bar covers 16% of the short
@@ -3696,7 +3697,7 @@ function classifyAccentVolumeDarkLandscapeSweep(env: unknown): StageVerdict {
     return {
       green: false,
       findings: env.findings.length + 1,
-      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 390 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~1068 vs the ~301px nav area at the landscape viewport, so a non-scrolling nav means the drawer geometry changed — links ~8–20 would be unreachable in landscape)`,
+      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 390 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~992 vs the ~301px nav area at the landscape viewport, so a non-scrolling nav means the drawer geometry changed — links ~8–20 would be unreachable in landscape)`,
     };
   }
   // The applied check: every accent's self-verified reading must match its key.
@@ -3932,7 +3933,7 @@ function classifyAccentVolumeDarkLandscapeSweep(env: unknown): StageVerdict {
 // The LANDSCAPE vehicle contract (the below-lg family, the S35/S40/S48
 // doctrine at volume): the sidebar (hidden lg:flex) must be HIDDEN at 844 and
 // the hamburger VISIBLE; the drawer-own nav scroll carries to the landscape
-// geometry — the nav scrollHeight ~1068 (the 20 reference-measured rows) vs
+// geometry — the nav scrollHeight ~992 (the 20 reference-measured rows) vs
 // the ~301px nav area at 390 height (the 390 viewport minus the ~89px brand
 // header), so links ~8–20 sit below the fold and the nav's scroll is the
 // only path to them; the fixed h-16 app bar covers 16% of the short
@@ -4062,7 +4063,7 @@ function classifyAccentVolumeLightLandscapeSweep(env: unknown): StageVerdict {
     return {
       green: false,
       findings: env.findings.length + 1,
-      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 390 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~1068 vs the ~301px nav area at the landscape viewport, so a non-scrolling nav means the drawer geometry changed — links ~8–20 would be unreachable in landscape)`,
+      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 390 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~992 vs the ~301px nav area at the landscape viewport, so a non-scrolling nav means the drawer geometry changed — links ~8–20 would be unreachable in landscape)`,
     };
   }
   // The applied check: every accent's self-verified reading must match its key.
@@ -4299,7 +4300,7 @@ function classifyAccentVolumeLightLandscapeSweep(env: unknown): StageVerdict {
 // dark — those surfaces re-theme); lowcontrast < 3.2 = WARN. The landscape
 // vehicle contract (the below-lg family): the sidebar is hidden lg:flex —
 // below 1024 the DRAWER is the only vehicle, and the nav MUST scroll at 390
-// height (scrollHeight ~1068 vs the ~301px nav area — links ~8–20 below the
+// height (scrollHeight ~992 vs the ~301px nav area — links ~8–20 below the
 // fold). The light half at seed is the S40 accent-landscape-sweep's own (all
 // 20 views); the 7 volume views at dark × landscape are the S48 audit's own
 // (at volume) — the view sets are DISJOINT discriminators on the same cell.
@@ -4407,7 +4408,7 @@ function classifyAccentDarkLandscapeSeedSweep(env: unknown): StageVerdict {
     return {
       green: false,
       findings: env.findings.length + 1,
-      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 390 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~1068 vs the ~301px nav area at the landscape viewport, so a non-scrolling nav means the drawer geometry changed — links ~8–20 would be unreachable in landscape)`,
+      note: `the drawer-own scroll contract broke — drawerNavScrollable=false at 390 height under at least one accent (the nav geometry: the 20 reference-measured rows measure scrollHeight ~992 vs the ~301px nav area at the landscape viewport, so a non-scrolling nav means the drawer geometry changed — links ~8–20 would be unreachable in landscape)`,
     };
   }
   // The applied check: every accent's self-verified reading must match its key.

@@ -42,7 +42,7 @@
 //      the only vehicle) + the hamburger visible (the vehicle's handle)
 //   3. the drawer-own nav-scroll contract (re-measured per accent at the
 //      first drawer open): at 844 height the 20 nav rows (scrollHeight
-//      ~1068) cannot fit the ~700px nav area — the nav MUST be scrollable
+//      ~992) cannot fit the ~700px nav area — the nav MUST be scrollable
 //   4. the accent APPLIES through the real lifecycle (PATCHed + self-
 //      verified on <html data-accent> + html.dark, with the shell-presence
 //      guard folded into the wait — the AP-90 lesson applied to the mobile

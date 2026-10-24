@@ -89,7 +89,12 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav aria-label="Primary" className="sf-scroll flex-1 overflow-y-auto p-4">
-        <ul className="flex flex-col gap-1">
+        {/* S94 — gapless nav, mirroring the drawer's parity change (the
+            reference's settled sidebar: gapless 48px links, navSH 992; its
+            collapsed rail: gapless 44px, navSH 912). The clone's gap-1 is
+            retired on BOTH surfaces in one change — the shared NavItemLink
+            keeps the two navs identical by construction. */}
+        <ul className="flex flex-col">
           {NAV.map((item) => (
             <li key={item.id}>
               <NavItemLink id={item.id} collapsed={collapsed} />

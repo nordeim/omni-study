@@ -1,7 +1,7 @@
 // S35 evidence capture — the drawer OPEN at 844×390 (the iPhone-class
 // landscape): the short-viewport story in one frame — the fixed glass app
 // bar (16% of the viewport), the 390px-tall panel, and the nav SCROLLED
-// (the only path to links 8–20 in landscape; measured: scrollHeight 1068
+// (the only path to links 8–20 in landscape; measured: scrollHeight 992
 // vs clientHeight 301). The capture scrolls the nav to its middle so the
 // mid-list links (Analytics/Files/Calculator) are in-frame above the fold.
 import { chromium } from "playwright";
