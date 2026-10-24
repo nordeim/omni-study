@@ -86,10 +86,28 @@ for (const entry of readdirSync(TRACE_DIR, { withFileTypes: true })) {
 
 const pkg = JSON.parse(readFileSync(join(REPO, "package.json"), "utf8"));
 
+// Installed TOP-LEVEL versions for the prod-direct modules — the S96
+// bundled-server-dep evidence: bun's "(direct dependency)" marker is
+// NAME-based (it prints whenever a top-level copy exists), so whether the
+// RUNTIME copy is actually in the vulnerable range is decided by its
+// installed version, read straight from node_modules.
+const installedVersions = {};
+for (const dep of Object.keys(pkg.dependencies ?? {})) {
+  try {
+    const depPkg = JSON.parse(
+      readFileSync(join(REPO, "node_modules", dep, "package.json"), "utf8"),
+    );
+    if (typeof depPkg.version === "string") installedVersions[dep] = depPkg.version;
+  } catch {
+    // absent/unreadable → the classifier treats the module as in-range (loud)
+  }
+}
+
 const ctx = {
   runtimeModules,
   prodDependencies: Object.keys(pkg.dependencies ?? {}),
   devDependencies: Object.keys(pkg.devDependencies ?? {}),
+  installedVersions,
 };
 
 // --- Run bun audit (informational exit code; parse the text) -------------

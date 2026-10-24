@@ -10,12 +10,26 @@
 // that motivated the seam, so a future bun format change fails the pins
 // and forces the parser update in the same change).
 //
-// The doctrine (S27/S28, extended): the standalone trace is the
+// The doctrine (S27/S28, extended S96): the standalone trace is the
 // reachability ground truth — a HIGH advisory in a dev-only or CLI-only
 // chain is a DOCUMENTED risk (evidence: not in the trace), never an
 // emergency; a runtime-reachable advisory FAILS loudly. A probe must never
 // normalize a genuine finding away, and must never cry wolf on tooling
 // the deployment never ships.
+//
+// The S96 extension — the bundled-server-dep rule: the trace's
+// node_modules only lists EXTERNALIZED packages (sharp, the prisma client,
+// …); Next.js BUNDLES pure-JS server deps into the route chunks, so a
+// direct production dependency can be absent from the trace yet fully
+// runtime-reachable (the zod GHSA-mrhx-c7xc-m3w5 case: prod-direct 4.6.5
+// in range, miscategorized dev-surface by the path roots alone). The
+// authority for the rule is the INSTALLED TOP-LEVEL VERSION evaluated
+// against bun's printed vulnerable range — NOT bun's "(direct dependency)"
+// marker, which is NAME-based (it prints whenever a top-level copy of the
+// package exists, as the post-bump audit proved: the marker stayed on zod
+// after 4.6.7 patched the prod copy and only the dev chain's own 4.6.5
+// remained in range). The trace remains the evidence for the transitive
+// chains.
 
 export type AuditSeverity = "low" | "moderate" | "high" | "critical";
 
@@ -29,6 +43,10 @@ export interface AuditAdvisory {
   /** Dependency chains, each "root › … › module" (bun's " › " separator). */
   paths: string[];
   url: string | null;
+  /** True iff bun printed the "(direct dependency)" marker (the top-level
+   *  package itself is in the vulnerable range — recorded since S96, when
+   *  dropping it let a prod-direct runtime advisory hide behind a dev chain). */
+  direct: boolean;
 }
 
 /** Where the vulnerable package is actually reachable from. */
@@ -54,6 +72,11 @@ export interface DepAuditContext {
   prodDependencies: string[];
   /** package.json "devDependencies" keys. */
   devDependencies: string[];
+  /** Installed TOP-LEVEL versions (node_modules/<name>/package.json#version),
+   *  the S96 evidence for the bundled-server-dep rule — the runtime copy a
+   *  prod-direct advisory must be evaluated against. A missing entry is
+   *  treated as IN RANGE (loud on uncertainty). */
+  installedVersions: Record<string, string>;
 }
 
 export interface DepAuditEnvelope {
@@ -98,8 +121,13 @@ export function parseBunAuditOutput(text: string): AuditAdvisory[] {
     if (line.startsWith("  ")) {
       if (!current) continue;
       const body = line.trim();
-      // The "(direct dependency)" marker is not a path.
-      if (body.startsWith("(")) continue;
+      // The "(direct dependency)" marker is not a path — but since S96 it
+      // IS recorded: it proves the top-level package is itself in range
+      // (the evidence half of the bundled-server-dep rule).
+      if (body.startsWith("(")) {
+        if (body.includes("direct dependency")) current.direct = true;
+        continue;
+      }
 
       const severityMatch = SEVERITIES.find(
         (s) => body.startsWith(`${s}:`) || body.startsWith(`${s} :`),
@@ -139,6 +167,7 @@ export function parseBunAuditOutput(text: string): AuditAdvisory[] {
           title: "",
           paths: [],
           url: null,
+          direct: false,
         };
       }
     }
@@ -152,13 +181,73 @@ function pathRoot(path: string): string {
   return first.trim();
 }
 
+type Triple = readonly [number, number, number];
+
+function parseVersionTriple(v: string): Triple | null {
+  const m = v.trim().match(/^(\d+)\.(\d+)\.(\d+)/);
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+}
+
+function compareTriples(a: Triple, b: Triple): number {
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
+  }
+  return 0;
+}
+
+/**
+ * Evaluate a bun-printed vulnerable range against an installed version —
+ * the S96 evidence primitive. Handles the forms bun prints: "<4.6.6",
+ * "<=3.0.3", ">=1.0.0 <1.5.0" (space-separated AND), ">1.0.0", ">=2.0.0",
+ * an exact "1.2.3", and "*". Prerelease/build suffixes are ignored (the
+ * numeric-triple comparison). UNPARSABLE inputs conservatively answer
+ * TRUE (in range): the probe must be LOUD on what it cannot evaluate, so
+ * an unknown form can never quietly normalize a finding away.
+ */
+export function versionInRange(version: string, range: string): boolean {
+  const installed = parseVersionTriple(version);
+  if (!installed) return true; // loud: cannot prove the copy is safe
+  const parts = range.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0 || parts.includes("*")) return true;
+  return parts.every((part) => {
+    const m = part.match(/^(<=|>=|<|>|=)?\s*(\d+(?:\.\d+){0,2})$/);
+    if (!m) return true; // loud: unknown operator form
+    const op = m[1] ?? "=";
+    const segs = m[2].split(".").map(Number);
+    const bound: Triple = [segs[0] ?? 0, segs[1] ?? 0, segs[2] ?? 0];
+    const cmp = compareTriples(installed, bound);
+    switch (op) {
+      case "<":
+        return cmp < 0;
+      case "<=":
+        return cmp <= 0;
+      case ">":
+        return cmp > 0;
+      case ">=":
+        return cmp >= 0;
+      default:
+        return cmp === 0;
+    }
+  });
+}
+
 /**
  * Classify one advisory by reachability. Rules, in order:
  * 1. The module IS in the runtime trace → surface "runtime", FAIL.
- * 2. Not traced + every path roots in a devDependency → "dev".
- * 3. Not traced + any path roots in a prod dependency → "cli" (prod-
+ * 2. The module IS a direct production dependency AND the installed
+ *    top-level copy is IN the vulnerable range (S96) → surface "runtime",
+ *    FAIL. Next bundles pure-JS server deps into the route chunks, so the
+ *    standalone trace only carries externalized packages — absence from
+ *    the trace is NOT unreachability evidence for the copy the manifest
+ *    declares. The installed version (not bun's name-based marker) is the
+ *    authority; a missing version reads as in-range (loud). When the
+ *    installed prod copy is OUT of range, only TRANSITIVE copies are
+ *    affected → the path-root rules classify those (a dev chain's own
+ *    nested copy is dev-surface, whatever the module name).
+ * 3. Not traced + every path roots in a devDependency → "dev".
+ * 4. Not traced + any path roots in a prod dependency → "cli" (prod-
  *    declared tooling the runtime never imports — the prisma-CLI class).
- * 4. Roots that classify neither way → "unclassified" (still not in the
+ * 5. Roots that classify neither way → "unclassified" (still not in the
  *    trace, so still NON-PRODUCTION — but the rationale says so honestly).
  */
 export function classifyAdvisory(
@@ -182,6 +271,29 @@ export function classifyAdvisory(
         `The vulnerable package "${advisory.module}" ships in the production ` +
         `standalone trace — this is a RUNTIME finding; fix or override the ` +
         `dependency before deploying.`,
+    };
+  }
+
+  const installed = ctx.installedVersions[advisory.module];
+  if (
+    prodDeps.has(advisory.module) &&
+    (installed === undefined || versionInRange(installed, advisory.vulnerableRange))
+  ) {
+    return {
+      module: advisory.module,
+      severity: advisory.severity,
+      surface: "runtime",
+      runtimeReachable: true,
+      paths: advisory.paths,
+      verdict: "FAIL",
+      rationale:
+        `"${advisory.module}" is a direct production dependency and the ` +
+        `installed top-level copy ${installed ?? "(version unknown — treated as in range)"} ` +
+        `is in the vulnerable range ${advisory.vulnerableRange} — app code imports it at ` +
+        `runtime. Next.js bundles pure-JS server deps into the route chunks, so the ` +
+        `standalone node_modules trace only lists externalized packages; absence from ` +
+        `the trace is NOT unreachability evidence here. ` +
+        `Fix or override the dependency before deploying.`,
     };
   }
 
