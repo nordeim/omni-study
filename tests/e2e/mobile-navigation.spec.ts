@@ -90,6 +90,18 @@ test.describe("mobile navigation", () => {
     // tolerance — Chromium occasionally rounds the fractional layout box
     // under mobile DPR emulation; the reference measures 288.)
     const panel = dialog.locator("div.absolute.inset-y-0.left-0");
+    // S100 flake fix (the S55 width-poll doctrine, applied to this spec
+    // after two full-suite 286px reproductions): the panel carries the
+    // 0.25s sf-slide-in entry animation (scale(0.98) at the start) and
+    // boundingBox()/getBoundingClientRect() include transforms, so an
+    // immediate read can land mid-animation below the 287 floor under
+    // full-suite load — poll the FINAL settled width first, exactly as
+    // the s52 sibling spec has done since its own S55 fix.
+    await expect
+      .poll(async () =>
+        panel.evaluate((el) => Math.abs(Math.round(el.getBoundingClientRect().width) - 288)),
+      )
+      .toBeLessThan(2);
     const box = await panel.boundingBox();
     expect(Math.round(box?.width ?? 0)).toBeGreaterThanOrEqual(287);
     expect(Math.round(box?.width ?? 0)).toBeLessThanOrEqual(288);
